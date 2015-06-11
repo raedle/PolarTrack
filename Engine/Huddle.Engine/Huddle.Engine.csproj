@@ -185,6 +185,9 @@
     <Reference Include="Cudafy.NET">
       <HintPath>..\..\packages\CUDAfy.NET.1.29.5576.13786\lib\net40\Cudafy.NET.dll</HintPath>
     </Reference>
+    <Reference Include="DepthSenseWrapper">
+      <HintPath>..\..\lib\DepthSenseWrapper\DepthSenseWrapper.dll</HintPath>
+    </Reference>
     <Reference Include="Emgu.CV">
       <HintPath>..\..\lib\Emgu.CV\Emgu.CV.dll</HintPath>
     </Reference>
@@ -336,6 +339,7 @@
     <Compile Include="Processor\OpenCv\Struct\IdentificationState.cs" />
     <Compile Include="Processor\OpenCv\Struct\TrackingState.cs" />
     <Compile Include="Processor\Sensors\Senz3DIntel.cs" />
+    <Compile Include="Processor\Sensors\Senz3DSoftKinetic.cs" />
     <Compile Include="Processor\Sensors\Utils\Senz3DUtils.cs" />
     <Compile Include="Util\LambdaExtensions.cs" />
     <Compile Include="Util\LambdaValueConverter.cs" />
