@@ -6,6 +6,7 @@ using System.Windows.Media.Imaging;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.External.Extensions;
+using Emgu.CV.GPU;
 using Emgu.CV.Structure;
 using Huddle.Engine.Data;
 using Huddle.Engine.Extensions;
@@ -102,6 +103,22 @@ namespace Huddle.Engine.Processor
                 RaisePropertyChanging(PostProcessImagePropertyName);
                 _postProcessImage = value;
                 RaisePropertyChanged(PostProcessImagePropertyName);
+            }
+        }
+
+        #endregion
+
+        #region IsCudaSupported
+
+        /// <summary>
+        /// Gets the IsCudaSupported property.
+        /// Changes to that property's value raise the PropertyChanged event. 
+        /// </summary>
+        public bool IsCudaSupported
+        {
+            get
+            {
+                return GpuInvoke.HasCuda;
             }
         }
 

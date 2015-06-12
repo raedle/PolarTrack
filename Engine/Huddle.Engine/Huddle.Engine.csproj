@@ -182,6 +182,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\packages\Alchemy.2.2.1\lib\net40\Alchemy.dll</HintPath>
     </Reference>
+    <Reference Include="Cudafy.NET">
+      <HintPath>..\..\packages\CUDAfy.NET.1.29.5576.13786\lib\net40\Cudafy.NET.dll</HintPath>
+    </Reference>
     <Reference Include="Emgu.CV">
       <HintPath>..\..\lib\Emgu.CV\Emgu.CV.dll</HintPath>
     </Reference>
@@ -321,6 +324,8 @@
     <Compile Include="Filter\NoSmoothing.cs" />
     <Compile Include="Filter\OneEuroSmoothing.cs" />
     <Compile Include="Filter\SmoothingFilterFactory.cs" />
+    <Compile Include="Processor\PolarTracker.cs" />
+    <Compile Include="Processor\ImagesToVideo.cs" />
     <Compile Include="Processor\Complex\PolygonIntersection\PolygonCollisionUtils.cs" />
     <Compile Include="Processor\MergeRgbImageAndDevice.cs" />
     <Compile Include="Processor\Network\Huddle\Client.cs" />
@@ -507,6 +512,7 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
+    <None Include="Tools\place_these_executables_in_same_folder_as_Cudafy.NET.dll_" />
     <Resource Include="Resources\Glyph.png" />
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
@@ -614,6 +620,13 @@
     <Resource Include="Resources\32x32\save_as.png" />
   </ItemGroup>
   <ItemGroup>
+    <Resource Include="Readme\README.txt" />
+    <Resource Include="Readme\ILSpy-license.txt" />
+    <Resource Include="Readme\example_source_code.cs.txt" />
+    <Resource Include="Readme\CUDAfy-License.txt" />
+    <Resource Include="Readme\CUDA.NET.Readme.txt" />
+    <Content Include="Tools\cudafycl.exe" />
+    <Content Include="Tools\CudafyViewer.exe" />
     <Resource Include="Resources\where-is-waldo1.jpg" />
     <Content Include="Resources\256x256\ppl_256px.ico" />
     <SplashScreen Include="Resources\SplashScreen.png" />

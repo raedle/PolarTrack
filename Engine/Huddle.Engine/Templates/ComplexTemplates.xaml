@@ -1,6 +1,7 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:complex="clr-namespace:Huddle.Engine.Processor.Complex">
+                    xmlns:complex="clr-namespace:Huddle.Engine.Processor.Complex"
+                    xmlns:processor="clr-namespace:Huddle.Engine.Processor">
 
     <DataTemplate x:Key="BinaryThresholding" DataType="complex:BinaryThresholding">
         <StackPanel>
@@ -112,6 +113,52 @@
                     <Image Source="{Binding Path=PostProcessImage}" />
                 </GroupBox>
             </Grid>
+        </StackPanel>
+    </DataTemplate>
+
+    <DataTemplate x:Key="ImagesToVideo" DataType="processor:ImagesToVideo">
+        <StackPanel>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="320" />
+                    <ColumnDefinition Width="320" />
+                </Grid.ColumnDefinitions>
+            </Grid>
+
+            <StackPanel Orientation="Horizontal">
+                <Label Content="Fps"/>
+                <Slider Value="{Binding Path=Fps}" Width="340" Height="25" Minimum="1" Maximum="120" TickFrequency="1" IsSnapToTickEnabled="True" />
+                <TextBlock Text="{Binding Path=Fps, StringFormat={}{0}}"/>
+            </StackPanel>
+        </StackPanel>
+    </DataTemplate>
+    
+    <DataTemplate x:Key="PolarTracker" DataType="processor:PolarTracker">
+        <StackPanel>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="320" />
+                    <ColumnDefinition Width="320" />
+                </Grid.ColumnDefinitions>
+
+                <GroupBox Header="Pre Processed Image"
+                          Grid.Column="0">
+                    <Image Source="{Binding Path=PreProcessImage}" />
+                </GroupBox>
+                <GroupBox Header="Post Processed Image"
+                          Grid.Column="1">
+                    <Image Source="{Binding Path=PostProcessImage}" />
+                </GroupBox>
+            </Grid>
+
+            <StackPanel Orientation="Horizontal">
+                <Label Content="Threshold"/>
+                <Slider Value="{Binding Path=Threshold}" Width="340" Height="25" Minimum="0" Maximum="255" TickFrequency="1" IsSnapToTickEnabled="True" />
+                <TextBlock Text="{Binding Path=Threshold, StringFormat={}{0}}"/>
+            </StackPanel>
+
+            <CheckBox Content="Use Gpu" VerticalAlignment="Center" IsChecked="{Binding Path=IsUseGpu}" IsEnabled="{Binding Path=IsCudaSupported}" />
+            <CheckBox Content="Use OpenCL" VerticalAlignment="Center" IsChecked="{Binding Path=IsUseOpenCL}" />
         </StackPanel>
     </DataTemplate>
 </ResourceDictionary>
