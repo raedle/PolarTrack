@@ -712,7 +712,12 @@ namespace Huddle.Engine.Processor.OpenCv
                         outputImage[0].Draw(circle, Rgbs.Blue, 3);
                     }
 
-                    outputImage[0].Draw(string.Format("Id {0}", obj.Id), ref EmguFont, new DPoint((int)obj.Shape.center.X, (int)obj.Shape.center.Y), Rgbs.White);
+                    Emgu.CV.CvInvoke.PutText(outputImage[0],
+                        string.Format("Id {0}", obj.Id),
+                        new DPoint((int)obj.Shape.Center.X, (int)obj.Shape.Center.Y),
+                        EmguFont.Font,
+                        EmguFont.Scale,
+                        Rgbs.White.MCvScalar);
                 }
 
                 var bounds = obj.Bounds;
@@ -722,7 +727,7 @@ namespace Huddle.Engine.Processor.OpenCv
                     Id = obj.Id,
                     Center = new WPoint(smoothedCenter.X / imageWidth, smoothedCenter.Y / imageHeight),
                     State = obj.State,
-                    Angle = obj.Shape.angle,
+                    Angle = obj.Shape.Angle,
                     Shape = obj.Shape,
                     Polygon = obj.Polygon,
                     Area = new Rect
@@ -803,7 +808,12 @@ namespace Huddle.Engine.Processor.OpenCv
             if (depthMap.Width != imageWidth || depthMap.Height != imageHeight)
             {
                 var resizedDepthMap = new Image<Gray, float>(imageWidth, imageHeight);
-                CvInvoke.cvResize(depthMap.Ptr, resizedDepthMap.Ptr, INTER.CV_INTER_CUBIC);
+                CvInvoke.Resize(depthMap,
+                    resizedDepthMap,
+                    new System.Drawing.Size(imageWidth, imageHeight),
+                    0,
+                    0,
+                    Emgu.CV.CvEnum.Inter.Cubic);
                 depthMap.Dispose();
                 depthMap = resizedDepthMap;
             }
@@ -851,26 +861,44 @@ namespace Huddle.Engine.Processor.OpenCv
 
             using (var storage = new MemStorage())
             {
-                for (var contours = grayImage.FindContours(CHAIN_APPROX_METHOD.CV_CHAIN_APPROX_SIMPLE, IsRetrieveExternal ? RETR_TYPE.CV_RETR_EXTERNAL : RETR_TYPE.CV_RETR_LIST, storage); contours != null; contours = contours.HNext)
-                {
-                    var lowApproxContour = contours.ApproxPoly(contours.Perimeter * 0.015, storage);
+                var grayImageCopy = grayImage.Copy(); // copy because findcountours modifies original image
 
-                    if (lowApproxContour.Area > ((MinContourArea / 100.0) * pixels) && lowApproxContour.Area < ((MaxContourArea / 100.0) * pixels)) //only consider contours with area greater than
+                Emgu.CV.Util.VectorOfVectorOfPoint contours = new Emgu.CV.Util.VectorOfVectorOfPoint();
+
+                CvInvoke.FindContours(grayImageCopy,
+                    contours,
+                    null,
+                    IsRetrieveExternal ? Emgu.CV.CvEnum.RetrType.External : Emgu.CV.CvEnum.RetrType.List,
+                    Emgu.CV.CvEnum.ChainApproxMethod.ChainApproxSimple);
+
+                for (int i = 0; i < contours.Size; i++)
+                {
+                    Emgu.CV.Util.VectorOfPoint lowApproxContour = new Emgu.CV.Util.VectorOfPoint();
+                    CvInvoke.ApproxPolyDP(contours[i],
+                        lowApproxContour,
+                        CvInvoke.ArcLength(contours[i], true) * 0.015,
+                        true);
+
+                    if (CvInvoke.ContourArea(lowApproxContour) > ((MinContourArea / 100.0) * pixels) && CvInvoke.ContourArea(lowApproxContour) < ((MaxContourArea / 100.0) * pixels)) //only consider contours with area greater than
                     {
                         if (IsRenderContent && IsDrawAllContours)
-                            outputImage.Draw(lowApproxContour, Rgbs.BlueTorquoise, 1);
+                            outputImage.Draw(lowApproxContour.ToArray(), Rgbs.BlueTorquoise);
                         //outputImage.Draw(currentContour.GetConvexHull(ORIENTATION.CV_CLOCKWISE), Rgbs.BlueTorquoise, 2);
 
                         // Continue with next contour if current contour is not a rectangle.
                         List<DPoint> points;
-                        if (!IsPlausibleRectangle(lowApproxContour, MinAngle, MaxAngle, MinDetectRightAngles, out points)) continue;
+                        if (!IsPlausibleRectangle(lowApproxContour.ToArray(), MinAngle, MaxAngle, MinDetectRightAngles, out points)) continue;
 
-                        var highApproxContour = contours.ApproxPoly(contours.Perimeter * 0.05, storage);
+                        Emgu.CV.Util.VectorOfPoint highApproxContour = new Emgu.CV.Util.VectorOfPoint();
+                        CvInvoke.ApproxPolyDP(contours[i],
+                            highApproxContour,
+                            CvInvoke.ArcLength(contours[i], true) * 0.05,
+                            true);
                         if (IsRenderContent && IsDrawAllContours)
-                            outputImage.Draw(highApproxContour, Rgbs.Yellow, 1);
+                            outputImage.Draw(highApproxContour.ToArray(), Rgbs.Yellow);
 
-                        var rectangle = highApproxContour.BoundingRectangle;
-                        var minAreaRect = highApproxContour.GetMinAreaRect(storage);
+                        var rectangle = CvInvoke.BoundingRectangle(highApproxContour);
+                        var minAreaRect = CvInvoke.MinAreaRect(highApproxContour);
                         var polygon = new Polygon(points.ToArray(), imageWidth, imageHeight);
                         var contourPoints = highApproxContour.ToArray();
 
@@ -894,11 +922,11 @@ namespace Huddle.Engine.Processor.OpenCv
         /// <param name="minDetectAngles"></param>
         /// <param name="points"></param>
         /// <returns></returns>
-        private bool IsPlausibleRectangle(Seq<DPoint> contour, int minAngle, int maxAngle, int minDetectAngles, out List<DPoint> points)
+        private bool IsPlausibleRectangle(DPoint[] contour, int minAngle, int maxAngle, int minDetectAngles, out List<DPoint> points)
         {
             points = new List<DPoint>();
 
-            if (contour.Total < 4) return false; //The contour has less than 3 vertices.
+            if (contour.Length < 4) return false; //The contour has less than 3 vertices.
 
             var pts = contour.ToArray();
             var edges = PointCollection.PolyLine(pts, true);
@@ -938,14 +966,14 @@ namespace Huddle.Engine.Processor.OpenCv
         /// <param name="polygon"></param>
         /// <param name="points"></param>
         /// <param name="updateTime"></param>
-        private static RectangularObject CreateObject(long id, Rectangle boundingRectangle, MCvBox2D minAreaRect, Polygon polygon, DPoint[] points, DateTime updateTime)
+        private static RectangularObject CreateObject(long id, Rectangle boundingRectangle, RotatedRect minAreaRect, Polygon polygon, DPoint[] points, DateTime updateTime)
         {
             return new RectangularObject
             {
                 Id = id,
                 State = TrackingState.Tracked,
                 LastUpdate = updateTime,
-                Center = new WPoint(minAreaRect.center.X, minAreaRect.center.Y),
+                Center = new WPoint(minAreaRect.Center.X, minAreaRect.Center.Y),
                 Bounds = boundingRectangle,
                 Shape = minAreaRect,
                 Polygon = polygon,
@@ -965,15 +993,15 @@ namespace Huddle.Engine.Processor.OpenCv
         /// <param name="updateTime"></param>
         /// <param name="objects"></param>
         /// <returns></returns>
-        private static bool UpdateObject(bool occluded, double maxRestoreDistance, Rectangle boundingRectangle, MCvBox2D minAreaRect, Polygon polygon, DPoint[] points, DateTime updateTime, IEnumerable<RectangularObject> objects)
+        private static bool UpdateObject(bool occluded, double maxRestoreDistance, Rectangle boundingRectangle, RotatedRect minAreaRect, Polygon polygon, DPoint[] points, DateTime updateTime, IEnumerable<RectangularObject> objects)
         {
-            var cCenter = minAreaRect.center;
+            var cCenter = minAreaRect.Center;
 
             RectangularObject candidate = null;
             var leastDistance = double.MaxValue;
             foreach (var obj in objects)
             {
-                var oCenter = obj.Shape.center;
+                var oCenter = obj.Shape.Center;
                 var distance = Math.Sqrt(Math.Pow(oCenter.X - cCenter.X, 2) + Math.Pow(oCenter.Y - cCenter.Y, 2));
 
                 if (!(leastDistance > distance)) continue;

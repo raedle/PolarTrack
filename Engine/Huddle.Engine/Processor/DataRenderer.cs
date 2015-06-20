@@ -20,9 +20,6 @@ namespace Huddle.Engine.Processor
     {
         #region static fields
 
-        public static MCvFont EmguFont = new MCvFont(FONT.CV_FONT_HERSHEY_DUPLEX, 0.3, 0.3);
-        public static MCvFont EmguFontBig = new MCvFont(FONT.CV_FONT_HERSHEY_DUPLEX, 1.0, 1.0);
-
         #endregion
 
         #region properties
@@ -107,12 +104,14 @@ namespace Huddle.Engine.Processor
                 _debugOutputImage.DrawPolyline(polyline.ToArray(), true, device.IsIdentified ? Rgbs.Red : Rgbs.White, 5);
 
                 if (device.IsIdentified)
-                    _debugOutputImage.Draw(string.Format("Id {0}", device.DeviceId), ref EmguFontBig, new Point(centerX, centerY), Rgbs.Red);
+                {
+                    _debugOutputImage.Draw(string.Format("Id {0}", device.DeviceId), EmguFontBig.Font, EmguFontBig.Scale, new Point(centerX, centerY), Rgbs.Red);
+                }
             }
 
             foreach (var hand in hands)
             {
-                var resizedHandSegment = hand.Segment.Resize(_debugOutputImage.Width, _debugOutputImage.Height, INTER.CV_INTER_CUBIC).Mul(255);
+                var resizedHandSegment = hand.Segment.Resize(_debugOutputImage.Width, _debugOutputImage.Height, Emgu.CV.CvEnum.Inter.Cubic).Mul(255);
 
                 //_debugOutputImage = _debugOutputImage.Copy(resizedHandSegment.Not());
                 _debugOutputImage = _debugOutputImage.AddWeighted(resizedHandSegment.Convert<Rgb, byte>(), 1.0, 0.5, 0.0);
@@ -123,7 +122,7 @@ namespace Huddle.Engine.Processor
                 var labelPoint = new Point((int)(hand.RelativeCenter.X * Width + 30), (int)(hand.RelativeCenter.Y * Height));
 
                 _debugOutputImage.Draw(new CircleF(point, 10), Rgbs.Red, 6);
-                _debugOutputImage.Draw(string.Format("Id {0} (d={1:F0})", hand.Id, hand.Depth), ref EmguFontBig, labelPoint, Rgbs.Red);
+                _debugOutputImage.Draw(string.Format("Id {0} (d={1:F0})", hand.Id, hand.Depth), EmguFontBig.Font, EmguFontBig.Scale, labelPoint, Rgbs.Red);
             }
 
             var debugOutputImageCopy = _debugOutputImage.Copy();
@@ -137,7 +136,9 @@ namespace Huddle.Engine.Processor
             Stage(new RgbImageData(this, "DataRenderer", _debugOutputImage.Copy()));
 
             if (_videoWriter != null)
-                _videoWriter.WriteFrame(_debugOutputImage.Convert<Bgr, byte>());
+            {
+                _videoWriter.Write(_debugOutputImage.Convert<Bgr, byte>().ToUMat().ToMat(Emgu.CV.CvEnum.AccessType.Read));
+            }
 
             _debugOutputImage.Dispose();
 
@@ -153,7 +154,11 @@ namespace Huddle.Engine.Processor
 
         public override void Start()
         {
-            _videoWriter = new VideoWriter("DataRenderer.avi", CvInvoke.CV_FOURCC('D', 'I', 'V', 'X'), 25, Width, Height, true);
+            _videoWriter = new VideoWriter("DataRenderer.avi",
+                    Emgu.CV.VideoWriter.Fourcc('D', 'I', 'V', 'X'),
+                    25,
+                    new Size(Width, Height),
+                    true);
 
             base.Start();
         }

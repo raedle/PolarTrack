@@ -191,9 +191,6 @@
     <Reference Include="Emgu.CV">
       <HintPath>..\..\lib\Emgu.CV\Emgu.CV.dll</HintPath>
     </Reference>
-    <Reference Include="Emgu.CV.GPU">
-      <HintPath>..\..\lib\Emgu.CV\Emgu.CV.GPU.dll</HintPath>
-    </Reference>
     <Reference Include="Emgu.Util">
       <HintPath>..\..\lib\Emgu.CV\Emgu.Util.dll</HintPath>
     </Reference>

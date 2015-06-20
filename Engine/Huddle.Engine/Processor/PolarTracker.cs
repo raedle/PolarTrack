@@ -12,7 +12,6 @@ using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.External.Extensions;
 using Emgu.CV.External.Structure;
-using Emgu.CV.GPU;
 using Emgu.CV.Structure;
 using GalaSoft.MvvmLight.Command;
 using Huddle.Engine.Data;
@@ -30,7 +29,7 @@ namespace Huddle.Engine.Processor
         #region private members
 
         private Image<Rgb, byte> _prevImage;
-        private GpuImage<Rgb, byte> _prevGpuImage;
+        private Image<Rgb, byte> _prevGpuImage;
 
         #endregion
 
@@ -237,10 +236,12 @@ namespace Huddle.Engine.Processor
 
             var isUseGpu = IsUseGpu;
 
-            GpuImage<Rgb, byte> gpuImage = null;
+            Image<Rgb, byte> gpuImage = null;
             if (IsCudaSupported && isUseGpu)
-                gpuImage = new GpuImage<Rgb, byte>(imageCopy);
-
+            {
+                gpuImage = imageCopy.Copy();
+            }
+                
             if (_prevImage == null)
             {
                 _prevImage = imageCopy;
@@ -260,12 +261,12 @@ namespace Huddle.Engine.Processor
             Image<Rgb, byte> output;
             if (IsCudaSupported && isUseGpu)
             {
-                var gpuDiffImage = new GpuImage<Rgb, byte>(gpuImage);
-                GpuInvoke.Absdiff(gpuImage, _prevGpuImage, gpuDiffImage, IntPtr.Zero);
+                var gpuDiffImage = gpuImage.Copy();
+                CvInvoke.AbsDiff(gpuImage, _prevGpuImage, gpuDiffImage);
                 var grayScaleGpuImage = gpuDiffImage.Convert<Gray, byte>();
-                GpuInvoke.Threshold(grayScaleGpuImage, grayScaleGpuImage, Threshold, 255, THRESH.CV_THRESH_BINARY, IntPtr.Zero);
+                CvInvoke.Threshold(grayScaleGpuImage, grayScaleGpuImage, Threshold, 255, Emgu.CV.CvEnum.ThresholdType.Binary);
 
-                output = grayScaleGpuImage.Convert<Rgb, byte>().ToImage();
+                output = grayScaleGpuImage.Convert<Rgb, byte>();
             }
             else
             {

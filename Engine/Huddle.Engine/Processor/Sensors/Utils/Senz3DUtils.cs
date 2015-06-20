@@ -197,13 +197,20 @@ namespace Huddle.Engine.Processor.Sensors.Utils
             {
                 using (var storage = new MemStorage())
                 {
-                    for (var contours = contourImg.FindContours(CHAIN_APPROX_METHOD.CV_CHAIN_APPROX_SIMPLE,
-                        RETR_TYPE.CV_RETR_EXTERNAL, storage); contours != null; contours = contours.HNext)
+                    Emgu.CV.Util.VectorOfVectorOfPoint contours = new Emgu.CV.Util.VectorOfVectorOfPoint();
+                    CvInvoke.FindContours(contourImg,
+                        contours,
+                        null,
+                        RetrType.External,
+                        ChainApproxMethod.ChainApproxSimple);
+
+                    for (int i = 0; i < contours.Size; i++)
                     {
-                        var currentContour = contours.ApproxPoly(contours.Perimeter * 0.05, storage);
-                        if (currentContour.Area > 160 * 120)
+                        Emgu.CV.Util.VectorOfPoint currentContour = new Emgu.CV.Util.VectorOfPoint();
+                        CvInvoke.ApproxPolyDP(contours[i], currentContour, CvInvoke.ArcLength(contours[i], true) * 0.05, true);
+                        if (CvInvoke.ContourArea(currentContour, false) > 160 * 120)
                         {
-                            rgbInDepthRect = currentContour.BoundingRectangle;
+                            rgbInDepthRect = CvInvoke.BoundingRectangle(currentContour);
                         }
                     }
                 }

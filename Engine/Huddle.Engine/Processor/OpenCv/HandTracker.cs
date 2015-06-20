@@ -591,7 +591,7 @@ namespace Huddle.Engine.Processor.OpenCv
 
             var debugOutput = new Image<Rgb, byte>(width, height);
 
-            MCvConnectedComp comp;
+            MCvConnectedComp comp = new MCvConnectedComp();
             for (var i = 0; !minValues[0].Equals(maxValues[0]) && i < maxFloodFillLoops;
                 imageWithOriginalDepth.MinMax(out minValues, out maxValues, out minLocations, out maxLocations), i++)
             {
@@ -599,18 +599,17 @@ namespace Huddle.Engine.Processor.OpenCv
                 var mask = new Image<Gray, byte>(width + 2, height + 2);
 
                 // Flood fill segment with lowest pixel value to allow for next segment on next iteration.
-                CvInvoke.cvFloodFill(imageWithOriginalDepth.Ptr,
+                CvInvoke.FloodFill(imageWithOriginalDepth,
+                    mask,
                     maxLocations[0],
                     new MCvScalar(0.0f),
+                    out comp.Rect,
                     new MCvScalar(FloodFillDifference),
                     new MCvScalar(FloodFillDifference),
-                    out comp,
-                    CONNECTIVITY.EIGHT_CONNECTED,
-                    FLOODFILL_FLAG.DEFAULT,
-                    mask.Ptr);
+                    Emgu.CV.CvEnum.Connectivity.EightConnected);
 
                 // Only process segments that are of a certain size (and are not the entire image).
-                if (!(comp.area > minHandArmArea) || !(comp.area < maxHandArmArea)) continue;
+                if (!( comp.Area > minHandArmArea) || !(comp.Area < maxHandArmArea)) continue;
 
                 mask.ROI = shrinkMaskROI;
 
@@ -663,8 +662,13 @@ namespace Huddle.Engine.Processor.OpenCv
                 {
                     debugOutput.Draw(new CircleF(new PointF((float)hand.Center.X, (float)hand.Center.Y), 5), Rgbs.Red, 3);
                     debugOutput.Draw(new CircleF(new PointF((float)hand.SmoothedCenter.X, (float)hand.SmoothedCenter.Y), 5), Rgbs.Green, 3);
+                    Emgu.CV.CvInvoke.PutText(debugOutput,
+                        string.Format("Id {0} ({1:F1})", hand.Id, hand.Depth),
+                        new DPoint((int)hand.SmoothedCenter.X, (int)hand.SmoothedCenter.Y),
+                        EmguFont.Font,
+                        EmguFont.Scale,
+                        Rgbs.TrueRed.MCvScalar);
 
-                    debugOutput.Draw(string.Format("Id {0} ({1:F1})", hand.Id, hand.Depth), ref EmguFont, new DPoint((int)hand.SmoothedCenter.X, (int)hand.SmoothedCenter.Y), Rgbs.TrueRed);
                 }
 
                 var debugOutputCopy = debugOutput.Copy();
@@ -695,7 +699,9 @@ namespace Huddle.Engine.Processor.OpenCv
 
             if (++_collectedBackgroundImages < BackgroundSubtractionSamples)
             {
-                _backgroundImage.RunningAvg(image, 0.8);
+                CvInvoke.AccumulateWeighted(image,
+                    _backgroundImage,
+                    0.8);
                 return true;
             }
 
@@ -734,7 +740,12 @@ namespace Huddle.Engine.Processor.OpenCv
 
             for (var j = 0; j < samples; j++)
             {
-                CvInvoke.cvMinMaxLoc(handSegment, ref minVal, ref maxVal, ref minLoc, ref maxLoc, handMask);
+                CvInvoke.MinMaxLoc(handSegment,
+                    ref minVal,
+                    ref maxVal,
+                    ref minLoc,
+                    ref maxLoc,
+                    handMask);
 
                 var maxX = maxLoc.X;
                 var maxY = maxLoc.Y;

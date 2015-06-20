@@ -156,9 +156,9 @@ namespace Emgu.CV.External.Extensions
             return image.CallInternalProperty<int>("Height");
         }
 
-        public static void Draw(this IImage image, string message, ref MCvFont font, Point bottomLeft, IColor color)
+        public static void Draw(this IImage image, string message, Emgu.CV.CvEnum.FontFace font, double fontScale, Point bottomLeft, IColor color)
         {
-            image.CallInternalMethod("Draw", new[] { false, true, false, false }, new object[] { message, font, bottomLeft, color });
+            image.CallInternalMethod("Draw", new[] { false, true, false, false }, new object[] { message, font, fontScale, bottomLeft, color });
         }
 
         public static Image<TColor, TDepth> Convert<TColor, TDepth>(this IImage image)
@@ -234,9 +234,9 @@ namespace Emgu.CV.External.Extensions
             return Math.Sqrt(Math.Pow(self.X - point.X, 2) + Math.Pow(self.Y - point.Y, 2));
         }
 
-        public static bool IsRectangle(Contour<Point> contour, double toleranceAngle = 10.0)
+        public static bool IsRectangle(Point[] contour, double toleranceAngle = 10.0)
         {
-            if (contour.Total != 4) return false;
+            if (contour.Length != 4) return false;
 
             // determine if all the angles in the contour are within [80, 100] degree
             var pts = contour.ToArray();

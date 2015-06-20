@@ -28,9 +28,6 @@ namespace Huddle.Engine.Processor.BarCodes
     {
         #region static fields
 
-        public static MCvFont EmguFont = new MCvFont(FONT.CV_FONT_HERSHEY_SIMPLEX, 0.3, 0.3);
-        public static MCvFont EmguFontBig = new MCvFont(FONT.CV_FONT_HERSHEY_SIMPLEX, 1.0, 1.0);
-
         #endregion
 
         #region private fields
@@ -399,17 +396,28 @@ namespace Huddle.Engine.Processor.BarCodes
 
                     grayImage.ROI = roi;
 
-                    Contour<Point> largestContour = null;
+                    Emgu.CV.Util.VectorOfPoint largestContour = null;
                     using (var storage = new MemStorage())
                     {
-                        for (var contours = grayImage.FindContours(CHAIN_APPROX_METHOD.CV_CHAIN_APPROX_SIMPLE, RETR_TYPE.CV_RETR_EXTERNAL); contours != null; contours = contours.HNext)
+                        Emgu.CV.Util.VectorOfVectorOfPoint contours = new Emgu.CV.Util.VectorOfVectorOfPoint();
+                        CvInvoke.FindContours(grayImage,
+                            contours,
+                            null,
+                            RetrType.External,
+                            ChainApproxMethod.ChainApproxSimple);
+
+                        for (int i = 0; i < contours.Size; i++)
                         {
-                            var contour = contours.ApproxPoly(contours.Perimeter * 0.05, storage);
+                            Emgu.CV.Util.VectorOfPoint contour = new Emgu.CV.Util.VectorOfPoint();
+                            CvInvoke.ApproxPolyDP(contours[i],
+                                contour,
+                                CvInvoke.ArcLength(contours[i], true) * 0.05,
+                                true);
 
                             var roiArea = roi.Size.Width * roi.Size.Height;
-                            var contourArea = contour.Area;
+                            var contourArea = CvInvoke.ContourArea(contour);
 
-                            if (contour.Total != 4) continue;
+                            if (contour.Size != 4) continue;
 
                             if (contourArea < roiArea * 0.98 && contourArea > 10)
                             {
@@ -419,7 +427,7 @@ namespace Huddle.Engine.Processor.BarCodes
                                     continue;
                                 }
 
-                                if (contour.Area > largestContour.Area)
+                                if (CvInvoke.ContourArea(contour) > CvInvoke.ContourArea(largestContour))
                                 {
                                     largestContour = contour;
                                 }
@@ -428,13 +436,13 @@ namespace Huddle.Engine.Processor.BarCodes
 
                         if (largestContour != null)
                         {
-                            var edges = DetermineLongestEdge(largestContour);
+                            var edges = DetermineLongestEdge(largestContour.ToArray());
 
                             if (IsRenderContent)
                             {
                                 var oldROI = outputImage.ROI;
                                 outputImage.ROI = roi;
-                                outputImage.Draw(largestContour.GetMinAreaRect(storage), Rgbs.Cyan, 2);
+                                outputImage.Draw(CvInvoke.MinAreaRect(largestContour), Rgbs.Cyan, 2);
 
                                 outputImage.Draw(edges[0], Rgbs.Red, 3);
                                 outputImage.Draw(edges[1], Rgbs.Green, 3);
@@ -559,7 +567,12 @@ namespace Huddle.Engine.Processor.BarCodes
                         var i = 0;
                         foreach (var point in quad)
                         {
-                            outputImage.Draw(i++.ToString(CultureInfo.InvariantCulture), ref EmguFont, new Point(point.X + offsetX, point.Y + offsetY), Rgbs.TrueRed);
+                            Emgu.CV.CvInvoke.PutText(outputImage,
+                                i++.ToString(CultureInfo.InvariantCulture),
+                                new Point(point.X + offsetX, point.Y + offsetY),
+                                EmguFont.Font,
+                                EmguFont.Scale,
+                                Rgbs.TrueRed.MCvScalar);
                         }
                     }
 
@@ -575,7 +588,12 @@ namespace Huddle.Engine.Processor.BarCodes
                         {
                             String label = recGlyph.Name;
                             Point labelPos = new Point(recQuad[2].X + offsetX, recQuad[2].Y + offsetY);
-                            outputImage.Draw(label, ref EmguFontBig, labelPos, Rgbs.Green);
+                            Emgu.CV.CvInvoke.PutText(outputImage,
+                                label,
+                                labelPos,
+                                EmguFontBig.Font,
+                                EmguFontBig.Scale,
+                                Rgbs.Green.MCvScalar);
                         }
                     }
                 }
@@ -676,7 +694,12 @@ namespace Huddle.Engine.Processor.BarCodes
 
                                 String label = radOrientation + " " + degOrientation;
                                 Point labelPos = new Point(quad[0].X + offsetX, quad[0].Y + offsetY);
-                                outputImage.Draw(label, ref EmguFontBig, labelPos, Rgbs.Yellow);
+                                Emgu.CV.CvInvoke.PutText(outputImage,
+                                    label,
+                                    labelPos,
+                                    EmguFontBig.Font,
+                                    EmguFontBig.Scale,
+                                    Rgbs.Yellow.MCvScalar);
                             }
                         }
                     }
@@ -690,10 +713,9 @@ namespace Huddle.Engine.Processor.BarCodes
             }
         }
 
-        private LineSegment2D[] DetermineLongestEdge(Contour<Point> contour)
+        private LineSegment2D[] DetermineLongestEdge(Point[] contour)
         {
-            var pts = contour.ToArray();
-            var edges = PointCollection.PolyLine(pts, true);
+            var edges = PointCollection.PolyLine(contour, true);
 
             var longestEdge = edges[0];
             var index = 0;

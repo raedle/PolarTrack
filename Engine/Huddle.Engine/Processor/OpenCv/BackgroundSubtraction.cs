@@ -269,7 +269,7 @@ namespace Huddle.Engine.Processor.OpenCv
 
             if (++_collectedBackgroundImages < BackgroundSubtractionSamples)
             {
-                _backgroundImage.RunningAvg(image, 0.8);
+                _backgroundImage.AccumulateWeighted(image, 0.8);
                 return true;
             }
 

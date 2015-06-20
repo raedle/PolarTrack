@@ -19,9 +19,6 @@ namespace Huddle.Engine.Processor.Complex
     {
         #region static fields
 
-        public static MCvFont EmguFont = new MCvFont(FONT.CV_FONT_HERSHEY_SIMPLEX, 0.3, 0.3);
-        public static MCvFont EmguFontBig = new MCvFont(FONT.CV_FONT_HERSHEY_SIMPLEX, 1.0, 1.0);
-
         #endregion
 
         public override IDataContainer PreProcess(IDataContainer dataContainer)
@@ -51,7 +48,7 @@ namespace Huddle.Engine.Processor.Complex
                 var centerY = (int)(blob.Center.Y * height);
 
                 image.DrawPolyline(polyline.ToArray(), true, color, 5);
-                image.Draw(string.Format("Id {0}", blob.Id), ref EmguFontBig, new Point(centerX, centerY), Rgbs.White);
+                image.Draw(string.Format("Id {0}", blob.Id), new Point(centerX, centerY), EmguFontBig.Font, EmguFontBig.Scale, Rgbs.White);
             }
 
             Stage(new RgbImageData(this, "BlobRenderer", image.Copy()));

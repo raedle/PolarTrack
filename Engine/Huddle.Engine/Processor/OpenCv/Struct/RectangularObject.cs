@@ -169,13 +169,13 @@ namespace Huddle.Engine.Processor.OpenCv.Struct
         /// </summary>
         public const string ShapePropertyName = "Shape";
 
-        private MCvBox2D _shape;
+        private RotatedRect _shape;
 
         /// <summary>
         /// Sets and gets the Shape property.
         /// Changes to that property's value raise the PropertyChanged event. 
         /// </summary>
-        public MCvBox2D Shape
+        public RotatedRect Shape
         {
             get
             {
@@ -204,13 +204,13 @@ namespace Huddle.Engine.Processor.OpenCv.Struct
         /// </summary>
         public const string OriginDepthShapePropertyName = "OriginDepthShape";
 
-        private MCvBox2D _originDepthShape;
+        private RotatedRect _originDepthShape;
 
         /// <summary>
         /// Sets and gets the Shape property.
         /// Changes to that property's value raise the PropertyChanged event. 
         /// </summary>
-        public MCvBox2D OriginDepthShape
+        public RotatedRect OriginDepthShape
         {
             get
             {
@@ -567,7 +567,7 @@ namespace Huddle.Engine.Processor.OpenCv.Struct
         {
             get
             {
-                return Equals(_averageSize, SizeF.Empty) ? Shape.size : _averageSize;
+                return Equals(_averageSize, SizeF.Empty) ? Shape.Size : _averageSize;
             }
         }
 

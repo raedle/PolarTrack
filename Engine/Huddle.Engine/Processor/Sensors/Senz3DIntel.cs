@@ -825,7 +825,7 @@ namespace Huddle.Engine.Processor.Sensors
             var floodFillImage = confidenceImage.Convert<Gray, byte>();
 
             // TODO Not necessarily required to extract spot with valid depth values in low confidence depth image (high).
-            CvInvoke.cvThreshold(floodFillImage.Ptr, floodFillImage.Ptr, 10, 250, THRESH.CV_THRESH_BINARY);
+            CvInvoke.Threshold(floodFillImage, floodFillImage, 10, 250, Emgu.CV.CvEnum.ThresholdType.Binary);
 
             // Mask need to be two pixels bigger than the source image.
             var width = confidenceImage.Width();
@@ -839,15 +839,15 @@ namespace Huddle.Engine.Processor.Sensors
             MCvConnectedComp comp;
 
             // Flood fill segment with lowest pixel value to allow for next segment on next iteration.
-            CvInvoke.cvFloodFill(floodFillImage.Ptr,
+            CvInvoke.FloodFill(floodFillImage,
+                mask,
                 seedPoint,
                 new MCvScalar(255.0),
+                out comp.Rect,
                 new MCvScalar(10),
                 new MCvScalar(10),
-                out comp,
-                CONNECTIVITY.EIGHT_CONNECTED,
-                FLOODFILL_FLAG.DEFAULT,
-                mask.Ptr);
+                Connectivity.EightConnected,
+                FloodFillType.Default);
 
             mask = mask.Dilate(6).Erode(15);
             mask.ROI = shrinkMaskROI;

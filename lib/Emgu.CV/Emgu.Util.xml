@@ -4,78 +4,6 @@
         <name>Emgu.Util</name>
     </assembly>
     <members>
-        <member name="T:Emgu.Util.BinaryFileStorage`1">
-            <summary>
-            A raw data storage
-            </summary>
-            <typeparam name="T">The type of elments in the storage</typeparam>
-        </member>
-        <member name="F:Emgu.Util.BinaryFileStorage`1._fileInfo">
-            <summary>
-            The file info
-            </summary>
-        </member>
-        <member name="M:Emgu.Util.BinaryFileStorage`1.#ctor(System.String)">
-            <summary>
-            Create a binary File Storage
-            </summary>
-            <param name="fileName">The file name of the storage</param>
-        </member>
-        <member name="M:Emgu.Util.BinaryFileStorage`1.#ctor(System.String,System.Int32)">
-            <summary>
-            Create a binary File Storage
-            </summary>
-            <param name="fileName">The file name of the storage</param>
-            <param name="trunkSize">The data will be read in trunk of this size internally. Can be use to seed up the file read. A good number will be 4096</param>
-        </member>
-        <member name="M:Emgu.Util.BinaryFileStorage`1.#ctor(System.String,System.Collections.Generic.IEnumerable{`0})">
-            <summary>
-            Create a binary File Storage with the specific data
-            </summary>
-            <param name="fileName">The file name of the storage, all data in the existing file will be replaced</param>
-            <param name="samples">The data which will be stored in the storage</param>
-        </member>
-        <member name="M:Emgu.Util.BinaryFileStorage`1.Append(System.Collections.Generic.IEnumerable{`0})">
-            <summary>
-            Append the samples to the end of the storage
-            </summary>
-            <param name="samples">The samples to be appended to the storage</param>
-        </member>
-        <member name="M:Emgu.Util.BinaryFileStorage`1.Clear">
-            <summary>
-            Delete all data in the existing storage, if there is any.
-            </summary>
-        </member>
-        <member name="M:Emgu.Util.BinaryFileStorage`1.EstimateSize">
-            <summary>
-            Estimate the number of elements in this storage as the size of the storage divided by the size of the elements
-            </summary>
-            <returns>An estimation of the number of elements in this storage</returns>
-        </member>
-        <member name="M:Emgu.Util.BinaryFileStorage`1.Peek">
-            <summary>
-            Get a copy of the first element in the storage. If the storage is empty, a default value will be returned
-            </summary>
-            <returns>A copy of the first element in the storage. If the storage is empty, a default value will be returned</returns>
-        </member>
-        <member name="M:Emgu.Util.BinaryFileStorage`1.GetSubsamples(System.Int32)">
-            <summary>
-            Get the subsampled data in this storage
-            </summary>
-            <param name="subsampleRate">The subsample rate</param>
-            <returns>The subsampled data in this storage</returns>
-        </member>
-        <member name="M:Emgu.Util.BinaryFileStorage`1.GetEnumerator">
-            <summary>
-            Get the data in this storage
-            </summary>
-            <returns>The data in this storage</returns>
-        </member>
-        <member name="P:Emgu.Util.BinaryFileStorage`1.FileName">
-            <summary>
-            The file name of the storage
-            </summary>
-        </member>
         <member name="T:Emgu.Util.DisposableObject">
             <summary>
             An abstract class that wrap around a disposable object
@@ -300,7 +228,7 @@
             Call a command from command line
             </summary>
             <param name="execFileName">The name of the executable</param>
-            <param name="arguments">The arguments to the executeable</param>
+            <param name="arguments">The arguments to the executable</param>
             <returns>The standard output</returns>
         </member>
         <member name="M:Emgu.Util.Toolbox.GetBaseType(System.Type,System.String)">
@@ -318,30 +246,6 @@
             <typeparam name="TData">type of the input vector</typeparam>
             <param name="data">array of data</param>
             <returns>the byte vector</returns>
-        </member>
-        <member name="M:Emgu.Util.Toolbox.CopyVector``1(``0[],System.IntPtr)">
-            <summary>
-            Copy a generic vector to the unmanaged memory
-            </summary>
-            <typeparam name="TData">The data type of the vector</typeparam>
-            <param name="src">The source vector</param>
-            <param name="dest">Pointer to the destination unmanaged memory</param>
-        </member>
-        <member name="M:Emgu.Util.Toolbox.CopyMatrix``1(``0[][],System.IntPtr)">
-            <summary>
-            Copy a jagged two dimensional array to the unmanaged memory
-            </summary>
-            <typeparam name="TData">The data type of the jagged two dimensional</typeparam>
-            <param name="source">The source array</param>
-            <param name="dest">Pointer to the destination unmanaged memory</param>
-        </member>
-        <member name="M:Emgu.Util.Toolbox.CopyMatrix``1(System.IntPtr,``0[][])">
-            <summary>
-            Copy a jagged two dimensional array from the unmanaged memory
-            </summary>
-            <typeparam name="D">The data type of the jagged two dimensional</typeparam>
-            <param name="src">The src array</param>
-            <param name="dest">Pointer to the destination unmanaged memory</param>
         </member>
         <member name="M:Emgu.Util.Toolbox.LinearInterpolate``1(System.Collections.Generic.IEnumerable{``0},System.Collections.Generic.IEnumerable{System.Double})">
             <summary>
@@ -366,14 +270,6 @@
             <typeparam name="T">The type of objects that will be joined</typeparam>
             <param name="enums">The enumerables, each should be stored in index ascending order</param>
             <returns>A single enumerable sorted in index ascending order</returns>
-        </member>
-        <member name="M:Emgu.Util.Toolbox.memcpy(System.IntPtr,System.IntPtr,System.Int32)">
-            <summary>
-            memcpy function
-            </summary>
-            <param name="dest">the destination of memory copy</param>
-            <param name="src">the source of memory copy</param>
-            <param name="len">the number of bytes to be copied</param>
         </member>
         <member name="M:Emgu.Util.Toolbox.LoadLibrary(System.String)">
             <summary>
@@ -424,6 +320,11 @@
         <member name="F:Emgu.Util.TypeEnum.OS.Android">
             <summary>
             Android devices
+            </summary>
+        </member>
+        <member name="F:Emgu.Util.TypeEnum.OS.WindowsPhone">
+            <summary>
+            The windows phone
             </summary>
         </member>
         <member name="T:Emgu.Util.TypeEnum.ClrType">

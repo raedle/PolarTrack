@@ -268,10 +268,9 @@ namespace Huddle.Engine.Processor
                 //var captureOutput = new VideoWriter(@"test.avi", CvInvoke.CV_FOURCC('W', 'M', 'V', '3'), 1, width, height, true);
                 var videoWriter = new VideoWriter(
                     GetTempFilePath(_tmpRecordPath, videoMetadata.FileName),
-                    CvInvoke.CV_FOURCC('D', 'I', 'V', 'X'),
+                    Emgu.CV.VideoWriter.Fourcc('D', 'I', 'V', 'X'),
                     Fps,
-                    videoMetadata.Width,
-                    videoMetadata.Height,
+                    new System.Drawing.Size(videoMetadata.Width, videoMetadata.Height),
                     true);
 
                 _recorders.Add(videoMetadata, videoWriter);
@@ -292,7 +291,7 @@ namespace Huddle.Engine.Processor
                 {
                     Console.WriteLine("Write image frame");
                     imageCopy = imageData.Image;
-                    recorder.WriteFrame(imageCopy.Convert<Bgr, byte>());
+                    recorder.Write(imageCopy.Convert<Bgr, byte>().ToUMat().ToMat(Emgu.CV.CvEnum.AccessType.Read));
                 }
                 finally
                 {
@@ -349,7 +348,7 @@ namespace Huddle.Engine.Processor
                 {
                     try
                     {
-                        _frame = _capture.QueryFrame();
+                        CvInvoke.cvCopy(_capture.QueryFrame().Ptr, _frame, IntPtr.Zero);
                         Console.WriteLine("Queried");
                     }
                     catch (AccessViolationException e)
@@ -441,7 +440,8 @@ namespace Huddle.Engine.Processor
         {
             Console.WriteLine("echo {0}", i++);
 
-            var frame = _capture.RetrieveBgrFrame();
+            Emgu.CV.UMat frame = new UMat();
+            _capture.Retrieve(frame);
 
             //Image<Gray, Byte> grayFrame = image.Convert<Gray, Byte>();
             //Image<Gray, Byte> smallGrayFrame = grayFrame.PyrDown();

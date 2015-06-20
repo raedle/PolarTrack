@@ -2,7 +2,6 @@
 using System.Linq;
 using System.ServiceModel;
 using System.Windows;
-using Emgu.CV.GPU;
 using GalaSoft.MvvmLight.Threading;
 
 namespace Huddle.Engine
@@ -35,7 +34,7 @@ namespace Huddle.Engine
 
         void AppStartup(object sender, StartupEventArgs e)
         {
-            Console.WriteLine("Cuda support available: {0}", GpuInvoke.HasCuda);
+            Console.WriteLine("Cuda support available: {0}", Emgu.CV.CvInvoke.HaveOpenCLCompatibleGpuDevice);
             //MessageBox.Show(string.Format( "Cuda support available: {0}", GpuInvoke.HasCuda), "Cuda Support");
 
             foreach (var arg in e.Args)

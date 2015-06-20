@@ -198,13 +198,13 @@ namespace Huddle.Engine.Data
         /// </summary>
         public const string ShapePropertyName = "Shape";
 
-        private MCvBox2D _shape;
+        private RotatedRect _shape;
 
         /// <summary>
         /// Sets and gets the Shape property.
         /// Changes to that property's value raise the PropertyChanged event. 
         /// </summary>
-        public MCvBox2D Shape
+        public RotatedRect Shape
         {
             get
             {

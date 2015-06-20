@@ -6,7 +6,6 @@ using System.Windows.Media.Imaging;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.External.Extensions;
-using Emgu.CV.GPU;
 using Emgu.CV.Structure;
 using Huddle.Engine.Data;
 using Huddle.Engine.Extensions;
@@ -18,9 +17,6 @@ namespace Huddle.Engine.Processor
         where TDepth : new()
     {
         #region static fields
-
-        public static MCvFont EmguFont = new MCvFont(FONT.CV_FONT_HERSHEY_SIMPLEX, 0.3, 0.3);
-        public static MCvFont EmguFontBig = new MCvFont(FONT.CV_FONT_HERSHEY_SIMPLEX, 1.0, 1.0);
 
         private static int VideoWriterId = 0;
         public const int VideoWriterWidth = 1280;
@@ -118,7 +114,7 @@ namespace Huddle.Engine.Processor
         {
             get
             {
-                return GpuInvoke.HasCuda;
+                return Emgu.CV.CvInvoke.HaveOpenCLCompatibleGpuDevice;
             }
         }
 
@@ -137,7 +133,11 @@ namespace Huddle.Engine.Processor
             _enableVideoWriter = enableVideoWriter;
 
             if (_enableVideoWriter)
-                _videoWriter = new VideoWriter(string.Format("{0}_{1}.avi", GetType().Name, VideoWriterId++), CvInvoke.CV_FOURCC('D', 'I', 'V', 'X'), VideoWriterFps, VideoWriterWidth, VideoWriterHeight, true);
+                _videoWriter = new VideoWriter(string.Format("{0}_{1}.avi", GetType().Name, VideoWriterId++),
+                    Emgu.CV.VideoWriter.Fourcc('D', 'I', 'V', 'X'),
+                    VideoWriterFps,
+                    new Size(VideoWriterWidth, VideoWriterHeight),
+                    true);
         }
 
         #endregion
@@ -233,10 +233,11 @@ namespace Huddle.Engine.Processor
             var bgrImage = image.Convert<Bgr, byte>();
             image.Dispose();
 
-            var resizedImage = bgrImage.Resize(VideoWriterWidth, VideoWriterHeight, INTER.CV_INTER_CUBIC);
+            var resizedImage = bgrImage.Resize(VideoWriterWidth, VideoWriterHeight, Emgu.CV.CvEnum.Inter.Cubic);
             bgrImage.Dispose();
 
-            _videoWriter.WriteFrame(resizedImage);
+
+            _videoWriter.Write(resizedImage.ToUMat().ToMat(Emgu.CV.CvEnum.AccessType.Read));
             //resizedImage.Dispose();
         }
 

@@ -124,7 +124,12 @@ namespace Huddle.Engine.Processor.OpenCv
             }
             
             var message = outputImage.Width + " x " + outputImage.Height + " [rd: " + MinReproducedDepth + " ," + MaxReproducedDepth + "]";
-            outputImage.Draw(message, ref EmguFont, new Point(5, 15), new Hsv(0, 0, 0));
+            Emgu.CV.CvInvoke.PutText(outputImage,
+                message,
+                new Point(5, 15),
+                EmguFont.Font,
+                EmguFont.Scale,
+                new MCvScalar(0, 0, 0));
 
             return outputImage.Convert<Rgb, byte>();
         }

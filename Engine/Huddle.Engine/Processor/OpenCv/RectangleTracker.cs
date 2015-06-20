@@ -1007,19 +1007,19 @@ namespace Huddle.Engine.Processor.OpenCv
                         objectForDevice.OriginDepthShape = objectForDevice.Shape;
 
                         var oldShape = objectForDevice.Shape;
-                        var shapeSize = oldShape.size;
-                        var shapeAngle = oldShape.angle;
+                        var shapeSize = oldShape.Size;
+                        var shapeAngle = oldShape.Angle;
 
                         objectForDevice.LastAngle = shapeAngle;
                         if (shapeSize.Width > shapeSize.Height)
                         {
                             objectForDevice.SetCorrectSize(width, height);
-                            objectForDevice.Shape = new MCvBox2D(oldShape.center, new SizeF(width, height), shapeAngle);
+                            objectForDevice.Shape = new RotatedRect(oldShape.Center, new SizeF(width, height), shapeAngle);
                         }
                         else
                         {
                             objectForDevice.SetCorrectSize(height, width);
-                            objectForDevice.Shape = new MCvBox2D(oldShape.center, new SizeF(height, width), shapeAngle);
+                            objectForDevice.Shape = new RotatedRect(oldShape.Center, new SizeF(height, width), shapeAngle);
                         }
                     }
                 }
@@ -1125,7 +1125,12 @@ namespace Huddle.Engine.Processor.OpenCv
                         outputImage[0].Draw(circle, Rgbs.Blue, 3);
                     }
 
-                    outputImage[0].Draw(string.Format("Id {0}", obj.Id), ref EmguFont, new DPoint((int)obj.Shape.center.X, (int)obj.Shape.center.Y), Rgbs.White);
+                    Emgu.CV.CvInvoke.PutText(outputImage[0],
+                        string.Format("Id {0}", obj.Id),
+                        new DPoint((int)obj.Shape.Center.X, (int)obj.Shape.Center.Y),
+                        EmguFont.Font,
+                        EmguFont.Scale,
+                        Rgbs.White.MCvScalar);
                 }
 
                 var bounds = obj.Bounds;
@@ -1201,7 +1206,9 @@ namespace Huddle.Engine.Processor.OpenCv
                 var maskImage = new Image<Gray, byte>(imageWidth, imageHeight);
                 maskImage.Draw(roi, new Gray(255), -1);
 
-                CvInvoke.cvAnd(blankedImageGray.Ptr, maskImage.Ptr, blankedImageGray.Ptr, IntPtr.Zero);
+                CvInvoke.BitwiseAnd(blankedImageGray,
+                    maskImage,
+                    blankedImageGray);
             }
 
             //blankedImageGray = blankedImageGray.Erode(2).Dilate(1).Erode(1).Dilate(1);
@@ -1292,7 +1299,12 @@ namespace Huddle.Engine.Processor.OpenCv
             if (depthMap.Width != imageWidth || depthMap.Height != imageHeight)
             {
                 var resizedDepthMap = new Image<Gray, float>(imageWidth, imageHeight);
-                CvInvoke.cvResize(depthMap.Ptr, resizedDepthMap.Ptr, INTER.CV_INTER_CUBIC);
+                CvInvoke.Resize(depthMap,
+                    resizedDepthMap,
+                    new System.Drawing.Size(imageWidth, imageHeight),
+                    0,
+                    0,
+                    Emgu.CV.CvEnum.Inter.Cubic);
                 depthMap.Dispose();
                 depthMap = resizedDepthMap;
             }
@@ -1326,7 +1338,7 @@ namespace Huddle.Engine.Processor.OpenCv
             if (pixelsSurvived < SurvivePixelThreshold) return;
 
             var repairedPixels = depthPatchesImage.CountNonzero()[0];
-            var totalPixels = obj.OriginDepthShape.size.Width * obj.OriginDepthShape.size.Height;
+            var totalPixels = obj.OriginDepthShape.Size.Width * obj.OriginDepthShape.Size.Height;
             var factorOfRepairedPixels = (double)repairedPixels / totalPixels;
             //Console.WriteLine("{0}% pixels repaired.", factorOfRepairedPixels * 100);
 
@@ -1336,13 +1348,39 @@ namespace Huddle.Engine.Processor.OpenCv
             // Erode and dilate depth patches image to remove small pixels around device borders.
             if (IsFirstErodeThenDilateDepthPatches)
             {
-                CvInvoke.cvErode(depthPatchesImage.Ptr, depthPatchesImage.Ptr, IntPtr.Zero, DepthPatchesErode);
-                CvInvoke.cvDilate(depthPatchesImage.Ptr, depthPatchesImage.Ptr, IntPtr.Zero, DepthPatchesDilate);
+                Mat maskZero = new Emgu.CV.Mat();
+                CvInvoke.cvCopy(IntPtr.Zero, maskZero, IntPtr.Zero);
+                CvInvoke.Erode(depthPatchesImage,
+                    depthPatchesImage,
+                    maskZero,
+                    new System.Drawing.Point(-1, -1),
+                    DepthPatchesErode,
+                    Emgu.CV.CvEnum.BorderType.Default, // TODO gut oder andere methode?
+                    new Emgu.CV.Structure.MCvScalar());
+                CvInvoke.Dilate(depthPatchesImage,
+                    depthPatchesImage,
+                    maskZero,
+                    new System.Drawing.Point(-1, -1),
+                    DepthPatchesDilate,
+                    Emgu.CV.CvEnum.BorderType.Default, // TODO gut oder andere methode?
+                    new Emgu.CV.Structure.MCvScalar());
             }
             else
             {
-                CvInvoke.cvDilate(depthPatchesImage.Ptr, depthPatchesImage.Ptr, IntPtr.Zero, DepthPatchesDilate);
-                CvInvoke.cvErode(depthPatchesImage.Ptr, depthPatchesImage.Ptr, IntPtr.Zero, DepthPatchesErode);
+                CvInvoke.Dilate(depthPatchesImage,
+                    depthPatchesImage,
+                    null,
+                    new System.Drawing.Point(-1, -1),
+                    DepthPatchesDilate,
+                    Emgu.CV.CvEnum.BorderType.Default, // TODO gut oder andere methode?
+                    new Emgu.CV.Structure.MCvScalar());
+                CvInvoke.Erode(depthPatchesImage,
+                    depthPatchesImage,
+                    null,
+                    new System.Drawing.Point(-1, -1),
+                    DepthPatchesErode,
+                    Emgu.CV.CvEnum.BorderType.Default, // TODO gut oder andere methode?
+                    new Emgu.CV.Structure.MCvScalar());
             }
 
             if (IsRenderContent)
@@ -1408,33 +1446,60 @@ namespace Huddle.Engine.Processor.OpenCv
 
             using (var storage = new MemStorage())
             {
-                for (var contours = grayImage.FindContours(CHAIN_APPROX_METHOD.CV_CHAIN_APPROX_SIMPLE, IsRetrieveExternal ? RETR_TYPE.CV_RETR_EXTERNAL : RETR_TYPE.CV_RETR_LIST, storage); contours != null; contours = contours.HNext)
+                Emgu.CV.Util.VectorOfVectorOfPoint contours = new Emgu.CV.Util.VectorOfVectorOfPoint();
+
+                CvInvoke.FindContours(grayImage,
+                    contours,
+                    null, // TODO can we use hierarchy
+                    IsRetrieveExternal ? RetrType.External : RetrType.List,
+                    Emgu.CV.CvEnum.ChainApproxMethod.ChainApproxSimple);
+
+                for (int i = 0; i < contours.Size; i++)
                 {
-                    var lowApproxContour = contours.ApproxPoly(contours.Perimeter * 0.015, storage);
+                    Emgu.CV.Util.VectorOfPoint lowApproxContour = new Emgu.CV.Util.VectorOfPoint();
+                    CvInvoke.ApproxPolyDP(contours[i], lowApproxContour, CvInvoke.ArcLength(contours[i], true) * 0.015, true);
 
                     if (IsRenderContent && IsDrawAllContours)
-                        outputImage.Draw(lowApproxContour, Rgbs.FuchsiaRose, 1);
+                    {
+                        outputImage.Draw(lowApproxContour.ToArray(), Rgbs.FuchsiaRose);
+                    }
 
-                    if (lowApproxContour.Area > ((MinContourArea / 100.0) * pixels) && lowApproxContour.Area < ((MaxContourArea / 100.0) * pixels)) //only consider contours with area greater than
+                    if (CvInvoke.ContourArea(lowApproxContour, false) > ((MinContourArea / 100.0) * pixels) && CvInvoke.ContourArea(lowApproxContour, false) < ((MaxContourArea / 100.0) * pixels)) //only consider contours with area greater than
                     {
                         if (IsRenderContent && IsDrawAllContours)
-                            outputImage.Draw(lowApproxContour, Rgbs.BlueTorquoise, 1);
+                        {
+                            outputImage.Draw(lowApproxContour.ToArray(), Rgbs.BlueTorquoise);
+                        }
+                            
                         //outputImage.Draw(currentContour.GetConvexHull(ORIENTATION.CV_CLOCKWISE), Rgbs.BlueTorquoise, 2);
 
                         // Continue with next contour if current contour is not a rectangle.
                         List<DPoint> points;
-                        if (!IsPlausibleRectangle(lowApproxContour, MinAngle, MaxAngle, MinDetectRightAngles, out points)) continue;
+                        if (!IsPlausibleRectangle(lowApproxContour.ToArray(), MinAngle, MaxAngle, MinDetectRightAngles, out points)) continue;
 
-                        var highApproxContour = contours.ApproxPoly(contours.Perimeter * 0.05, storage);
+                        Emgu.CV.Util.VectorOfPoint highApproxContour = new Emgu.CV.Util.VectorOfPoint();
+                        CvInvoke.ApproxPolyDP(contours[i],highApproxContour,CvInvoke.ArcLength(contours[i], true)*0.05,true);
                         if (IsRenderContent && IsDrawAllContours)
-                            outputImage.Draw(highApproxContour, Rgbs.Yellow, 1);
+                            outputImage.Draw(highApproxContour.ToArray(), Rgbs.Yellow);
 
-                        var rectangle = highApproxContour.BoundingRectangle;
-                        var minAreaRect = highApproxContour.GetMinAreaRect(storage);
+
+                        var rectangle = CvInvoke.BoundingRectangle(highApproxContour);
+                        var minAreaRect = CvInvoke.MinAreaRect(highApproxContour);
                         var polygon = new Polygon(points.ToArray(), imageWidth, imageHeight);
                         var contourPoints = highApproxContour.ToArray();
 
-                        if (!UpdateObject(occlusionTracking, highApproxContour, maxRestoreDistance, rectangle, minAreaRect, polygon, contourPoints, updateTime, objects))
+
+                        Contour<DPoint> cont = new Contour<DPoint>(highApproxContour, storage);
+
+                        if (!UpdateObject(occlusionTracking,
+                            cont,
+                            maxRestoreDistance,
+                            rectangle,
+                            minAreaRect,
+                            polygon,
+                            contourPoints,
+                            updateTime,
+                            objects))
                         {
                             newObjects.Add(CreateObject(NextId(), rectangle, minAreaRect, polygon, contourPoints, updateTime));
                         }
@@ -1454,14 +1519,13 @@ namespace Huddle.Engine.Processor.OpenCv
         /// <param name="minDetectAngles"></param>
         /// <param name="points"></param>
         /// <returns></returns>
-        private bool IsPlausibleRectangle(Seq<DPoint> contour, int minAngle, int maxAngle, int minDetectAngles, out List<DPoint> points)
+        private bool IsPlausibleRectangle(DPoint[] contour, int minAngle, int maxAngle, int minDetectAngles, out List<DPoint> points)
         {
             points = new List<DPoint>();
 
-            if (contour.Total < minDetectAngles) return false; //The contour has less than 3 vertices.
+            if (contour.Length < minDetectAngles) return false; //The contour has less than 3 vertices.
 
-            var pts = contour.ToArray();
-            var edges = PointCollection.PolyLine(pts, true);
+            var edges = PointCollection.PolyLine(contour, true);
 
             var rightAngle = 0;
             for (var i = 0; i < edges.Length; i++)
@@ -1498,17 +1562,17 @@ namespace Huddle.Engine.Processor.OpenCv
         /// <param name="polygon"></param>
         /// <param name="points"></param>
         /// <param name="updateTime"></param>
-        private static RectangularObject CreateObject(long id, Rectangle boundingRectangle, MCvBox2D minAreaRect, Polygon polygon, DPoint[] points, DateTime updateTime)
+        private static RectangularObject CreateObject(long id, Rectangle boundingRectangle, RotatedRect minAreaRect, Polygon polygon, DPoint[] points, DateTime updateTime)
         {
             return new RectangularObject
             {
                 Id = id,
                 State = TrackingState.Tracked,
                 LastUpdate = updateTime,
-                Center = new WPoint(minAreaRect.center.X, minAreaRect.center.Y),
+                Center = new WPoint(minAreaRect.Center.X, minAreaRect.Center.Y),
                 Bounds = boundingRectangle,
                 Shape = minAreaRect,
-                LastAngle = minAreaRect.angle,
+                LastAngle = minAreaRect.Angle,
                 Polygon = polygon,
                 Points = points,
             };
@@ -1527,14 +1591,14 @@ namespace Huddle.Engine.Processor.OpenCv
         /// <param name="updateTime"></param>
         /// <param name="objects"></param>
         /// <returns></returns>
-        private static bool UpdateObject(bool occluded, Contour<DPoint> objectContour, double maxRestoreDistance, Rectangle boundingRectangle, MCvBox2D minAreaRect, Polygon polygon, DPoint[] points, DateTime updateTime, IEnumerable<RectangularObject> objects)
+        private static bool UpdateObject(bool occluded, Contour<DPoint> objectContour, double maxRestoreDistance, Rectangle boundingRectangle, RotatedRect minAreaRect, Polygon polygon, DPoint[] points, DateTime updateTime, IEnumerable<RectangularObject> objects)
         {
             double distance;
             var candidate = GetObjectCandidate(objects, objectContour, minAreaRect, maxRestoreDistance, out distance);
 
             if (candidate == null) return false;
 
-            var deltaAngle = minAreaRect.angle - candidate.LastAngle;
+            var deltaAngle = minAreaRect.Angle - candidate.LastAngle;
 
             // this is a hack but it works pretty good
             if (deltaAngle > 45)
@@ -1549,22 +1613,22 @@ namespace Huddle.Engine.Processor.OpenCv
             // create new candidate shape based on its previous shape size and the new center point and orientation.
             // This keeps the objects shape constant and avoids growing shapes when devices are connected closely or
             // an objects occludes the device.
-            MCvBox2D shape;
+            RotatedRect shape;
             if (candidate.IsCorrectSize)
             {
-                var oldAngle = candidate.Shape.angle;
-                var diff = Math.Abs(Math.Abs(minAreaRect.angle) - Math.Abs(oldAngle));
+                var oldAngle = candidate.Shape.Angle;
+                var diff = Math.Abs(Math.Abs(minAreaRect.Angle) - Math.Abs(oldAngle));
 
                 var size = candidate.Size;
                 if (diff > 45)
                 {
                     candidate.SetCorrectSize(size.Height, size.Width);
-                    shape = new MCvBox2D(minAreaRect.center, new SizeF(size.Height, size.Width), minAreaRect.angle);
+                    shape = new RotatedRect(minAreaRect.Center, new SizeF(size.Height, size.Width), minAreaRect.Angle);
                 }
                 else
                 {
                     candidate.SetCorrectSize(size.Width, size.Height);
-                    shape = new MCvBox2D(minAreaRect.center, new SizeF(size.Width, size.Height), minAreaRect.angle);
+                    shape = new RotatedRect(minAreaRect.Center, new SizeF(size.Width, size.Height), minAreaRect.Angle);
                 }
             }
             else
@@ -1574,18 +1638,18 @@ namespace Huddle.Engine.Processor.OpenCv
 
             candidate.State = occluded ? TrackingState.Occluded : TrackingState.Tracked;
             candidate.LastUpdate = updateTime;
-            candidate.Center = new WPoint(shape.center.X, shape.center.Y);
+            candidate.Center = new WPoint(shape.Center.X, shape.Center.Y);
             candidate.Bounds = boundingRectangle;
             candidate.Shape = shape;
             candidate.Angle = (candidate.Angle + deltaAngle) % 360;
-            candidate.LastAngle = minAreaRect.angle;
+            candidate.LastAngle = minAreaRect.Angle;
             candidate.Polygon = polygon;
             candidate.Points = points;
 
             return true;
         }
 
-        private static RectangularObject GetObjectCandidate(IEnumerable<RectangularObject> objects, Contour<DPoint> objectContour, MCvBox2D shape, double maxRestoreDistance, out double retDistance)
+        private static RectangularObject GetObjectCandidate(IEnumerable<RectangularObject> objects, Contour<DPoint> objectContour, RotatedRect shape, double maxRestoreDistance, out double retDistance)
         {
             RectangularObject candidate = null;
             var leastDistance = double.MaxValue;
@@ -1593,10 +1657,14 @@ namespace Huddle.Engine.Processor.OpenCv
             {
                 // check current contour to last center point distance (checking last contour with current center point does not work because of MemStorage
                 // which will lead to an inconsistent last contour after last image has been processed completely and after storage is disposed.
-                var distanceToContour = CvInvoke.cvPointPolygonTest(objectContour.Ptr, obj.Shape.center, true);
+                UMat ret = new UMat();//TODO remove me
+                CvInvoke.cvCopy(objectContour, ret, IntPtr.Zero);//TODO remove me
+                var distanceToContour = CvInvoke.PointPolygonTest(ret,
+                    obj.Shape.Center,
+                    true);
 
-                var oCenter = obj.Shape.center;
-                var distance = Math.Sqrt(Math.Pow(oCenter.X - shape.center.X, 2) + Math.Pow(oCenter.Y - shape.center.Y, 2));
+                var oCenter = obj.Shape.Center;
+                var distance = Math.Sqrt(Math.Pow(oCenter.X - shape.Center.X, 2) + Math.Pow(oCenter.Y - shape.Center.Y, 2));
 
                 // distance < 0 means the point is outside of the contour.
                 if (distanceToContour < 0 || leastDistance < distance) continue;

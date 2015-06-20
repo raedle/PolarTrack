@@ -22,8 +22,6 @@ namespace Huddle.Engine.ViewModel
     {
         #region private fields
 
-        public static MCvFont EmguFont = new MCvFont(FONT.CV_FONT_HERSHEY_SIMPLEX, 0.3, 0.3);
-
         #endregion
 
         #region commands

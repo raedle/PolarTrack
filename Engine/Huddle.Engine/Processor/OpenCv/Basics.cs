@@ -6,7 +6,6 @@ using System.Xml.Serialization;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.External.Structure;
-using Emgu.CV.GPU;
 using Emgu.CV.Structure;
 using GalaSoft.MvvmLight.Command;
 using Huddle.Engine.Data;
@@ -358,21 +357,28 @@ namespace Huddle.Engine.Processor.OpenCv
                 if (Scale != 1.0)
                 {
                     var imageCopy2 = new Image<Rgb, byte>((int)(imageCopy.Width * Scale), (int)(imageCopy.Height * Scale));
-                    CvInvoke.cvResize(imageCopy.Ptr, imageCopy2.Ptr, INTER.CV_INTER_CUBIC);
+                    CvInvoke.Resize(imageCopy,
+                        imageCopy2,
+                        new System.Drawing.Size((int)(imageCopy.Width * Scale), (int)(imageCopy.Height * Scale)),
+                        0,
+                        0,
+                        Emgu.CV.CvEnum.Inter.Cubic);
 
                     imageCopy.Dispose();
                     imageCopy = imageCopy2;
                 }
 
-                var flipCode = FLIP.NONE;
+                var flipCode = Emgu.CV.CvEnum.FlipType.None;
 
                 if (FlipHorizontal)
-                    flipCode |= FLIP.HORIZONTAL;
+                    flipCode |= FlipType.Horizontal;
                 if (FlipVertical)
-                    flipCode |= FLIP.VERTICAL;
+                    flipCode |= FlipType.Vertical;
 
-                if (flipCode != FLIP.NONE)
-                    CvInvoke.cvFlip(imageCopy.Ptr, imageCopy.Ptr, flipCode);
+                if (flipCode != FlipType.None)
+                {
+                    CvInvoke.Flip(imageCopy, imageCopy, flipCode);
+                }
 
                 return imageCopy;
             }

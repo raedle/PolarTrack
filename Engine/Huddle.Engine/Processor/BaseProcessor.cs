@@ -22,6 +22,21 @@ namespace Huddle.Engine.Processor
     [KnownType("GetKnownTypes")]
     public abstract class BaseProcessor : ObservableObject, IProcessor, ILocator, ISnapshoter
     {
+        #region static fields
+
+        public abstract class EmguFont
+        {
+            public const double Scale = 0.3;
+            public const Emgu.CV.CvEnum.FontFace Font = Emgu.CV.CvEnum.FontFace.HersheySimplex;
+        };
+        public abstract class EmguFontBig
+        {
+            public const double Scale = 1.0;
+            public const Emgu.CV.CvEnum.FontFace Font = Emgu.CV.CvEnum.FontFace.HersheySimplex;
+        };
+
+        #endregion
+
         #region const
 
         private const int QueueSize = 100;

@@ -4,7 +4,6 @@ using System.Windows.Navigation;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.External.Structure;
-using Emgu.CV.GPU;
 using Emgu.CV.Structure;
 using Huddle.Engine.Util;
 
@@ -90,7 +89,15 @@ namespace Huddle.Engine.Processor.OpenCv
             //grayImage = grayImage.SmoothGaussian(15);
 
             MCvConnectedComp comp;
-            CvInvoke.cvFloodFill(imageCopy.Ptr, new Point(image.Width / 2, image.Height / 2), new MCvScalar(0), new MCvScalar(Difference), new MCvScalar(Difference), out comp, CONNECTIVITY.EIGHT_CONNECTED, FLOODFILL_FLAG.DEFAULT, IntPtr.Zero);
+            CvInvoke.FloodFill(imageCopy,
+                null,
+                new Point(image.Width / 2, image.Height / 2),
+                new MCvScalar(0),
+                out comp.Rect,
+                new MCvScalar(Difference),
+                new MCvScalar(Difference),
+                Connectivity.EightConnected,
+                FloodFillType.Default);
 
             //var cannyEdges = grayImage.Canny(Threshold, ThresholdLinking);
 

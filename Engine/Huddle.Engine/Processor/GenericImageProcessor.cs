@@ -18,9 +18,6 @@ namespace Huddle.Engine.Processor
     {
         #region static fields
 
-        public static MCvFont EmguFont = new MCvFont(FONT.CV_FONT_HERSHEY_SIMPLEX, 0.3, 0.3);
-        public static MCvFont EmguFontBig = new MCvFont(FONT.CV_FONT_HERSHEY_SIMPLEX, 1.0, 1.0);
-
         #endregion
 
         #region private fields

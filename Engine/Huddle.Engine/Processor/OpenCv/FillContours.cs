@@ -137,9 +137,20 @@ namespace Huddle.Engine.Processor.OpenCv
 
             using (var storage = new MemStorage())
             {
-                for (var contours = grayImage.FindContours(CHAIN_APPROX_METHOD.CV_CHAIN_APPROX_SIMPLE, IsRetrieveExternal ? RETR_TYPE.CV_RETR_EXTERNAL : RETR_TYPE.CV_RETR_LIST, storage); contours != null; contours = contours.HNext)
+                Emgu.CV.Util.VectorOfVectorOfPoint contours = new Emgu.CV.Util.VectorOfVectorOfPoint();
+                CvInvoke.FindContours(grayImage,
+                    contours,
+                    null,
+                    IsRetrieveExternal ? RetrType.External : RetrType.List,
+                    ChainApproxMethod.ChainApproxSimple);
+
+                for (int i = 0; i < contours.Size; i++)
                 {
-                    var currentContour = contours.ApproxPoly(contours.Perimeter * 0.015, storage);
+                    Emgu.CV.Util.VectorOfPoint currentContour = new Emgu.CV.Util.VectorOfPoint(); //TODO move me in all!!!! projects
+                    CvInvoke.ApproxPolyDP(contours[i],
+                        currentContour,
+                        CvInvoke.ArcLength(contours[i], true) * 0.015,
+                        true);
 
                     //Console.WriteLine("AREA {0}", currentContour.Area);
 
@@ -153,7 +164,7 @@ namespace Huddle.Engine.Processor.OpenCv
 
                     //outputImage.Draw(currentContour.GetConvexHull(ORIENTATION.CV_CLOCKWISE), Rgbs.White, Rgbs.Yellow, 2, -1);
 
-                    outputImage.Draw(currentContour, Rgbs.White, -1);
+                    outputImage.Draw(currentContour.ToArray(), Rgbs.White, -1);
 
                     if (IsRenderContent)
                     {

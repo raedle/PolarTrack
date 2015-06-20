@@ -30,9 +30,6 @@ namespace Huddle.Engine.Processor.Complex
 
         #region static fields
 
-        public static MCvFont EmguFont = new MCvFont(FONT.CV_FONT_HERSHEY_SIMPLEX, 0.3, 0.3);
-        public static MCvFont EmguFontBig = new MCvFont(FONT.CV_FONT_HERSHEY_SIMPLEX, 1.0, 1.0);
-
         #endregion
 
         #region member fields
@@ -601,7 +598,7 @@ namespace Huddle.Engine.Processor.Complex
                         debugImage.ROI = roi;
 
                         var labelPos = new Point(recQuad[2].X, recQuad[2].Y);
-                        debugImage.Draw(recGlyph.Name, ref EmguFontBig, labelPos, Rgbs.Green);
+                        debugImage.Draw(recGlyph.Name, EmguFontBig.Font, EmguFontBig.Scale, labelPos, Rgbs.Green);
 
                         debugImage.ROI = debugImageRoi;
                     }
@@ -699,7 +696,7 @@ namespace Huddle.Engine.Processor.Complex
 
                             debugImage.Draw(new Cross2DF(markerCenter, 6, 6), Rgbs.Green, 2);
                             debugImage.Draw(new LineSegment2DF(markerCenter, p2), Rgbs.Green, 2);
-                            debugImage.Draw(string.Format("{0} deg", Math.Round(degOrientation, 1)), ref EmguFont, p3, Rgbs.Green);
+                            debugImage.Draw(string.Format("{0} deg", Math.Round(degOrientation, 1)), EmguFont.Font, EmguFont.Scale, p3, Rgbs.Green);
                         }
                     }
                     else
@@ -795,7 +792,15 @@ namespace Huddle.Engine.Processor.Complex
 
             // mask needs to be 2 pixels wider and 2 pixels taller
             var mask = new Image<Gray, byte>(imageWidth + 2, imageHeight + 2);
-            CvInvoke.cvFloodFill(floodFillImage, center, new MCvScalar(255), new MCvScalar(FloodFillDifference), new MCvScalar(FloodFillDifference), out comp, CONNECTIVITY.FOUR_CONNECTED, FLOODFILL_FLAG.DEFAULT, mask);
+            CvInvoke.FloodFill(floodFillImage,
+                mask,
+                center,
+                new MCvScalar(255),
+                out comp.Rect,
+                new MCvScalar(FloodFillDifference),
+                new MCvScalar(FloodFillDifference),
+                Connectivity.FourConnected,
+                FloodFillType.Default);
 
             #region Debug Flood Fill Image
 
@@ -832,28 +837,41 @@ namespace Huddle.Engine.Processor.Complex
             EnclosingRectangle enclosingRectangle = null;
             using (var storage = new MemStorage())
             {
-                for (
-                    var contours = contourBinaryImage.FindContours(CHAIN_APPROX_METHOD.CV_CHAIN_APPROX_SIMPLE,
-                        RETR_TYPE.CV_RETR_EXTERNAL, storage);
-                    contours != null;
-                    contours = contours.HNext)
-                {
-                    var contour = contours.ApproxPoly(contours.Perimeter * 0.05, storage);
+                Emgu.CV.Util.VectorOfVectorOfPoint contours = new Emgu.CV.Util.VectorOfVectorOfPoint();
+                CvInvoke.FindContours(contourBinaryImage,
+                    contours,
+                    null,
+                    RetrType.External,
+                    ChainApproxMethod.ChainApproxSimple);
 
-                    var contourBounds = contour.BoundingRectangle;
+                for (int i = 0; i < contours.Size; i++ )
+                {
+                    Emgu.CV.Util.VectorOfPoint contour = new Emgu.CV.Util.VectorOfPoint();
+                    CvInvoke.ApproxPolyDP(contours[i],
+                        contour,
+                        CvInvoke.ArcLength(contours[i], true) * 0.05,
+                        true);
+
+                    var contourBounds = CvInvoke.BoundingRectangle(contour);
                     if (contourBounds.Width + 5 >= roi.Width || contourBounds.Height + 5 >= roi.Height)
                         continue;
 
-                    if (!EmguExtensions.IsRectangle(contour, 10.0)) continue;
+                    if (!EmguExtensions.IsRectangle(contour.ToArray(), 10.0)) continue;
 
-                    var edges = GetRightAngleEdges(contour);
+                    var edges = GetRightAngleEdges(contour.ToArray());
 
                     if (IsRenderContent)
                     {
                         var debugImageRoi = debugImage.ROI;
                         debugImage.ROI = roi;
-                        debugImage.Draw(contour.GetConvexHull(ORIENTATION.CV_CLOCKWISE), Rgbs.Cyan, 2);
-                        debugImage.Draw(contour.GetMinAreaRect(storage), Rgbs.Cyan, 2);
+
+                        Emgu.CV.Util.VectorOfPoint ret = null;
+                        CvInvoke.ConvexHull(contour,
+                            ret,
+                            true,
+                            true);
+                        debugImage.Draw(ret.ToArray(), Rgbs.Cyan, 2);
+                        debugImage.Draw(CvInvoke.MinAreaRect(contour), Rgbs.Cyan, 2);
 
                         DrawEdge(ref debugImage, edges[0], Rgbs.Red);
                         DrawEdge(ref debugImage, edges[1], Rgbs.Green);
@@ -863,7 +881,7 @@ namespace Huddle.Engine.Processor.Complex
 
                     enclosingRectangle = new EnclosingRectangle
                     {
-                        Contour = contour,
+                        Contour = contour.ToArray(),
                         LongEdge = edges[0],
                         ShortEdge = edges[1]
                     };
@@ -875,10 +893,9 @@ namespace Huddle.Engine.Processor.Complex
             return enclosingRectangle;
         }
 
-        private LineSegment2D[] GetRightAngleEdges(Contour<Point> contour)
+        private LineSegment2D[] GetRightAngleEdges(Point[] contour)
         {
-            var pts = contour.ToArray();
-            var edges = PointCollection.PolyLine(pts, true);
+            var edges = PointCollection.PolyLine(contour, true);
 
             var longestEdge = edges[0];
             var index = 0;
@@ -914,7 +931,7 @@ namespace Huddle.Engine.Processor.Complex
             var centerX = minX + (maxX - minX) / 2;
             var centerY = minY + (maxY - minY) / 2;
 
-            debugImage.Draw(string.Format("{0:F1}", edge.Length), ref EmguFontBig, new Point(centerX, centerY), color);
+            debugImage.Draw(string.Format("{0:F1}", edge.Length), EmguFontBig.Font, EmguFontBig.Scale, new Point(centerX, centerY), color);
         }
 
         #endregion
@@ -939,7 +956,7 @@ namespace Huddle.Engine.Processor.Complex
 
     public class EnclosingRectangle
     {
-        public Contour<Point> Contour { get; set; }
+        public Point[] Contour { get; set; }
 
         public LineSegment2D LongEdge { get; set; }
 
