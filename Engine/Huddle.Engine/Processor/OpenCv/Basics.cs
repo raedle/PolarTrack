@@ -347,19 +347,24 @@ namespace Huddle.Engine.Processor.OpenCv
             // mirror image
             try
             {
-                Image<Rgb, byte> imageCopy;
+                UMat imageCopy = new UMat();
                 if (IsUseROI)
-                    imageCopy = image.Copy(ROI);
+                {
+                    imageCopy = image.Copy(ROI).ToUMat();
+                }
                 else
-                    imageCopy = image.Copy();
+                {
+                    imageCopy = image.Copy().ToUMat();
+                }
 
                 // TODO Revise code.
                 if (Scale != 1.0)
                 {
-                    var imageCopy2 = new Image<Rgb, byte>((int)(imageCopy.Width * Scale), (int)(imageCopy.Height * Scale));
+                    UMat imageCopy2 = new UMat();
+
                     CvInvoke.Resize(imageCopy,
                         imageCopy2,
-                        new System.Drawing.Size((int)(imageCopy.Width * Scale), (int)(imageCopy.Height * Scale)),
+                        new System.Drawing.Size((int)(image.Width * Scale), (int)(image.Height * Scale)),
                         0,
                         0,
                         Emgu.CV.CvEnum.Inter.Cubic);
@@ -380,7 +385,7 @@ namespace Huddle.Engine.Processor.OpenCv
                     CvInvoke.Flip(imageCopy, imageCopy, flipCode);
                 }
 
-                return imageCopy;
+                return imageCopy.ToImage<Rgb, byte>();
             }
             catch (Exception e)
             {
