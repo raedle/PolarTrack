@@ -836,7 +836,7 @@ namespace Huddle.Engine.Processor.Sensors
             var _colorImage = new Image<Bgr, byte>(sample.Width, sample.Height);
             _colorImage.Data = sample.Data;
             var colorImage = new Image<Rgb, byte>(sample.Width, sample.Height);
-            CvInvoke.cvCvtColor(_colorImage, colorImage, COLOR_CONVERSION.BGR2RGB);
+            CvInvoke.CvtColor(_colorImage, colorImage, ColorConversion.Bgr2Rgb);
             var colorImageCopy = colorImage.Copy();
             ColorImageFrameTime = sw.ElapsedMilliseconds;
 

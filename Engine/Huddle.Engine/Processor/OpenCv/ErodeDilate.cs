@@ -122,9 +122,45 @@ namespace Huddle.Engine.Processor.OpenCv
 
         public override Image<Rgb, byte> ProcessAndView(Image<Rgb, byte> image)
         {
-            image = IsFirstErodeThenDilate ? image.Erode(NumErode).Dilate(NumDilate) : image.Dilate(NumDilate).Erode(NumErode);
+            UMat img = image.ToUMat();
+            UMat ret = new UMat();
 
-            return image;
+            if (IsFirstErodeThenDilate)
+            {
+                CvInvoke.Erode(img,
+                    ret,
+                    new Mat(),
+                    new System.Drawing.Point(-1, -1),
+                    NumErode,
+                    Emgu.CV.CvEnum.BorderType.Default,
+                    new MCvScalar());
+                //CvInvoke.Dilate(ret,
+                //    ret,
+                //    new Mat(),
+                //    new System.Drawing.Point(-1, -1),
+                //    NumDilate,
+                //    Emgu.CV.CvEnum.BorderType.Default,
+                //    new MCvScalar());
+            }
+            else
+            {
+                CvInvoke.Dilate(img,
+                    ret,
+                    new Mat(),
+                    new System.Drawing.Point(-1, -1),
+                    NumDilate,
+                    Emgu.CV.CvEnum.BorderType.Default,
+                    new MCvScalar());
+                CvInvoke.Erode(ret,
+                    ret,
+                    new Mat(),
+                    new System.Drawing.Point(-1, -1),
+                    NumErode,
+                    Emgu.CV.CvEnum.BorderType.Default,
+                    new MCvScalar());
+            }
+
+            return ret.ToImage<Rgb, byte>();
         }
     }
 }
