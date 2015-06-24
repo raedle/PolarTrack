@@ -1293,26 +1293,58 @@ namespace Huddle.Engine.Processor.OpenCv
             // create mask for objects previousl location
             mask.Draw(obj.Shape, new Gray(1), -1);
 
-            var depthMapBinary = _depthImage.ThresholdBinaryInv(new Gray(255), new Gray(255));
-            var depthMap = depthMapBinary;
+            var depthMapBinary = _depthImage.ThresholdBinaryInv(new Gray(255), new Gray(255)); //UMat ?
+            var depthMap = depthMapBinary.Clone();
 
-            if (depthMap.Width != imageWidth || depthMap.Height != imageHeight)
+            if (depthMapBinary.Width != imageWidth || depthMapBinary.Height != imageHeight)
             {
-                var resizedDepthMap = new Image<Gray, float>(imageWidth, imageHeight);
-                CvInvoke.Resize(depthMap,
-                    resizedDepthMap,
+                // TODO UMat
+                UMat _depthMap = depthMap.ToUMat();
+                CvInvoke.Resize(_depthMap,
+                    _depthMap,
                     new System.Drawing.Size(imageWidth, imageHeight),
                     0,
                     0,
                     Emgu.CV.CvEnum.Inter.Cubic);
-                depthMap.Dispose();
-                depthMap = resizedDepthMap;
+                depthMap = _depthMap.ToImage<Gray, float>();
             }
 
+            UMat _mask = mask.ToUMat();
             if (IsFirstErodeThenDilateFixMask)
-                mask = mask.Erode(FixMaskErode).Dilate(FixMaskDilate);
+            {
+                CvInvoke.Erode(_mask,
+                    _mask,
+                    new UMat(),
+                    new System.Drawing.Point(-1, -1),
+                    FixMaskErode,
+                    Emgu.CV.CvEnum.BorderType.Default,
+                    new MCvScalar());
+                CvInvoke.Dilate(_mask,
+                    _mask,
+                    new UMat(),
+                    new System.Drawing.Point(-1, -1),
+                    FixMaskDilate,
+                    BorderType.Default,
+                    new MCvScalar());
+            }
             else
-                mask = mask.Dilate(FixMaskDilate).Erode(FixMaskErode);
+            {
+                CvInvoke.Dilate(_mask,
+                    _mask,
+                    new UMat(),
+                    new System.Drawing.Point(-1, -1),
+                    FixMaskDilate,
+                    BorderType.Default,
+                    new MCvScalar());
+                CvInvoke.Erode(_mask,
+                   _mask,
+                   new UMat(),
+                   new System.Drawing.Point(-1, -1),
+                   FixMaskErode,
+                   Emgu.CV.CvEnum.BorderType.Default,
+                   new MCvScalar());
+            }
+            mask = _mask.ToImage<Gray, byte>();
 
             if (IsRenderContent)
             {
@@ -1329,15 +1361,27 @@ namespace Huddle.Engine.Processor.OpenCv
                 #endregion
             }
 
-            CvInvoke.cvCopy(depthMap.Ptr, depthPatchesImage.Ptr, mask);
+            // TODO UMat or toimage
+            CvInvoke.cvCopy(depthMap,
+                depthPatchesImage,
+                mask);
 
             var originPixels = new Image<Rgb, byte>(image.Width, image.Height);
-            CvInvoke.cvCopy(image.Ptr, originPixels.Ptr, mask);
+            CvInvoke.cvCopy(image, originPixels, mask);
 
-            var pixelsSurvived = originPixels.CountNonzero()[0];
+
+            Mat cn1 = new Mat(image.Width, image.Height, DepthType.Cv8U, 1);
+            Emgu.CV.Util.VectorOfMat ret = new Emgu.CV.Util.VectorOfMat(cn1);
+            CvInvoke.Split(originPixels.ToUMat(),
+                ret);
+            int pixelsSurvived = CvInvoke.CountNonZero(cn1);
+
+            //int pixelsSurvived = CvInvoke.CountNonZero(originPixels);
+            //var pixelsSurvived = originPixels CountNonzero()[0];
             if (pixelsSurvived < SurvivePixelThreshold) return;
 
-            var repairedPixels = depthPatchesImage.CountNonzero()[0];
+            //var repairedPixels = depthPatchesImage.CountNonzero()[0];
+            var repairedPixels = CvInvoke.CountNonZero(depthPatchesImage);
             var totalPixels = obj.OriginDepthShape.Size.Width * obj.OriginDepthShape.Size.Height;
             var factorOfRepairedPixels = (double)repairedPixels / totalPixels;
             //Console.WriteLine("{0}% pixels repaired.", factorOfRepairedPixels * 100);
@@ -1345,21 +1389,20 @@ namespace Huddle.Engine.Processor.OpenCv
             // Do not account for entire occlusion at this time to avoid phantom objects even if the device is not present anymore.
             if (factorOfRepairedPixels > (AllowedRepairPixelsRatio / 100.0)) return;
 
+            UMat u_depthPatchesImage = depthPatchesImage.ToUMat();
             // Erode and dilate depth patches image to remove small pixels around device borders.
             if (IsFirstErodeThenDilateDepthPatches)
             {
-                Mat maskZero = new Emgu.CV.Mat();
-                CvInvoke.cvCopy(IntPtr.Zero, maskZero, IntPtr.Zero);
-                CvInvoke.Erode(depthPatchesImage,
-                    depthPatchesImage,
-                    maskZero,
+                CvInvoke.Erode(u_depthPatchesImage,
+                    u_depthPatchesImage,
+                    null, // or new Mat() or IntPtr.Zero
                     new System.Drawing.Point(-1, -1),
                     DepthPatchesErode,
                     Emgu.CV.CvEnum.BorderType.Default, // TODO gut oder andere methode?
                     new Emgu.CV.Structure.MCvScalar());
-                CvInvoke.Dilate(depthPatchesImage,
-                    depthPatchesImage,
-                    maskZero,
+                CvInvoke.Dilate(u_depthPatchesImage,
+                    u_depthPatchesImage,
+                    null,
                     new System.Drawing.Point(-1, -1),
                     DepthPatchesDilate,
                     Emgu.CV.CvEnum.BorderType.Default, // TODO gut oder andere methode?
@@ -1367,15 +1410,15 @@ namespace Huddle.Engine.Processor.OpenCv
             }
             else
             {
-                CvInvoke.Dilate(depthPatchesImage,
-                    depthPatchesImage,
+                CvInvoke.Dilate(u_depthPatchesImage,
+                    u_depthPatchesImage,
                     null,
                     new System.Drawing.Point(-1, -1),
                     DepthPatchesDilate,
                     Emgu.CV.CvEnum.BorderType.Default, // TODO gut oder andere methode?
                     new Emgu.CV.Structure.MCvScalar());
-                CvInvoke.Erode(depthPatchesImage,
-                    depthPatchesImage,
+                CvInvoke.Erode(u_depthPatchesImage,
+                    u_depthPatchesImage,
                     null,
                     new System.Drawing.Point(-1, -1),
                     DepthPatchesErode,
@@ -1387,7 +1430,7 @@ namespace Huddle.Engine.Processor.OpenCv
             {
                 #region Render Depth Patches Image
 
-                var depthPatchesImageCopy = depthPatchesImage.Copy();
+                var depthPatchesImageCopy = u_depthPatchesImage.ToImage<Gray, float>().Copy();
                 Task.Factory.StartNew(() =>
                 {
                     var bitmapSource = depthPatchesImageCopy.ToBitmapSource(true);
@@ -1401,7 +1444,7 @@ namespace Huddle.Engine.Processor.OpenCv
             // ??? Clip depth patches image again to avoid depth fixed rectangles to grow.
             //CvInvoke.cvCopy(depthPatchesImage.Ptr, depthPatchesImage.Ptr, mask);
 
-            var debugImage3 = depthPatchesImage.Convert<Rgb, byte>();
+            var debugImage3 = u_depthPatchesImage.ToImage<Gray, float>().Convert<Rgb, byte>(); // TODO UMat
 
             var depthFixedImage = image.Or(debugImage3);
             //fixedImage = fixedImage.Erode(2);
@@ -1448,7 +1491,7 @@ namespace Huddle.Engine.Processor.OpenCv
             {
                 Emgu.CV.Util.VectorOfVectorOfPoint contours = new Emgu.CV.Util.VectorOfVectorOfPoint();
 
-                CvInvoke.FindContours(grayImage,
+                CvInvoke.FindContours(grayImage.ToUMat(),
                     contours,
                     null, // TODO can we use hierarchy
                     IsRetrieveExternal ? RetrType.External : RetrType.List,
@@ -1457,7 +1500,10 @@ namespace Huddle.Engine.Processor.OpenCv
                 for (int i = 0; i < contours.Size; i++)
                 {
                     Emgu.CV.Util.VectorOfPoint lowApproxContour = new Emgu.CV.Util.VectorOfPoint();
-                    CvInvoke.ApproxPolyDP(contours[i], lowApproxContour, CvInvoke.ArcLength(contours[i], true) * 0.015, true);
+                    CvInvoke.ApproxPolyDP(contours[i],
+                        lowApproxContour, 
+                        CvInvoke.ArcLength(contours[i], true) * 0.015, 
+                        true);
 
                     if (IsRenderContent && IsDrawAllContours)
                     {
@@ -1478,7 +1524,10 @@ namespace Huddle.Engine.Processor.OpenCv
                         if (!IsPlausibleRectangle(lowApproxContour.ToArray(), MinAngle, MaxAngle, MinDetectRightAngles, out points)) continue;
 
                         Emgu.CV.Util.VectorOfPoint highApproxContour = new Emgu.CV.Util.VectorOfPoint();
-                        CvInvoke.ApproxPolyDP(contours[i],highApproxContour,CvInvoke.ArcLength(contours[i], true)*0.05,true);
+                        CvInvoke.ApproxPolyDP(contours[i],
+                            highApproxContour,
+                            CvInvoke.ArcLength(contours[i], true) * 0.05,
+                            true);
                         if (IsRenderContent && IsDrawAllContours)
                             outputImage.Draw(highApproxContour.ToArray(), Rgbs.Yellow);
 
@@ -1489,10 +1538,10 @@ namespace Huddle.Engine.Processor.OpenCv
                         var contourPoints = highApproxContour.ToArray();
 
 
-                        Contour<DPoint> cont = new Contour<DPoint>(highApproxContour, storage);
+                        //Contour<DPoint> cont = new Contour<DPoint>(highApproxContour, storage);
 
                         if (!UpdateObject(occlusionTracking,
-                            cont,
+                            highApproxContour,
                             maxRestoreDistance,
                             rectangle,
                             minAreaRect,
@@ -1591,7 +1640,7 @@ namespace Huddle.Engine.Processor.OpenCv
         /// <param name="updateTime"></param>
         /// <param name="objects"></param>
         /// <returns></returns>
-        private static bool UpdateObject(bool occluded, Contour<DPoint> objectContour, double maxRestoreDistance, Rectangle boundingRectangle, RotatedRect minAreaRect, Polygon polygon, DPoint[] points, DateTime updateTime, IEnumerable<RectangularObject> objects)
+        private static bool UpdateObject(bool occluded, Emgu.CV.Util.VectorOfPoint objectContour, double maxRestoreDistance, Rectangle boundingRectangle, RotatedRect minAreaRect, Polygon polygon, DPoint[] points, DateTime updateTime, IEnumerable<RectangularObject> objects)
         {
             double distance;
             var candidate = GetObjectCandidate(objects, objectContour, minAreaRect, maxRestoreDistance, out distance);
@@ -1649,7 +1698,7 @@ namespace Huddle.Engine.Processor.OpenCv
             return true;
         }
 
-        private static RectangularObject GetObjectCandidate(IEnumerable<RectangularObject> objects, Contour<DPoint> objectContour, RotatedRect shape, double maxRestoreDistance, out double retDistance)
+        private static RectangularObject GetObjectCandidate(IEnumerable<RectangularObject> objects, Emgu.CV.Util.VectorOfPoint objectContour, RotatedRect shape, double maxRestoreDistance, out double retDistance)
         {
             RectangularObject candidate = null;
             var leastDistance = double.MaxValue;
@@ -1657,9 +1706,10 @@ namespace Huddle.Engine.Processor.OpenCv
             {
                 // check current contour to last center point distance (checking last contour with current center point does not work because of MemStorage
                 // which will lead to an inconsistent last contour after last image has been processed completely and after storage is disposed.
-                UMat ret = new UMat();//TODO remove me
-                CvInvoke.cvCopy(objectContour, ret, IntPtr.Zero);//TODO remove me
-                var distanceToContour = CvInvoke.PointPolygonTest(ret,
+                //UMat ret = new UMat();//TODO remove me
+                //CvInvoke.cvCopy(objectContour.toma, ret, IntPtr.Zero);//TODO remove me
+
+                var distanceToContour = CvInvoke.PointPolygonTest(objectContour,
                     obj.Shape.Center,
                     true);
 
