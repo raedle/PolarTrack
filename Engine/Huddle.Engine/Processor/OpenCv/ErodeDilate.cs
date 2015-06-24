@@ -134,13 +134,13 @@ namespace Huddle.Engine.Processor.OpenCv
                     NumErode,
                     Emgu.CV.CvEnum.BorderType.Default,
                     new MCvScalar());
-                //CvInvoke.Dilate(ret,
-                //    ret,
-                //    new Mat(),
-                //    new System.Drawing.Point(-1, -1),
-                //    NumDilate,
-                //    Emgu.CV.CvEnum.BorderType.Default,
-                //    new MCvScalar());
+                CvInvoke.Dilate(ret,
+                    ret,
+                    new Mat(),
+                    new System.Drawing.Point(-1, -1),
+                    NumDilate,
+                    Emgu.CV.CvEnum.BorderType.Default,
+                    new MCvScalar());
             }
             else
             {
