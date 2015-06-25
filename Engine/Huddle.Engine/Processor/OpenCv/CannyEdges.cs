@@ -120,22 +120,28 @@ namespace Huddle.Engine.Processor.OpenCv
         public override Image<Rgb, byte> ProcessAndView(Image<Rgb, byte> image)
         {
             //Convert the image to grayscale and filter out the noise
-            var grayImage = image.Convert<Gray, Byte>();
-
-            // Dispose old image
-            image.Dispose();
-
+            var grayImage = image.Convert<Gray, byte>(); //TODO does not work with UMat atm
+            UMat u_grayImage = grayImage.ToUMat();
+            
             if (GaussianPyramidDownUpDecomposition)
-                grayImage = grayImage.PyrDown().PyrUp();
+            {
+                CvInvoke.PyrDown(u_grayImage,
+                    u_grayImage);
+                CvInvoke.PyrUp(u_grayImage,
+                    u_grayImage);
+            }
 
-            var cannyEdges = grayImage.Canny(Threshold, ThresholdLinking);
+            UMat ret = new UMat();
+            CvInvoke.Canny(u_grayImage,
+                ret,
+                Threshold,
+                ThresholdLinking);
 
-            image = cannyEdges.Convert<Rgb, byte>();
-
-            // Dispose gray image
+            // Dispose old images
+            image.Dispose();
             grayImage.Dispose();
 
-            return image;
+            return ret.ToImage<Gray, byte>().Convert<Rgb, byte>(); //TODO does not work with UMat atm
         }
     }
 }
