@@ -412,39 +412,45 @@ namespace Huddle.Engine.Processor.Complex
 
             var rgbImage = rgbImages.First().Image.Copy();
             var debugImage = rgbImage.Copy();
+            UMat u_rgbImage = rgbImage.ToUMat();
+            //UMat u_debugImage = debugImage.ToUMat();
 
             if (IsRenderContent)
             {
-                var lastRgbImageCopy = rgbImage.Copy();
+                var u_lastRgbImageCopy = u_rgbImage.Clone();
                 Task.Factory.StartNew(() =>
                 {
-                    var bitmapSource = lastRgbImageCopy.ToBitmapSource(true);
-                    lastRgbImageCopy.Dispose();
+                    var bitmapSource = u_lastRgbImageCopy.ToImage().ToBitmapSource(true);
+                    u_lastRgbImageCopy.Dispose();
                     return bitmapSource;
                 }).ContinueWith(t => InputImageBitmapSource = t.Result);
             }
 
-            var colorImage = rgbImage.Copy();
+            var u_colorImage = u_rgbImage.Clone();
 
             // TODO: is the copy required or does convert already create a copy? _lastRgbImage.Copy() 
-            var grayscaleImage = rgbImage.Copy().Convert<Gray, byte>();
+            var grayscaleImage = u_rgbImage.Clone().ToImage<Rgb, byte>().Convert<Gray, byte>();
 
-            var width = rgbImage.Width;
-            var height = rgbImage.Height;
+            var width = u_rgbImage.Cols;
+            var height = u_rgbImage.Rows;
 
             foreach (var device in devicesToFind)
             {
-                ProcessDevice(device, colorImage, grayscaleImage, width, height, ref debugImage);
+                ProcessDevice(device,
+                    u_colorImage.ToImage<Rgb, byte>(),
+                    grayscaleImage,
+                    width, height,
+                    ref debugImage);
             }
 
-            colorImage.Dispose();
+            u_colorImage.Dispose();
             grayscaleImage.Dispose();
             Push();
 
             if (IsRenderContent)
             {
                 // draw debug output
-                var debugImageCopy = debugImage.Copy();
+                var debugImageCopy = debugImage.Clone();
                 Task.Factory.StartNew(() =>
                 {
                     var bitmapSource = debugImageCopy.ToBitmapSource(true);
@@ -792,7 +798,7 @@ namespace Huddle.Engine.Processor.Complex
 
             // mask needs to be 2 pixels wider and 2 pixels taller
             var mask = new Image<Gray, byte>(imageWidth + 2, imageHeight + 2);
-            CvInvoke.FloodFill(floodFillImage,
+            CvInvoke.FloodFill(floodFillImage.ToUMat(),
                 mask,
                 center,
                 new MCvScalar(255),

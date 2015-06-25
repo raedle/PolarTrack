@@ -141,6 +141,35 @@ namespace Emgu.CV.External.Extensions
             return gradientImage.ToBitmapSource(freeze);
         }
 
+        public static IImage ToImage(this UMat mat)
+        {
+            return UMatToImage(mat);
+        }
+        //TODO remove me when changed
+        public static IImage UMatToImage(this UMat umat)
+        {
+            int nc = umat.NumberOfChannels;
+            int width = umat.Cols;
+            int height = umat.Rows;
+            CvEnum.DepthType depth = umat.Depth;
+
+            // TODO fix me, this is more or less guesing nc and depth needs to be transformed
+            // <Rgb, byte>
+            IImage img = null;
+            if (nc == 3 && depth == CvEnum.DepthType.Cv8U)
+            {
+                img = umat.ToImage<Rgb, byte>();
+            }
+            // <Gray, float>
+            else if(nc == 1 && depth == CvEnum.DepthType.Cv32F)
+            {
+                img = umat.ToImage<Gray, float>();
+            }
+
+            return img;
+
+        }
+
         public static IImage Copy(this IImage image)
         {
             return image.CallInternalMethod<IImage>("Copy");
