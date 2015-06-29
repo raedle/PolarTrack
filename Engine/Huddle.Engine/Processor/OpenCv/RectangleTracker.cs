@@ -1028,10 +1028,12 @@ namespace Huddle.Engine.Processor.OpenCv
             return base.Process(data);
         }
 
-        public override Image<Rgb, byte> ProcessAndView(Image<Rgb, byte> image)
+        public override Image<Rgb, byte> ProcessAndView(Image<Rgb, byte> image_rename)
         {
-            var imageWidth = image.Width;
-            var imageHeight = image.Height;
+            UMat u_image = image_rename.ToUMat();
+
+            var imageWidth = u_image.Cols;
+            var imageHeight = u_image.Rows;
 
             // Get time for current processing.
             var now = DateTime.Now;
@@ -1052,7 +1054,7 @@ namespace Huddle.Engine.Processor.OpenCv
             {
                 // Try to identify objects even if they are connected tightly (without a gap).
                 //Parallel.ForEach(threadSafeObjects, obj => FindObjectByBlankingKnownObjects(image, ref outputImage[0], now, threadSafeObjects, obj)); // TODO Parallel.ForEach does not work :(
-                foreach (var foundObjects in threadSafeObjects.Select(obj => FindObjectByBlankingKnownObjects(false, image, ref outputImage[0], now, threadSafeObjects, obj, true)))
+                foreach (var foundObjects in threadSafeObjects.Select(obj => FindObjectByBlankingKnownObjects(false, u_image, ref outputImage[0], now, threadSafeObjects, obj, true)))
                 {
                     _objects.AddRange(foundObjects);
 
@@ -1062,10 +1064,10 @@ namespace Huddle.Engine.Processor.OpenCv
 
                 // Update occluded objects. It tries to find not yet identified and maybe occluded objects.
                 if (IsUpdateOccludedRectangles)
-                    UpdateOccludedObjects(image, ref outputImage[0], now, threadSafeObjects);
+                    UpdateOccludedObjects(u_image, ref outputImage[0], now, threadSafeObjects);
 
                 // Try to find new objects.
-                var foundNewObjects = FindObjectByBlankingKnownObjects(false, image, ref outputImage[0], now, _objects.ToArray());
+                var foundNewObjects = FindObjectByBlankingKnownObjects(false, u_image, ref outputImage[0], now, _objects.ToArray());
                 _objects.AddRange(foundNewObjects);
 
                 if (foundNewObjects.Any())
@@ -1074,7 +1076,7 @@ namespace Huddle.Engine.Processor.OpenCv
             else
             {
                 // Find yet unidentified objects
-                var foundObjects = FindObjectByBlankingKnownObjects(false, image, ref outputImage[0], now, _objects.ToArray());
+                var foundObjects = FindObjectByBlankingKnownObjects(false, u_image, ref outputImage[0], now, _objects.ToArray());
                 _objects.AddRange(foundObjects);
 
                 if (foundObjects.Any())
@@ -1171,24 +1173,31 @@ namespace Huddle.Engine.Processor.OpenCv
         /// <param name="obj"></param>
         /// <param name="updateTime"></param>
         /// <param name="useROI"></param>
-        private RectangularObject[] FindObjectByBlankingKnownObjects(bool occlusionTracking, Image<Rgb, byte> image, ref Image<Rgb, byte> outputImage, DateTime updateTime, RectangularObject[] objects, RectangularObject obj = null, bool useROI = false)
+        private RectangularObject[] FindObjectByBlankingKnownObjects(bool occlusionTracking, /*Image<Rgb, byte>*/UMat image, ref Image<Rgb, byte> outputImage, DateTime updateTime, RectangularObject[] objects, RectangularObject obj = null, bool useROI = false)
         {
-            var imageWidth = image.Width;
-            var imageHeight = image.Height;
+            var imageWidth = image.Cols;
+            var imageHeight = image.Rows;
 
             var objectsToBlank = obj != null ? objects.Where(o => o != obj) : objects;
 
             // Blank previous objects from previous frame
-            var blankedImage = image.Copy();
+            //var blankedImage = image.Clone();
+            //var blankedImageGray = image.Clone();
+            UMat blankedImageGray = new UMat();
+            UMat blankedImage = new UMat();
+            image.CopyTo(blankedImage);
+            image.CopyTo(blankedImageGray);
+
             foreach (var otherObject in objectsToBlank)
             {
-                blankedImage.Draw(otherObject.Shape, Rgbs.Black, -1);
+                (blankedImage.ToImage() as Image<Rgb, byte>).Draw(otherObject.Shape, Rgbs.Black, -1);
             }
 
-            var blankedImageGray = blankedImage.Convert<Gray, Byte>();
+            var blankedImageGray2 = (blankedImageGray.ToImage() as Image<Rgb, Byte>).Convert<Gray, Byte>();
+            UMat u_blankedImageGray = blankedImageGray2.ToUMat();
             //blankedImageGray = blankedImageGray.Erode(3);
 
-            var roi = blankedImage.ROI;
+            var roi = (blankedImage.ToImage() as Image<Rgb, byte>).ROI;
             if (useROI)
             {
                 const int threshold = 20;
@@ -1205,10 +1214,11 @@ namespace Huddle.Engine.Processor.OpenCv
 
                 var maskImage = new Image<Gray, byte>(imageWidth, imageHeight);
                 maskImage.Draw(roi, new Gray(255), -1);
+                UMat u_maskImage = maskImage.ToUMat();
 
-                CvInvoke.BitwiseAnd(blankedImageGray,
-                    maskImage,
-                    blankedImageGray);
+                CvInvoke.BitwiseAnd(u_blankedImageGray,
+                    u_maskImage,
+                    u_blankedImageGray);
             }
 
             //blankedImageGray = blankedImageGray.Erode(2).Dilate(1).Erode(1).Dilate(1);
@@ -1218,10 +1228,10 @@ namespace Huddle.Engine.Processor.OpenCv
             {
                 #region Render Depth Fixed Image
 
-                var debugImageCopy = blankedImageGray.Copy();
+                var debugImageCopy = u_blankedImageGray.Clone();
                 Task.Factory.StartNew(() =>
                 {
-                    var bitmapSource = debugImageCopy.ToBitmapSource(true);
+                    var bitmapSource = debugImageCopy.ToImage().ToBitmapSource(true);
                     debugImageCopy.Dispose();
                     return bitmapSource;
                 }).ContinueWith(t => DebugImageSource = t.Result);
@@ -1232,7 +1242,7 @@ namespace Huddle.Engine.Processor.OpenCv
             //var oldROI = outputImage.ROI;
             //outputImage.ROI = roi;
 
-            var newObjects = FindRectangles(occlusionTracking, blankedImageGray, ref outputImage, updateTime, objects, imageWidth, imageHeight);
+            var newObjects = FindRectangles(occlusionTracking, u_blankedImageGray, ref outputImage, updateTime, objects, imageWidth, imageHeight);
 
             //outputImage.ROI = oldROI;
 
@@ -1250,7 +1260,7 @@ namespace Huddle.Engine.Processor.OpenCv
                 }
             }
 
-            blankedImageGray.Dispose();
+            u_blankedImageGray.Dispose();
 
             return filteredObjects.ToArray();
         }
@@ -1262,7 +1272,7 @@ namespace Huddle.Engine.Processor.OpenCv
         /// <param name="updateTime"></param>
         /// <param name="outputImage"></param>
         /// <param name="objects"></param>
-        private void UpdateOccludedObjects(Image<Rgb, byte> image, ref Image<Rgb, byte> outputImage, DateTime updateTime, RectangularObject[] objects)
+        private void UpdateOccludedObjects(/*Image<Rgb, byte>*/UMat u_image, ref Image<Rgb, byte> outputImage, DateTime updateTime, RectangularObject[] objects)
         {
             var occludedObjects = objects.Where(o => !Equals(o.LastUpdate, updateTime)).ToArray();
 
@@ -1271,7 +1281,7 @@ namespace Huddle.Engine.Processor.OpenCv
                 return;
 
             var enclosedOutputImage = outputImage;
-            Parallel.ForEach(occludedObjects, obj => UpdateOccludedObject(image, ref enclosedOutputImage, updateTime, objects, obj));
+            Parallel.ForEach(occludedObjects, obj => UpdateOccludedObject(u_image, ref enclosedOutputImage, updateTime, objects, obj));
         }
 
         /// <summary>
@@ -1282,10 +1292,10 @@ namespace Huddle.Engine.Processor.OpenCv
         /// <param name="outputImage"></param>
         /// <param name="objects"></param>
         /// <param name="obj"></param>
-        private void UpdateOccludedObject(Image<Rgb, byte> image, ref Image<Rgb, byte> outputImage, DateTime updateTime, RectangularObject[] objects, RectangularObject obj)
+        private void UpdateOccludedObject(/*Image<Rgb, byte>*/UMat u_image, ref Image<Rgb, byte> outputImage, DateTime updateTime, RectangularObject[] objects, RectangularObject obj)
         {
-            var imageWidth = image.Width;
-            var imageHeight = image.Height;
+            var imageWidth = u_image.Cols;
+            var imageHeight = u_image.Rows;
 
             var mask = new Image<Gray, byte>(imageWidth, imageHeight);
             var depthPatchesImage = new Image<Gray, float>(imageWidth, imageHeight);
@@ -1365,14 +1375,21 @@ namespace Huddle.Engine.Processor.OpenCv
             CvInvoke.cvCopy(depthMap,
                 depthPatchesImage,
                 mask);
+            UMat u_depthPatchesImage = depthPatchesImage.ToUMat();
 
-            var originPixels = new Image<Rgb, byte>(image.Width, image.Height);
-            CvInvoke.cvCopy(image, originPixels, mask);
+            var _originPixels = new Image<Rgb, byte>(imageWidth, imageHeight);
+            //UMat originPixels = new UMat();
+            //u_image.CopyTo(originPixels, mask.ToUMat()); // not impl atm
+            UMat u_imageCopy = u_image.Clone();
+            CvInvoke.cvCopy(u_image.ToImage<Rgb, byte>(),
+                _originPixels,
+                mask);
+            UMat originPixels = _originPixels.ToUMat();
 
 
-            Mat cn1 = new Mat(image.Width, image.Height, DepthType.Cv8U, 1);
+            Mat cn1 = new Mat(imageWidth, imageHeight, DepthType.Cv8U, 1);
             Emgu.CV.Util.VectorOfMat ret = new Emgu.CV.Util.VectorOfMat(cn1);
-            CvInvoke.Split(originPixels.ToUMat(),
+            CvInvoke.Split(originPixels,
                 ret);
             int pixelsSurvived = CvInvoke.CountNonZero(cn1);
 
@@ -1381,7 +1398,7 @@ namespace Huddle.Engine.Processor.OpenCv
             if (pixelsSurvived < SurvivePixelThreshold) return;
 
             //var repairedPixels = depthPatchesImage.CountNonzero()[0];
-            var repairedPixels = CvInvoke.CountNonZero(depthPatchesImage);
+            var repairedPixels = CvInvoke.CountNonZero(u_depthPatchesImage);
             var totalPixels = obj.OriginDepthShape.Size.Width * obj.OriginDepthShape.Size.Height;
             var factorOfRepairedPixels = (double)repairedPixels / totalPixels;
             //Console.WriteLine("{0}% pixels repaired.", factorOfRepairedPixels * 100);
@@ -1389,7 +1406,6 @@ namespace Huddle.Engine.Processor.OpenCv
             // Do not account for entire occlusion at this time to avoid phantom objects even if the device is not present anymore.
             if (factorOfRepairedPixels > (AllowedRepairPixelsRatio / 100.0)) return;
 
-            UMat u_depthPatchesImage = depthPatchesImage.ToUMat();
             // Erode and dilate depth patches image to remove small pixels around device borders.
             if (IsFirstErodeThenDilateDepthPatches)
             {
@@ -1446,7 +1462,10 @@ namespace Huddle.Engine.Processor.OpenCv
 
             var debugImage3 = u_depthPatchesImage.ToImage<Gray, float>().Convert<Rgb, byte>(); // TODO UMat
 
-            var depthFixedImage = image.Or(debugImage3);
+            UMat depthFixedImage = new UMat();
+            CvInvoke.BitwiseOr(u_image,
+                debugImage3,
+                depthFixedImage);
             //fixedImage = fixedImage.Erode(2);
 
             if (IsRenderContent)
@@ -1454,7 +1473,7 @@ namespace Huddle.Engine.Processor.OpenCv
 
                 #region Render Depth Fixed Image
 
-                var depthFixedImageCopy = depthFixedImage.Copy();
+                UMat depthFixedImageCopy = depthFixedImage.Clone();
                 Task.Factory.StartNew(() =>
                 {
                     var bitmapSource = depthFixedImageCopy.ToBitmapSource(true);
@@ -1477,7 +1496,7 @@ namespace Huddle.Engine.Processor.OpenCv
         /// <param name="outputImage"></param>
         /// <param name="updateTime"></param>
         /// <param name="objects"></param>
-        private RectangularObject[] FindRectangles(bool occlusionTracking, Image<Gray, byte> grayImage, ref Image<Rgb, byte> outputImage, DateTime updateTime, RectangularObject[] objects, int imageWidth, int imageHeight)
+        private RectangularObject[] FindRectangles(bool occlusionTracking, /*Image<Gray, byte>*/UMat grayImage, ref Image<Rgb, byte> outputImage, DateTime updateTime, RectangularObject[] objects, int imageWidth, int imageHeight)
         {
             var newObjects = new List<RectangularObject>();
 
@@ -1491,7 +1510,7 @@ namespace Huddle.Engine.Processor.OpenCv
             {
                 Emgu.CV.Util.VectorOfVectorOfPoint contours = new Emgu.CV.Util.VectorOfVectorOfPoint();
 
-                CvInvoke.FindContours(grayImage.ToUMat(),
+                CvInvoke.FindContours(grayImage,
                     contours,
                     null, // TODO can we use hierarchy
                     IsRetrieveExternal ? RetrType.External : RetrType.List,
