@@ -24,9 +24,10 @@ namespace Huddle.Engine.Data
                 if (_data != null)
                 {
                     _data.Dispose();
+                    _data = null;
                 }
 
-                _data = value; // TODO do I need to clone here?
+                _data = value.Clone();
             }
         }
 
@@ -70,7 +71,7 @@ namespace Huddle.Engine.Data
 
         public override IData Copy()
         {
-            return new UMatData(Source, Key, Data.Clone()); // TODO do I need to clone here?
+            return new UMatData(Source, Key, Data);
         }
 
         public override void Dispose()

@@ -387,8 +387,7 @@ namespace Huddle.Engine.Processor.OpenCv
                     CvInvoke.Flip(imageCopy, imageCopy, flipCode);
                 }
 
-                data.Data.Dispose();
-                data.Data = imageCopy.Clone();
+                data.Data = imageCopy;
                 return data;
             }
             catch (Exception e)

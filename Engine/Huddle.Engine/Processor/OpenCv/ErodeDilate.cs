@@ -3,11 +3,12 @@ using Emgu.CV;
 using Emgu.CV.Structure;
 using Huddle.Engine.Util;
 using Huddle.Engine.Properties;
+using Huddle.Engine.Data;
 
 namespace Huddle.Engine.Processor.OpenCv
 {
     [ViewTemplate("Erode Dilate", "ErodeDilate")]
-    public class ErodeDilate : RgbProcessor
+    public class ErodeDilate : UMatProcessor
     {
         #region properties
 
@@ -120,14 +121,13 @@ namespace Huddle.Engine.Processor.OpenCv
 
         #endregion
 
-        public override Image<Rgb, byte> ProcessAndView(Image<Rgb, byte> image)
+        public override UMatData ProcessAndView(UMatData data)
         {
-            UMat img = image.ToUMat();
             UMat ret = new UMat();
 
             if (IsFirstErodeThenDilate)
             {
-                CvInvoke.Erode(img,
+                CvInvoke.Erode(data.Data,
                     ret,
                     new Mat(),
                     new System.Drawing.Point(-1, -1),
@@ -144,7 +144,7 @@ namespace Huddle.Engine.Processor.OpenCv
             }
             else
             {
-                CvInvoke.Dilate(img,
+                CvInvoke.Dilate(data.Data,
                     ret,
                     new Mat(),
                     new System.Drawing.Point(-1, -1),
@@ -160,7 +160,9 @@ namespace Huddle.Engine.Processor.OpenCv
                     new MCvScalar());
             }
 
-            return ret.ToImage<Rgb, byte>();
+            data.Data = ret;
+
+            return data;
         }
     }
 }
