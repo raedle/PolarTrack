@@ -312,6 +312,7 @@
       <DependentUpon>ExceptionMessageBox.xaml</DependentUpon>
     </Compile>
     <Compile Include="Data\Device.cs" />
+    <Compile Include="Data\UMatData.cs" />
     <Compile Include="Extensions\BitmapSourceExtensions.cs" />
     <Compile Include="Extensions\CollectionExtensions.cs" />
     <Compile Include="Extensions\DispatcherExtensions.cs" />
@@ -324,6 +325,7 @@
     <Compile Include="Filter\NoSmoothing.cs" />
     <Compile Include="Filter\OneEuroSmoothing.cs" />
     <Compile Include="Filter\SmoothingFilterFactory.cs" />
+    <Compile Include="Processor\UMatProcessor.cs" />
     <Compile Include="Processor\PolarTracker.cs" />
     <Compile Include="Processor\ImagesToVideo.cs" />
     <Compile Include="Processor\Complex\PolygonIntersection\PolygonCollisionUtils.cs" />
