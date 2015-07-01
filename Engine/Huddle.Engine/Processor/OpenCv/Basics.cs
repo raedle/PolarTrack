@@ -16,7 +16,7 @@ using Point = System.Windows.Point;
 namespace Huddle.Engine.Processor.OpenCv
 {
     [ViewTemplate("Basics", "Basics")]
-    public class Basics : RgbProcessor
+    public class Basics : UMatProcessor
     {
         #region private fields
 
@@ -326,23 +326,23 @@ namespace Huddle.Engine.Processor.OpenCv
             return base.Process(data);
         }
 
-        public override Image<Rgb, byte> PreProcess(Image<Rgb, byte> image0)
+        public override UMatData PreProcess(UMatData data)
         {
             if (!IsInitialized)
             {
-                ROI = new Rectangle(0, 0, image0.Width, image0.Height);
+                ROI = new Rectangle(0, 0, data.Data.Cols, data.Data.Rows);
 
                 IsInitialized = true;
             }
 
-            var image = base.PreProcess(image0);
+            var image = base.PreProcess(data);
 
-            image.Draw(ROI, Rgbs.Red, 1);
+            image.Data.ToImage<Rgb, byte>().Draw(ROI, Rgbs.Red, 1);
 
             return image;
         }
 
-        public override Image<Rgb, byte> ProcessAndView(Image<Rgb, byte> image)
+        public override UMatData ProcessAndView(UMatData data)
         {
             // mirror image
             try
@@ -350,11 +350,13 @@ namespace Huddle.Engine.Processor.OpenCv
                 UMat imageCopy = new UMat();
                 if (IsUseROI)
                 {
-                    imageCopy = image.Copy(ROI).ToUMat();
+                    imageCopy.Dispose();
+                    imageCopy = new UMat(data.Data, ROI); //TODO does this work?
+                    //data.Data.CopyTo(imageCopy, ROI);
                 }
                 else
                 {
-                    imageCopy = image.Copy().ToUMat();
+                    imageCopy = data.Data.Clone();
                 }
 
                 // TODO Revise code.
@@ -364,7 +366,7 @@ namespace Huddle.Engine.Processor.OpenCv
 
                     CvInvoke.Resize(imageCopy,
                         imageCopy2,
-                        new System.Drawing.Size((int)(image.Width * Scale), (int)(image.Height * Scale)),
+                        new System.Drawing.Size((int)(data.Width * Scale), (int)(data.Height * Scale)),
                         0,
                         0,
                         Emgu.CV.CvEnum.Inter.Cubic);
@@ -385,7 +387,9 @@ namespace Huddle.Engine.Processor.OpenCv
                     CvInvoke.Flip(imageCopy, imageCopy, flipCode);
                 }
 
-                return imageCopy.ToImage<Rgb, byte>();
+                data.Data.Dispose();
+                data.Data = imageCopy.Clone();
+                return data;
             }
             catch (Exception e)
             {

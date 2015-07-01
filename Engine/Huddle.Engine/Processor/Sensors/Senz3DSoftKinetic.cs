@@ -835,16 +835,16 @@ namespace Huddle.Engine.Processor.Sensors
             Stopwatch sw = Stopwatch.StartNew();
             var _colorImage = new Image<Bgr, byte>(sample.Width, sample.Height);
             _colorImage.Data = sample.Data;
-            var colorImage = new Image<Rgb, byte>(sample.Width, sample.Height);
-            CvInvoke.CvtColor(_colorImage, colorImage, ColorConversion.Bgr2Rgb);
-            var colorImageCopy = colorImage.Copy();
+            UMat colorImage = new UMat();
+            CvInvoke.CvtColor(_colorImage.ToUMat(), colorImage, ColorConversion.Bgr2Rgb);
+            UMat colorImageCopy = colorImage.Clone();
             ColorImageFrameTime = sw.ElapsedMilliseconds;
 
             if (IsRenderContent)
             {
                 Task.Factory.StartNew(() =>
                 {
-                    var bitmap = colorImageCopy.ToBitmapSource(true);
+                    var bitmap = colorImageCopy.ToImage().ToBitmapSource(true);
                     colorImageCopy.Dispose();
                     return bitmap;
                 }).ContinueWith(s => ColorImageSource = s.Result);
@@ -852,7 +852,7 @@ namespace Huddle.Engine.Processor.Sensors
 
             var dc = new Huddle.Engine.Data.DataContainer(++_frameId, DateTime.Now)
                     {
-                        new RgbImageData(this, "color", colorImage)
+                        new UMatData(this, "color", colorImage)
                     };
 
             Publish(dc);
@@ -929,8 +929,8 @@ namespace Huddle.Engine.Processor.Sensors
 
             var dc = new Huddle.Engine.Data.DataContainer(++_frameId, DateTime.Now)
                     {
-                        new GrayFloatImage(this, "depth", depthImage),
-                        new RgbImageData(this, "confidence", confidenceImage)
+                        new UMatData(this, "depth", depthImage.ToUMat()),
+                        new UMatData(this, "confidence", confidenceImage.ToUMat())
                     };
 
             Publish(dc);
