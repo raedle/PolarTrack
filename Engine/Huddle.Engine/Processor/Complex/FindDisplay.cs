@@ -22,7 +22,7 @@ using Point = System.Drawing.Point;
 namespace Huddle.Engine.Processor.Complex
 {
     [ViewTemplate("Find Display", "FindDisplay")]
-    public class FindDisplay : BaseProcessor
+    public class FindDisplay : UMatProcessor
     {
         #region const
 
@@ -404,15 +404,14 @@ namespace Huddle.Engine.Processor.Complex
 
             if (!devicesToFind.Any()) return null;
 
-            var rgbImages = dataContainer.OfType<RgbImageData>().ToArray();
+            var rgbImages = dataContainer.OfType<UMatData>().ToArray();
 
             // Do only process if RGB image is set
             if (!rgbImages.Any())
                 return null;
 
-            var rgbImage = rgbImages.First().Image.Copy();
-            var debugImage = rgbImage.Copy();
-            UMat u_rgbImage = rgbImage.ToUMat();
+            UMat u_rgbImage = rgbImages.First().Data.Clone();
+            var debugImage = u_rgbImage.Clone().ToImage<Rgb, byte>();
             //UMat u_debugImage = debugImage.ToUMat();
 
             if (IsRenderContent)
@@ -467,6 +466,11 @@ namespace Huddle.Engine.Processor.Complex
         public override IData Process(IData data)
         {
             return null;
+        }
+
+        public override UMatData ProcessAndView(UMatData data)
+        {
+            throw new NotImplementedException();
         }
 
         #region private methods

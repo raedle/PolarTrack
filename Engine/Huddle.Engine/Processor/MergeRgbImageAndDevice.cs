@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using Huddle.Engine.Data;
 using Huddle.Engine.Util;
 
+using Emgu.CV;
+
 namespace Huddle.Engine.Processor
 {
     [ViewTemplate("Merge RgbImage And Device", "MergeRgbImageAndDevice")]
@@ -13,7 +15,7 @@ namespace Huddle.Engine.Processor
     {
         #region private members
 
-        private RgbImageData _rgbImageData;
+        private UMatData _rgbImageData;
 
         #endregion
 
@@ -24,13 +26,13 @@ namespace Huddle.Engine.Processor
         /// <returns></returns>
         public override IDataContainer PreProcess(IDataContainer dataContainer)
         {
-            var rgbImages = dataContainer.OfType<RgbImageData>().ToArray();
-            if (rgbImages.Any())
+            var rgbImages = dataContainer.OfType<UMatData>().ToArray();
+            if (rgbImages.Any() && rgbImages[0].Key == "color")
             {
                 if (_rgbImageData != null)
                     _rgbImageData.Dispose();
 
-                _rgbImageData = rgbImages.First().Copy() as RgbImageData;
+                _rgbImageData = rgbImages.First().Copy() as UMatData;
                 return null;
             }
 

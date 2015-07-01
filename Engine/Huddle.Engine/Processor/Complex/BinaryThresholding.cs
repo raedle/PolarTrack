@@ -1,11 +1,14 @@
 ﻿using Emgu.CV;
 using Emgu.CV.Structure;
 using Huddle.Engine.Util;
+using Huddle.Engine.Data;
+
+using Emgu.CV.External.Extensions;
 
 namespace Huddle.Engine.Processor.Complex
 {
     [ViewTemplate("Binary Thresholding", "BinaryThresholding")]
-    public class BinaryThresholding : RgbProcessor
+    public class BinaryThresholding : UMatProcessor
     {
         #region properties
 
@@ -116,21 +119,43 @@ namespace Huddle.Engine.Processor.Complex
 
         #endregion
 
-        public override Image<Rgb, byte> ProcessAndView(Image<Rgb, byte> image)
+        public override UMatData ProcessAndView(UMatData data)
         {
+            if (data.Key != "color") //Image<Rgb, byte>
+            {
+                return data;
+            }
+
             var binaryThreshold = new Gray(BinaryThreshold);
             var binaryThresholdMax = new Gray(BinaryThresholdMax);
             var isBinaryThresholdInv = IsBinaryThresholdInv;
 
-            var imageCopy = image.Copy();
+            var imageCopy = data.Data.Clone();
 
-            var grayImage = imageCopy.Convert<Gray, byte>();
+            var grayImage = imageCopy.ToImage<Rgb,byte>().Convert<Gray, byte>().ToUMat();
 
-            var thresholdImage = isBinaryThresholdInv ?
-                grayImage.ThresholdBinaryInv(binaryThreshold, binaryThresholdMax) :
-                grayImage.ThresholdBinary(binaryThreshold, binaryThresholdMax);
 
-            return thresholdImage.Convert<Rgb, byte>();
+            UMat ret = new UMat();
+
+            if(isBinaryThresholdInv)
+            {
+                CvInvoke.Threshold(grayImage, 
+                    ret, 
+                    BinaryThreshold, // TODO stimmt der wert? oder ist new Gray(BinaryThreshold) was anderes?
+                    BinaryThresholdMax, // TODO stimmt der wert? oder ist new Gray(BinaryThreshold) was anderes?
+                    Emgu.CV.CvEnum.ThresholdType.BinaryInv);
+            } else {
+                CvInvoke.Threshold(grayImage,
+                    ret,
+                    BinaryThreshold, // TODO stimmt der wert? oder ist new Gray(BinaryThreshold) was anderes?
+                    BinaryThresholdMax, // TODO stimmt der wert? oder ist new Gray(BinaryThreshold) was anderes?
+                    Emgu.CV.CvEnum.ThresholdType.Binary);
+            }
+
+            //TODO convert back??? thresholdImage.Convert<Rgb, byte>()
+            data.Data = ret;
+
+            return data;
         }
     }
 }

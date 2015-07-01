@@ -16,7 +16,7 @@ using Point = System.Windows.Point;
 namespace Huddle.Engine.Processor.OpenCv
 {
     [ViewTemplate("Basics (Gray/Float)", "Basics")]
-    public class BasicsGrayFloat : BaseImageProcessor<Gray, float>
+    public class BasicsGrayFloat : UMatProcessor
     {
         #region private fields
 
@@ -326,35 +326,47 @@ namespace Huddle.Engine.Processor.OpenCv
             return base.Process(data);
         }
 
-        public override Image<Gray, float> PreProcess(Image<Gray, float> image0)
+        public override UMatData PreProcess(UMatData data)
         {
+            if (data.Key != "depth") // TODO can i check the type earlier or how can i avoid unecesary calls 
+            {
+                return data;
+            }
+
             if (!IsInitialized)
             {
-                ROI = new Rectangle(0, 0, image0.Width, image0.Height);
+                ROI = new Rectangle(0, 0, data.Width, data.Height);
 
                 IsInitialized = true;
             }
 
-            var image = base.PreProcess(image0);
+            var image = base.PreProcess(data);
 
-            image.Draw(ROI, new Gray(255.0), 1);
+            image.Data.ToImage<Gray, float>().Draw(ROI, new Gray(255.0), 1);
 
             return image;
         }
 
-        public override Image<Gray, float> ProcessAndView(Image<Gray, float> image)
+        public override UMatData ProcessAndView(UMatData data)
         {
+            if (data.Key != "depth")
+            {
+                return data;
+            }
+
             // mirror image
             try
             {
                 UMat imageCopy = new UMat();
                 if (IsUseROI)
                 {
-                    imageCopy = image.Copy(ROI).ToUMat();
+                    imageCopy.Dispose();
+                    imageCopy = new UMat(data.Data, ROI); //TODO does this work?
+                    //data.Data.CopyTo(imageCopy, ROI);
                 }
                 else
                 {
-                    imageCopy = image.Copy().ToUMat();
+                    imageCopy = data.Data.Clone();
                 }
 
                 // TODO Revise code.
@@ -363,7 +375,7 @@ namespace Huddle.Engine.Processor.OpenCv
                     UMat imageCopy2 = new UMat();
                     CvInvoke.Resize(imageCopy,
                         imageCopy2,
-                        new System.Drawing.Size((int)(image.Width * Scale), (int)(image.Height * Scale)),
+                        new System.Drawing.Size((int)(data.Width * Scale), (int)(data.Height * Scale)),
                         0,
                         0,
                         Emgu.CV.CvEnum.Inter.Cubic);
@@ -385,7 +397,8 @@ namespace Huddle.Engine.Processor.OpenCv
                     CvInvoke.Flip(imageCopy, imageCopy, flipCode);
                 }
 
-                return imageCopy.ToImage<Gray, float>();
+                data.Data = imageCopy;
+                return data;
             }
             catch (Exception e)
             {

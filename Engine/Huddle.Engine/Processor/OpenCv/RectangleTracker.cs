@@ -27,7 +27,7 @@ using Vector = Huddle.Engine.Processor.Complex.PolygonIntersection.Vector;
 namespace Huddle.Engine.Processor.OpenCv
 {
     [ViewTemplate("Rectangle Tracker", "RectangleTracker")]
-    public class RectangleTracker : RgbProcessor
+    public class RectangleTracker : UMatProcessor
     {
         #region private fields
 
@@ -1028,9 +1028,14 @@ namespace Huddle.Engine.Processor.OpenCv
             return base.Process(data);
         }
 
-        public override Image<Rgb, byte> ProcessAndView(Image<Rgb, byte> image_rename)
+        public override UMatData ProcessAndView(UMatData image_rename)
         {
-            UMat u_image = image_rename.ToUMat();
+            if (image_rename.Key != "confidence") //TODO
+            {
+                return image_rename;
+            }
+
+            UMat u_image = image_rename.Data;
 
             var imageWidth = u_image.Cols;
             var imageHeight = u_image.Rows;
@@ -1159,7 +1164,9 @@ namespace Huddle.Engine.Processor.OpenCv
 
             Push();
 
-            return outputImage[0];
+            image_rename.Data = outputImage[0].ToUMat();
+
+            return image_rename;
         }
 
         /// <summary>
@@ -1195,6 +1202,7 @@ namespace Huddle.Engine.Processor.OpenCv
 
             var blankedImageGray2 = (blankedImageGray.ToImage() as Image<Rgb, Byte>).Convert<Gray, Byte>();
             UMat u_blankedImageGray = blankedImageGray2.ToUMat();
+
             //blankedImageGray = blankedImageGray.Erode(3);
 
             var roi = (blankedImage.ToImage() as Image<Rgb, byte>).ROI;
