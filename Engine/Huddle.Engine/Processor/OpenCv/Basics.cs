@@ -335,11 +335,15 @@ namespace Huddle.Engine.Processor.OpenCv
                 IsInitialized = true;
             }
 
-            var image = base.PreProcess(data);
+            var _data = base.PreProcess(data);
 
-            image.Data.ToImage<Rgb, byte>().Draw(ROI, Rgbs.Red, 1);
+            //TODO leak?
+            var img = _data.Data.Clone().ToImage<Rgb, byte>();
+            img.Draw(ROI, Rgbs.Red, 1);
+            _data.Data.Dispose();
+            _data.Data = img.ToUMat();
 
-            return image;
+            return _data;
         }
 
         public override UMatData ProcessAndView(UMatData data)
@@ -351,11 +355,13 @@ namespace Huddle.Engine.Processor.OpenCv
                 if (IsUseROI)
                 {
                     imageCopy.Dispose();
-                    imageCopy = new UMat(data.Data, ROI); //TODO does this work?
+                    //imageCopy = new UMat(data.Data, ROI); //TODO does this work?
                     //data.Data.CopyTo(imageCopy, ROI);
+                    imageCopy = data.Data.Clone();
                 }
                 else
                 {
+                    imageCopy.Dispose();
                     imageCopy = data.Data.Clone();
                 }
 

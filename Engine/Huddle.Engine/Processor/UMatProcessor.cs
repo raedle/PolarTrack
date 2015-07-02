@@ -189,7 +189,7 @@ namespace Huddle.Engine.Processor
 
             if (IsRenderContent)
             {
-                var postProcessImage = data.Data.Clone();
+                var postProcessImage = data.Data.Clone().ToImage();
 
                 Task.Factory.StartNew(() =>
                 {
@@ -197,7 +197,7 @@ namespace Huddle.Engine.Processor
 
                     BitmapSource bitmap;
                     if (postProcessImage is Image<Gray, float>)
-                        bitmap = (postProcessImage.ToImage() as Image<Gray, float>).ToGradientBitmapSource(true, EmguExtensions.LowConfidence, EmguExtensions.Saturation);
+                        bitmap = (postProcessImage as Image<Gray, float>).ToGradientBitmapSource(true, EmguExtensions.LowConfidence, EmguExtensions.Saturation);
                     else
                         bitmap = postProcessImage.ToBitmapSource(true);
 
