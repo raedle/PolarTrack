@@ -166,6 +166,7 @@ namespace Huddle.Engine.Processor
                     if (processedImage == null) return null;
 
                     data = processedImage;
+
                 }
                 catch (Exception e)
                 {

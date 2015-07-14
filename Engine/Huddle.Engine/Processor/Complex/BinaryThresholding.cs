@@ -4,6 +4,7 @@ using Huddle.Engine.Util;
 using Huddle.Engine.Data;
 
 using Emgu.CV.External.Extensions;
+using Emgu.CV.CvEnum;
 
 namespace Huddle.Engine.Processor.Complex
 {
@@ -130,16 +131,22 @@ namespace Huddle.Engine.Processor.Complex
             var binaryThresholdMax = new Gray(BinaryThresholdMax);
             var isBinaryThresholdInv = IsBinaryThresholdInv;
 
-            var imageCopy = data.Data.Clone();
+            //var imageCopy = data.Data.Clone();
 
-            var grayImage = imageCopy.ToImage<Rgb,byte>().Convert<Gray, byte>().ToUMat();
-
+            //var grayImage = imageCopy.ToImage<Rgb,byte>().Convert<Gray, byte>().ToUMat();
+            UMat grayImage = new UMat();
+            grayImage = data.Data.ToImage<Rgb, byte>().Convert<Gray, float>().ToUMat();
+            //CvInvoke.CvtColor(grayImage,
+            //    grayImage,
+            //    ColorConversion.Rgb2Gray,
+            //    1);
+            //grayImage = data.Data.Clone();//.ToImage<Rgb, byte>().Convert<Gray, byte>().ToUMat(); // TODO remove me when cvtcolor works
 
             UMat ret = new UMat();
 
             if(isBinaryThresholdInv)
             {
-                CvInvoke.Threshold(grayImage, 
+                CvInvoke.Threshold(grayImage,
                     ret, 
                     BinaryThreshold, // TODO stimmt der wert? oder ist new Gray(BinaryThreshold) was anderes?
                     BinaryThresholdMax, // TODO stimmt der wert? oder ist new Gray(BinaryThreshold) was anderes?
