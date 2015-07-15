@@ -7,6 +7,7 @@ using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.External.Structure;
 using Emgu.CV.Structure;
+using Emgu.CV.External.Extensions;
 using GalaSoft.MvvmLight.Command;
 using Huddle.Engine.Data;
 using Huddle.Engine.Properties;
@@ -328,26 +329,44 @@ namespace Huddle.Engine.Processor.OpenCv
 
         public override UMatData PreProcess(UMatData data)
         {
+            if (data.Key != "color" || data.Key != "confidence") // TODO can i check the type earlier or how can i avoid unecesary calls 
+            {
+                return data;
+            }
+
             if (!IsInitialized)
             {
-                ROI = new Rectangle(0, 0, data.Data.Cols, data.Data.Rows);
+                ROI = new Rectangle(0, 0, data.Width, data.Height);
 
                 IsInitialized = true;
             }
 
             var _data = base.PreProcess(data);
 
+            if (data.Key == "confidence")
+            {
+                _data.Data.ToImage<Rgb,byte>().Draw(ROI, Rgbs.Red, 1);
+            }
+            else if (data.Key == "color")
+            {
+                _data.Data.ToImage<Rgb, byte>().Draw(ROI, Rgbs.Red, 1);
+            }
             //TODO leak?
-            var img = _data.Data.Clone().ToImage<Rgb, byte>();
-            img.Draw(ROI, Rgbs.Red, 1);
-            _data.Data.Dispose();
-            _data.Data = img.ToUMat();
+            //var img = _data.Data.Clone().ToImage<Rgb, byte>();
+            //img.Draw(ROI, Rgbs.Red, 1);
+            //_data.Data.Dispose();
+            //_data.Data = img.ToUMat();
 
             return _data;
         }
 
         public override UMatData ProcessAndView(UMatData data)
         {
+            if (data.Key != "color" || data.Key != "confidence")
+            {
+                return data;
+            }
+
             // mirror image
             try
             {
@@ -355,13 +374,11 @@ namespace Huddle.Engine.Processor.OpenCv
                 if (IsUseROI)
                 {
                     imageCopy.Dispose();
-                    //imageCopy = new UMat(data.Data, ROI); //TODO does this work?
+                    imageCopy = new UMat(data.Data, ROI); //TODO does this work?
                     //data.Data.CopyTo(imageCopy, ROI);
-                    imageCopy = data.Data.Clone();
                 }
                 else
                 {
-                    imageCopy.Dispose();
                     imageCopy = data.Data.Clone();
                 }
 

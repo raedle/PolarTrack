@@ -340,11 +340,11 @@ namespace Huddle.Engine.Processor.OpenCv
                 IsInitialized = true;
             }
 
-            var image = base.PreProcess(data);
+            var _data = base.PreProcess(data);
 
-            image.Data.ToImage<Gray, float>().Draw(ROI, new Gray(255.0), 1);
+            _data.Data.ToImage<Gray, float>().Draw(ROI, new Gray(255.0), 1);
 
-            return image;
+            return _data;
         }
 
         public override UMatData ProcessAndView(UMatData data)
