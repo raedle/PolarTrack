@@ -139,7 +139,10 @@ namespace Huddle.Engine.Processor
             if (IsRenderContent)
             {
                 // draw debug information on image -> TODO might worth be worth it to bind that information to the data template directly
-                var preProcessImage = data.Data.Clone().ToImage();
+                UMat tmp = data.Data.Clone();
+                //data.Data.CopyTo(tmp);
+                var preProcessImage = tmp.ToImage();
+                //var preProcessImage = data.Data.Clone().ToImage();
 
                 Task.Factory.StartNew(() =>
                 {

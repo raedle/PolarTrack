@@ -366,22 +366,20 @@ namespace Huddle.Engine.Processor.OpenCv
                 }
                 else
                 {
-                    imageCopy = data.Data.Clone();
+                    imageCopy = data.Data; /*.Clone()*/
                 }
 
                 // TODO Revise code.
                 if (Scale != 1.0)
                 {
-                    UMat imageCopy2 = new UMat();
+                    UMat tmp = new UMat();
                     CvInvoke.Resize(imageCopy,
-                        imageCopy2,
+                        tmp,
                         new System.Drawing.Size((int)(data.Width * Scale), (int)(data.Height * Scale)),
                         0,
                         0,
                         Emgu.CV.CvEnum.Inter.Cubic);
-
-                    imageCopy.Dispose();
-                    imageCopy = imageCopy2;
+                    imageCopy = tmp;
                 }
 
 
@@ -394,10 +392,13 @@ namespace Huddle.Engine.Processor.OpenCv
 
                 if (flipCode != FlipType.None)
                 {
-                    CvInvoke.Flip(imageCopy, imageCopy, flipCode);
+                    CvInvoke.Flip(imageCopy, data.Ptr, flipCode);
+                }
+                else
+                {
+                    data.Ptr = imageCopy;
                 }
 
-                data.Data = imageCopy;
                 return data;
             }
             catch (Exception e)

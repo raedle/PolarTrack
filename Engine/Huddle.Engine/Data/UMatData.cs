@@ -26,8 +26,20 @@ namespace Huddle.Engine.Data
                     _data.Dispose();
                     _data = null;
                 }
-
+                // TODO revise!!! is this good?
                 _data = value.Clone();
+            }
+        }
+
+        public UMat Ptr
+        {
+            get
+            {
+                return _data;
+            }
+            set
+            {
+                _data = value;
             }
         }
 
