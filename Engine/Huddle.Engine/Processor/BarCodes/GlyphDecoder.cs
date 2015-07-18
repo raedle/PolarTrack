@@ -397,58 +397,55 @@ namespace Huddle.Engine.Processor.BarCodes
                     grayImage.ROI = roi;
 
                     Emgu.CV.Util.VectorOfPoint largestContour = null;
-                    using (var storage = new MemStorage())
+                    Emgu.CV.Util.VectorOfVectorOfPoint contours = new Emgu.CV.Util.VectorOfVectorOfPoint();
+                    CvInvoke.FindContours(grayImage,
+                        contours,
+                        null,
+                        RetrType.External,
+                        ChainApproxMethod.ChainApproxSimple);
+
+                    for (int i = 0; i < contours.Size; i++)
                     {
-                        Emgu.CV.Util.VectorOfVectorOfPoint contours = new Emgu.CV.Util.VectorOfVectorOfPoint();
-                        CvInvoke.FindContours(grayImage,
-                            contours,
-                            null,
-                            RetrType.External,
-                            ChainApproxMethod.ChainApproxSimple);
+                        Emgu.CV.Util.VectorOfPoint contour = new Emgu.CV.Util.VectorOfPoint();
+                        CvInvoke.ApproxPolyDP(contours[i],
+                            contour,
+                            CvInvoke.ArcLength(contours[i], true) * 0.05,
+                            true);
 
-                        for (int i = 0; i < contours.Size; i++)
+                        var roiArea = roi.Size.Width * roi.Size.Height;
+                        var contourArea = CvInvoke.ContourArea(contour);
+
+                        if (contour.Size != 4) continue;
+
+                        if (contourArea < roiArea * 0.98 && contourArea > 10)
                         {
-                            Emgu.CV.Util.VectorOfPoint contour = new Emgu.CV.Util.VectorOfPoint();
-                            CvInvoke.ApproxPolyDP(contours[i],
-                                contour,
-                                CvInvoke.ArcLength(contours[i], true) * 0.05,
-                                true);
-
-                            var roiArea = roi.Size.Width * roi.Size.Height;
-                            var contourArea = CvInvoke.ContourArea(contour);
-
-                            if (contour.Size != 4) continue;
-
-                            if (contourArea < roiArea * 0.98 && contourArea > 10)
+                            if (largestContour == null)
                             {
-                                if (largestContour == null)
-                                {
-                                    largestContour = contour;
-                                    continue;
-                                }
+                                largestContour = contour;
+                                continue;
+                            }
 
-                                if (CvInvoke.ContourArea(contour) > CvInvoke.ContourArea(largestContour))
-                                {
-                                    largestContour = contour;
-                                }
+                            if (CvInvoke.ContourArea(contour) > CvInvoke.ContourArea(largestContour))
+                            {
+                                largestContour = contour;
                             }
                         }
+                    }
 
-                        if (largestContour != null)
+                    if (largestContour != null)
+                    {
+                        var edges = DetermineLongestEdge(largestContour.ToArray());
+
+                        if (IsRenderContent)
                         {
-                            var edges = DetermineLongestEdge(largestContour.ToArray());
+                            var oldROI = outputImage.ROI;
+                            outputImage.ROI = roi;
+                            outputImage.Draw(CvInvoke.MinAreaRect(largestContour), Rgbs.Cyan, 2);
 
-                            if (IsRenderContent)
-                            {
-                                var oldROI = outputImage.ROI;
-                                outputImage.ROI = roi;
-                                outputImage.Draw(CvInvoke.MinAreaRect(largestContour), Rgbs.Cyan, 2);
+                            outputImage.Draw(edges[0], Rgbs.Red, 3);
+                            outputImage.Draw(edges[1], Rgbs.Green, 3);
 
-                                outputImage.Draw(edges[0], Rgbs.Red, 3);
-                                outputImage.Draw(edges[1], Rgbs.Green, 3);
-
-                                outputImage.ROI = oldROI;
-                            }
+                            outputImage.ROI = oldROI;
                         }
                     }
                 }

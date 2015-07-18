@@ -195,23 +195,20 @@ namespace Huddle.Engine.Processor.Sensors.Utils
 
             if (getRgbContour)
             {
-                using (var storage = new MemStorage())
-                {
-                    Emgu.CV.Util.VectorOfVectorOfPoint contours = new Emgu.CV.Util.VectorOfVectorOfPoint();
-                    CvInvoke.FindContours(contourImg,
-                        contours,
-                        null,
-                        RetrType.External,
-                        ChainApproxMethod.ChainApproxSimple);
+                Emgu.CV.Util.VectorOfVectorOfPoint contours = new Emgu.CV.Util.VectorOfVectorOfPoint();
+                CvInvoke.FindContours(contourImg,
+                    contours,
+                    null,
+                    RetrType.External,
+                    ChainApproxMethod.ChainApproxSimple);
 
-                    for (int i = 0; i < contours.Size; i++)
+                for (int i = 0; i < contours.Size; i++)
+                {
+                    Emgu.CV.Util.VectorOfPoint currentContour = new Emgu.CV.Util.VectorOfPoint();
+                    CvInvoke.ApproxPolyDP(contours[i], currentContour, CvInvoke.ArcLength(contours[i], true) * 0.05, true);
+                    if (CvInvoke.ContourArea(currentContour, false) > 160 * 120)
                     {
-                        Emgu.CV.Util.VectorOfPoint currentContour = new Emgu.CV.Util.VectorOfPoint();
-                        CvInvoke.ApproxPolyDP(contours[i], currentContour, CvInvoke.ArcLength(contours[i], true) * 0.05, true);
-                        if (CvInvoke.ContourArea(currentContour, false) > 160 * 120)
-                        {
-                            rgbInDepthRect = CvInvoke.BoundingRectangle(currentContour);
-                        }
+                        rgbInDepthRect = CvInvoke.BoundingRectangle(currentContour);
                     }
                 }
             }

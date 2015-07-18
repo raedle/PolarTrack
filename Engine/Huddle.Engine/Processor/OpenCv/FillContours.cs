@@ -135,66 +135,63 @@ namespace Huddle.Engine.Processor.OpenCv
             //Convert the image to grayscale and filter out the noise
             var grayImage = image.Convert<Gray, Byte>();
 
-            using (var storage = new MemStorage())
+            Emgu.CV.Util.VectorOfVectorOfPoint contours = new Emgu.CV.Util.VectorOfVectorOfPoint();
+            CvInvoke.FindContours(grayImage,
+                contours,
+                null,
+                IsRetrieveExternal ? RetrType.External : RetrType.List,
+                ChainApproxMethod.ChainApproxSimple);
+
+            for (int i = 0; i < contours.Size; i++)
             {
-                Emgu.CV.Util.VectorOfVectorOfPoint contours = new Emgu.CV.Util.VectorOfVectorOfPoint();
-                CvInvoke.FindContours(grayImage,
-                    contours,
-                    null,
-                    IsRetrieveExternal ? RetrType.External : RetrType.List,
-                    ChainApproxMethod.ChainApproxSimple);
+                Emgu.CV.Util.VectorOfPoint currentContour = new Emgu.CV.Util.VectorOfPoint(); //TODO move me in all!!!! projects
+                CvInvoke.ApproxPolyDP(contours[i],
+                    currentContour,
+                    CvInvoke.ArcLength(contours[i], true) * 0.015,
+                    true);
 
-                for (int i = 0; i < contours.Size; i++)
+                //Console.WriteLine("AREA {0}", currentContour.Area);
+
+                //if (currentContour.Area > MinContourArea) //only consider contours with area greater than 250
+                //{
+
+                //outputImage.FillConvexPoly(currentContour.GetConvexHull(ORIENTATION.CV_CLOCKWISE).ToArray(), Rgbs.White);
+
+                //var p1 = currentContour[0];
+                //currentContour.Push(p1);
+
+                //outputImage.Draw(currentContour.GetConvexHull(ORIENTATION.CV_CLOCKWISE), Rgbs.White, Rgbs.Yellow, 2, -1);
+
+                outputImage.Draw(currentContour.ToArray(), Rgbs.White, -1);
+
+                if (IsRenderContent)
                 {
-                    Emgu.CV.Util.VectorOfPoint currentContour = new Emgu.CV.Util.VectorOfPoint(); //TODO move me in all!!!! projects
-                    CvInvoke.ApproxPolyDP(contours[i],
-                        currentContour,
-                        CvInvoke.ArcLength(contours[i], true) * 0.015,
-                        true);
 
-                    //Console.WriteLine("AREA {0}", currentContour.Area);
+                    //debugImage.DrawPolyline(currentContour.GetMoments().);
 
-                    //if (currentContour.Area > MinContourArea) //only consider contours with area greater than 250
+                    //debugImage.FillConvexPoly(currentContour.GetConvexHull(ORIENTATION.CV_CLOCKWISE).ToArray(), Rgbs.White);
+
+                    //debugImage.Draw(currentContour.GetConvexHull(ORIENTATION.CV_CLOCKWISE), Rgbs.White, 4);
+
+                    //debugImage.FillConvexPoly(currentContour.ToArray(), Rgbs.Yellow);
+
+
+                    //debugImage.Draw(contours, Rgbs.Green, 3);
+
+                    //debugImage = debugImage.Dilate(1);
+
+                    //foreach (var defect in currentContour.GetConvexityDefacts(storage, ORIENTATION.CV_CLOCKWISE).ToArray())
                     //{
+                    //    debugImage.Draw(new LineSegment2D(defect.StartPoint, defect.EndPoint), Rgbs.Red, 3);
 
-                    //outputImage.FillConvexPoly(currentContour.GetConvexHull(ORIENTATION.CV_CLOCKWISE).ToArray(), Rgbs.White);
-
-                    //var p1 = currentContour[0];
-                    //currentContour.Push(p1);
-
-                    //outputImage.Draw(currentContour.GetConvexHull(ORIENTATION.CV_CLOCKWISE), Rgbs.White, Rgbs.Yellow, 2, -1);
-
-                    outputImage.Draw(currentContour.ToArray(), Rgbs.White, -1);
-
-                    if (IsRenderContent)
-                    {
-
-                        //debugImage.DrawPolyline(currentContour.GetMoments().);
-
-                        //debugImage.FillConvexPoly(currentContour.GetConvexHull(ORIENTATION.CV_CLOCKWISE).ToArray(), Rgbs.White);
-
-                        //debugImage.Draw(currentContour.GetConvexHull(ORIENTATION.CV_CLOCKWISE), Rgbs.White, 4);
-
-                        //debugImage.FillConvexPoly(currentContour.ToArray(), Rgbs.Yellow);
-
-
-                        //debugImage.Draw(contours, Rgbs.Green, 3);
-
-                        //debugImage = debugImage.Dilate(1);
-
-                        //foreach (var defect in currentContour.GetConvexityDefacts(storage, ORIENTATION.CV_CLOCKWISE).ToArray())
-                        //{
-                        //    debugImage.Draw(new LineSegment2D(defect.StartPoint, defect.EndPoint), Rgbs.Red, 3);
-
-                        //} 
-                    }
-                    //}
-                    //else
-                    //{
-                    //    if (IsRenderContent)
-                    //        debugImage.FillConvexPoly(currentContour.GetConvexHull(ORIENTATION.CV_CLOCKWISE).ToArray(), Rgbs.Red);
-                    //}
+                    //} 
                 }
+                //}
+                //else
+                //{
+                //    if (IsRenderContent)
+                //        debugImage.FillConvexPoly(currentContour.GetConvexHull(ORIENTATION.CV_CLOCKWISE).ToArray(), Rgbs.Red);
+                //}
             }
 
             ////Convert the image to grayscale and filter out the noise

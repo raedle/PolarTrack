@@ -859,53 +859,50 @@ namespace Huddle.Engine.Processor.OpenCv
 
             var maxRestoreDistance = (MaxRestoreDistance / 100.0) * diagonal;
 
-            using (var storage = new MemStorage())
+            var grayImageCopy = grayImage.Copy(); // copy because findcountours modifies original image
+
+            Emgu.CV.Util.VectorOfVectorOfPoint contours = new Emgu.CV.Util.VectorOfVectorOfPoint();
+
+            CvInvoke.FindContours(grayImageCopy,
+                contours,
+                null,
+                IsRetrieveExternal ? Emgu.CV.CvEnum.RetrType.External : Emgu.CV.CvEnum.RetrType.List,
+                Emgu.CV.CvEnum.ChainApproxMethod.ChainApproxSimple);
+
+            for (int i = 0; i < contours.Size; i++)
             {
-                var grayImageCopy = grayImage.Copy(); // copy because findcountours modifies original image
+                Emgu.CV.Util.VectorOfPoint lowApproxContour = new Emgu.CV.Util.VectorOfPoint();
+                CvInvoke.ApproxPolyDP(contours[i],
+                    lowApproxContour,
+                    CvInvoke.ArcLength(contours[i], true) * 0.015,
+                    true);
 
-                Emgu.CV.Util.VectorOfVectorOfPoint contours = new Emgu.CV.Util.VectorOfVectorOfPoint();
-
-                CvInvoke.FindContours(grayImageCopy,
-                    contours,
-                    null,
-                    IsRetrieveExternal ? Emgu.CV.CvEnum.RetrType.External : Emgu.CV.CvEnum.RetrType.List,
-                    Emgu.CV.CvEnum.ChainApproxMethod.ChainApproxSimple);
-
-                for (int i = 0; i < contours.Size; i++)
+                if (CvInvoke.ContourArea(lowApproxContour) > ((MinContourArea / 100.0) * pixels) && CvInvoke.ContourArea(lowApproxContour) < ((MaxContourArea / 100.0) * pixels)) //only consider contours with area greater than
                 {
-                    Emgu.CV.Util.VectorOfPoint lowApproxContour = new Emgu.CV.Util.VectorOfPoint();
+                    if (IsRenderContent && IsDrawAllContours)
+                        outputImage.Draw(lowApproxContour.ToArray(), Rgbs.BlueTorquoise);
+                    //outputImage.Draw(currentContour.GetConvexHull(ORIENTATION.CV_CLOCKWISE), Rgbs.BlueTorquoise, 2);
+
+                    // Continue with next contour if current contour is not a rectangle.
+                    List<DPoint> points;
+                    if (!IsPlausibleRectangle(lowApproxContour.ToArray(), MinAngle, MaxAngle, MinDetectRightAngles, out points)) continue;
+
+                    Emgu.CV.Util.VectorOfPoint highApproxContour = new Emgu.CV.Util.VectorOfPoint();
                     CvInvoke.ApproxPolyDP(contours[i],
-                        lowApproxContour,
-                        CvInvoke.ArcLength(contours[i], true) * 0.015,
+                        highApproxContour,
+                        CvInvoke.ArcLength(contours[i], true) * 0.05,
                         true);
+                    if (IsRenderContent && IsDrawAllContours)
+                        outputImage.Draw(highApproxContour.ToArray(), Rgbs.Yellow);
 
-                    if (CvInvoke.ContourArea(lowApproxContour) > ((MinContourArea / 100.0) * pixels) && CvInvoke.ContourArea(lowApproxContour) < ((MaxContourArea / 100.0) * pixels)) //only consider contours with area greater than
+                    var rectangle = CvInvoke.BoundingRectangle(highApproxContour);
+                    var minAreaRect = CvInvoke.MinAreaRect(highApproxContour);
+                    var polygon = new Polygon(points.ToArray(), imageWidth, imageHeight);
+                    var contourPoints = highApproxContour.ToArray();
+
+                    if (!UpdateObject(occlusionTracking, maxRestoreDistance, rectangle, minAreaRect, polygon, contourPoints, updateTime, objects))
                     {
-                        if (IsRenderContent && IsDrawAllContours)
-                            outputImage.Draw(lowApproxContour.ToArray(), Rgbs.BlueTorquoise);
-                        //outputImage.Draw(currentContour.GetConvexHull(ORIENTATION.CV_CLOCKWISE), Rgbs.BlueTorquoise, 2);
-
-                        // Continue with next contour if current contour is not a rectangle.
-                        List<DPoint> points;
-                        if (!IsPlausibleRectangle(lowApproxContour.ToArray(), MinAngle, MaxAngle, MinDetectRightAngles, out points)) continue;
-
-                        Emgu.CV.Util.VectorOfPoint highApproxContour = new Emgu.CV.Util.VectorOfPoint();
-                        CvInvoke.ApproxPolyDP(contours[i],
-                            highApproxContour,
-                            CvInvoke.ArcLength(contours[i], true) * 0.05,
-                            true);
-                        if (IsRenderContent && IsDrawAllContours)
-                            outputImage.Draw(highApproxContour.ToArray(), Rgbs.Yellow);
-
-                        var rectangle = CvInvoke.BoundingRectangle(highApproxContour);
-                        var minAreaRect = CvInvoke.MinAreaRect(highApproxContour);
-                        var polygon = new Polygon(points.ToArray(), imageWidth, imageHeight);
-                        var contourPoints = highApproxContour.ToArray();
-
-                        if (!UpdateObject(occlusionTracking, maxRestoreDistance, rectangle, minAreaRect, polygon, contourPoints, updateTime, objects))
-                        {
-                            newObjects.Add(CreateObject(NextId(), rectangle, minAreaRect, polygon, contourPoints, updateTime));
-                        }
+                        newObjects.Add(CreateObject(NextId(), rectangle, minAreaRect, polygon, contourPoints, updateTime));
                     }
                 }
             }

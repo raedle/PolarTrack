@@ -7,7 +7,7 @@ namespace Huddle.Engine.Filter.Impl
     {
         #region private properties
 
-        private Emgu.CV.Kalman _kalman;
+        private Emgu.CV.KalmanFilter _kalman;
         private SyntheticData _syntheticData;
 
         #endregion
@@ -31,10 +31,9 @@ namespace Huddle.Engine.Filter.Impl
         private void InitializeKalman(float strengthTMatrix, double processNoise, double measurementNoise)
         {
             _syntheticData = new SyntheticData(strengthTMatrix, processNoise, measurementNoise);
-            _kalman = new Emgu.CV.Kalman(_syntheticData.State, _syntheticData.TransitionMatrix, _syntheticData.MeasurementMatrix, _syntheticData.ProcessNoise, _syntheticData.MeasurementNoise)
-            {
-                ErrorCovariancePost = _syntheticData.ErrorCovariancePost
-            };
+            _kalman = new Emgu.CV.KalmanFilter((int)strengthTMatrix,
+                (int)measurementNoise,
+                (int)processNoise);
         }
 
         private PointF[] FilterPoint(PointF pt)
@@ -44,11 +43,13 @@ namespace Huddle.Engine.Filter.Impl
 
             var prediction = _kalman.Predict();
 
-            var predictPoint = new PointF(prediction[0, 0], prediction[1, 0]);
+            int[] a = {0, 0};
+            int[] b = {1, 0};
+            var predictPoint = new PointF(prediction.GetData(a)[0] , prediction.GetData(b)[0]);
 
             var estimated = _kalman.Correct(_syntheticData.GetMeasurement());
 
-            var estimatedPoint = new PointF(estimated[0, 0], estimated[1, 0]);
+            var estimatedPoint = new PointF(estimated.GetData(a)[0], estimated.GetData(b)[0]);
 
             var results = new PointF[2];
             results[0] = predictPoint;

@@ -10,7 +10,7 @@ namespace Huddle.Engine.Processor.OpenCv.Filter
 
         public Matrix<float> State;
         public Matrix<float> TransitionMatrix;
-        public Matrix<float> MeasurementMatrix;
+        public Mat MeasurementMatrix;
         public Matrix<float> ProcessNoise;
         public Matrix<float> MeasurementNoise;
         public Matrix<float> ErrorCovariancePost;
@@ -47,12 +47,11 @@ namespace Huddle.Engine.Processor.OpenCv.Filter
                         {0, 0, 1, 0},
                         {0, 0, 0, 1}
                     });
-            MeasurementMatrix = new Matrix<float>(new float[,]
-                    {
-                        { 1, 0, 0, 0 },
-                        { 0, 1, 0, 0 }
-                    });
-            MeasurementMatrix.SetIdentity();
+            float[,] data = { { 1, 0, 0, 0 }, { 0, 1, 0, 0 } };
+            MeasurementMatrix = new Mat(2, 3, Emgu.CV.CvEnum.DepthType.Cv32F, 1);
+            MeasurementMatrix.SetTo(data);
+            CvInvoke.SetIdentity(MeasurementMatrix, new MCvScalar());
+
             ProcessNoise = new Matrix<float>(4, 4);                             //Linked to the size of the transition matrix
             ProcessNoise.SetIdentity(new MCvScalar(newProcessNoise));           //The smaller the value the more resistance to noise 
             MeasurementNoise = new Matrix<float>(2, 2);                         //Fixed accordiong to input data 
@@ -65,11 +64,17 @@ namespace Huddle.Engine.Processor.OpenCv.Filter
 
         #region public methods
 
-        public Matrix<float> GetMeasurement()
+        public Mat GetMeasurement()
         {
-            var measurementNoise = new Matrix<float>(2, 1);
-            measurementNoise.SetRandNormal(new MCvScalar(), new MCvScalar(Math.Sqrt(measurementNoise[0, 0])));
-            return MeasurementMatrix * State + measurementNoise;
+            int[] c = {0, 0};
+            var t = new Matrix<float>(2, 1);
+            var measurementNoise = new Mat(2,1,Emgu.CV.CvEnum.DepthType.Cv32F,1);
+            CvInvoke.Randn(measurementNoise,new MCvScalar(),new MCvScalar(Math.Sqrt(measurementNoise.GetData(c)[0])));
+
+            Mat ret = new Mat();
+            CvInvoke.Multiply(MeasurementMatrix, State, ret);
+            CvInvoke.Add(ret, measurementNoise, ret);
+            return ret;
         }
 
         public void GoToNextState()

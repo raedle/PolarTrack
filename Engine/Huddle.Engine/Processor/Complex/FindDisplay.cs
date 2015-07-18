@@ -845,57 +845,54 @@ namespace Huddle.Engine.Processor.Complex
             floodFillImage.Dispose();
 
             EnclosingRectangle enclosingRectangle = null;
-            using (var storage = new MemStorage())
+            Emgu.CV.Util.VectorOfVectorOfPoint contours = new Emgu.CV.Util.VectorOfVectorOfPoint();
+            CvInvoke.FindContours(contourBinaryImage,
+                contours,
+                null,
+                RetrType.External,
+                ChainApproxMethod.ChainApproxSimple);
+
+            for (int i = 0; i < contours.Size; i++ )
             {
-                Emgu.CV.Util.VectorOfVectorOfPoint contours = new Emgu.CV.Util.VectorOfVectorOfPoint();
-                CvInvoke.FindContours(contourBinaryImage,
-                    contours,
-                    null,
-                    RetrType.External,
-                    ChainApproxMethod.ChainApproxSimple);
+                Emgu.CV.Util.VectorOfPoint contour = new Emgu.CV.Util.VectorOfPoint();
+                CvInvoke.ApproxPolyDP(contours[i],
+                    contour,
+                    CvInvoke.ArcLength(contours[i], true) * 0.05,
+                    true);
 
-                for (int i = 0; i < contours.Size; i++ )
+                var contourBounds = CvInvoke.BoundingRectangle(contour);
+                if (contourBounds.Width + 5 >= roi.Width || contourBounds.Height + 5 >= roi.Height)
+                    continue;
+
+                if (!EmguExtensions.IsRectangle(contour.ToArray(), 10.0)) continue;
+
+                var edges = GetRightAngleEdges(contour.ToArray());
+
+                if (IsRenderContent)
                 {
-                    Emgu.CV.Util.VectorOfPoint contour = new Emgu.CV.Util.VectorOfPoint();
-                    CvInvoke.ApproxPolyDP(contours[i],
-                        contour,
-                        CvInvoke.ArcLength(contours[i], true) * 0.05,
+                    var debugImageRoi = debugImage.ROI;
+                    debugImage.ROI = roi;
+
+                    Emgu.CV.Util.VectorOfPoint ret = null;
+                    CvInvoke.ConvexHull(contour,
+                        ret,
+                        true,
                         true);
+                    debugImage.Draw(ret.ToArray(), Rgbs.Cyan, 2);
+                    debugImage.Draw(CvInvoke.MinAreaRect(contour), Rgbs.Cyan, 2);
 
-                    var contourBounds = CvInvoke.BoundingRectangle(contour);
-                    if (contourBounds.Width + 5 >= roi.Width || contourBounds.Height + 5 >= roi.Height)
-                        continue;
+                    DrawEdge(ref debugImage, edges[0], Rgbs.Red);
+                    DrawEdge(ref debugImage, edges[1], Rgbs.Green);
 
-                    if (!EmguExtensions.IsRectangle(contour.ToArray(), 10.0)) continue;
-
-                    var edges = GetRightAngleEdges(contour.ToArray());
-
-                    if (IsRenderContent)
-                    {
-                        var debugImageRoi = debugImage.ROI;
-                        debugImage.ROI = roi;
-
-                        Emgu.CV.Util.VectorOfPoint ret = null;
-                        CvInvoke.ConvexHull(contour,
-                            ret,
-                            true,
-                            true);
-                        debugImage.Draw(ret.ToArray(), Rgbs.Cyan, 2);
-                        debugImage.Draw(CvInvoke.MinAreaRect(contour), Rgbs.Cyan, 2);
-
-                        DrawEdge(ref debugImage, edges[0], Rgbs.Red);
-                        DrawEdge(ref debugImage, edges[1], Rgbs.Green);
-
-                        debugImage.ROI = debugImageRoi;
-                    }
-
-                    enclosingRectangle = new EnclosingRectangle
-                    {
-                        Contour = contour.ToArray(),
-                        LongEdge = edges[0],
-                        ShortEdge = edges[1]
-                    };
+                    debugImage.ROI = debugImageRoi;
                 }
+
+                enclosingRectangle = new EnclosingRectangle
+                {
+                    Contour = contour.ToArray(),
+                    LongEdge = edges[0],
+                    ShortEdge = edges[1]
+                };
             }
 
             contourBinaryImage.Dispose();

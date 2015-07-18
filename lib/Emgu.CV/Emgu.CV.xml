@@ -453,6 +453,24 @@
             are transformed to 3D points with a very large Z value (currently set to 10000).</param>
             <param name="ddepth">The optional output array depth. If it is -1, the output image will have CV_32F depth. ddepth can also be set to CV_16S, CV_32S or CV_32F.</param>
         </member>
+        <member name="M:Emgu.CV.CvInvoke.ProjectPoints(Emgu.CV.Structure.MCvPoint3D32f[],Emgu.CV.IInputArray,Emgu.CV.IInputArray,Emgu.CV.IInputArray,Emgu.CV.IInputArray,Emgu.CV.IOutputArray,System.Double)">
+            <summary>
+            Computes projections of 3D points to the image plane given intrinsic and extrinsic camera parameters. 
+            Optionally, the function computes jacobians - matrices of partial derivatives of image points as functions of all the input parameters w.r.t. the particular parameters, intrinsic and/or extrinsic. 
+            The jacobians are used during the global optimization in cvCalibrateCamera2 and cvFindExtrinsicCameraParams2. 
+            The function itself is also used to compute back-projection error for with current intrinsic and extrinsic parameters. 
+            </summary>
+            <remarks>Note, that with intrinsic and/or extrinsic parameters set to special values, the function can be used to compute just extrinsic transformation or just intrinsic transformation (i.e. distortion of a sparse set of points) </remarks>
+            <param name="objectPoints">The array of object points.</param>
+            <param name="rvec">The rotation vector, 1x3 or 3x1</param>
+            <param name="tvec">The translation vector, 1x3 or 3x1</param>
+            <param name="cameraMatrix">The camera matrix (A) [fx 0 cx; 0 fy cy; 0 0 1]. </param>
+            <param name="distCoeffs">The vector of distortion coefficients, 4x1 or 1x4 [k1, k2, p1, p2]. If it is IntPtr.Zero, all distortion coefficients are considered 0's</param>
+            <returns>The output array of image points, 2xN or Nx2, where N is the total number of points in the view</returns>
+            <param name="aspectRatio">Aspect ratio</param>
+            <param name="jacobian">Optional output 2Nx(10+&lt;numDistCoeffs&gt;) jacobian matrix of derivatives of image points with respect to components of the rotation vector, translation vector, focal lengths, coordinates of the principal point and the distortion coefficients. In the old interface different components of the jacobian are returned via different output parameters.</param>
+            <returns>The array of image points which is the projection of <paramref name="objectPoints"/></returns>
+        </member>
         <member name="M:Emgu.CV.CvInvoke.ProjectPoints(Emgu.CV.IInputArray,Emgu.CV.IInputArray,Emgu.CV.IInputArray,Emgu.CV.IInputArray,Emgu.CV.IInputArray,Emgu.CV.IOutputArray,Emgu.CV.IOutputArray,System.Double)">
             <summary>
             Computes projections of 3D points to the image plane given intrinsic and extrinsic camera parameters. Optionally, the function computes jacobians - matrices of partial derivatives of image points as functions of all the input parameters w.r.t. the particular parameters, intrinsic and/or extrinsic. The jacobians are used during the global optimization in cvCalibrateCamera2 and cvFindExtrinsicCameraParams2. The function itself is also used to compute back-projection error for with current intrinsic and extrinsic parameters.
@@ -466,6 +484,20 @@
             <param name="imagePoints">The output array of image points, 2xN or Nx2, where N is the total number of points in the view</param>
             <param name="aspectRatio">Aspect ratio</param>
             <param name="jacobian">Optional output 2Nx(10+&lt;numDistCoeffs&gt;) jacobian matrix of derivatives of image points with respect to components of the rotation vector, translation vector, focal lengths, coordinates of the principal point and the distortion coefficients. In the old interface different components of the jacobian are returned via different output parameters.</param>
+        </member>
+        <member name="M:Emgu.CV.CvInvoke.CalibrateCamera(Emgu.CV.Structure.MCvPoint3D32f[][],System.Drawing.PointF[][],System.Drawing.Size,Emgu.CV.IInputOutputArray,Emgu.CV.IInputOutputArray,Emgu.CV.CvEnum.CalibType,Emgu.CV.Structure.MCvTermCriteria,Emgu.CV.Mat[]@,Emgu.CV.Mat[]@)">
+            <summary>
+            Estimates intrinsic camera parameters and extrinsic parameters for each of the views
+            </summary>
+            <param name="objectPoints">The 3D location of the object points. The first index is the index of image, second index is the index of the point</param>
+            <param name="imagePoints">The 2D image location of the points. The first index is the index of the image, second index is the index of the point</param>
+            <param name="imageSize">The size of the image, used only to initialize intrinsic camera matrix</param>
+            <param name="rotationVectors">The output 3xM or Mx3 array of rotation vectors (compact representation of rotation matrices, see cvRodrigues2). </param>
+            <param name="translationVectors">The output 3xM or Mx3 array of translation vectors</param>/// <param name="calibrationType">cCalibration type</param>
+            <param name="termCriteria">The termination criteria</param>
+            <param name="cameraMatrix">The output camera matrix (A) [fx 0 cx; 0 fy cy; 0 0 1]. If CV_CALIB_USE_INTRINSIC_GUESS and/or CV_CALIB_FIX_ASPECT_RATION are specified, some or all of fx, fy, cx, cy must be initialized</param>
+            <param name="distortionCoeffs">The output 4x1 or 1x4 vector of distortion coefficients [k1, k2, p1, p2]</param>
+            <returns>The final reprojection error</returns>
         </member>
         <member name="M:Emgu.CV.CvInvoke.CalibrateCamera(Emgu.CV.IInputArray,Emgu.CV.IInputArray,System.Drawing.Size,Emgu.CV.IInputOutputArray,Emgu.CV.IInputOutputArray,Emgu.CV.IOutputArray,Emgu.CV.IOutputArray,Emgu.CV.CvEnum.CalibType,Emgu.CV.Structure.MCvTermCriteria)">
             <summary>
@@ -496,6 +528,20 @@
             <param name="principalPoint">The principal point in real-world units </param>
             <param name="aspectRatio">The pixel aspect ratio ~ fy/f</param>
         </member>
+        <member name="M:Emgu.CV.CvInvoke.SolvePnP(Emgu.CV.Structure.MCvPoint3D32f[],System.Drawing.PointF[],Emgu.CV.IInputArray,Emgu.CV.IInputArray,Emgu.CV.IOutputArray,Emgu.CV.IOutputArray,System.Boolean,Emgu.CV.CvEnum.SolvePnpMethod)">
+            <summary>
+            Estimates extrinsic camera parameters using known intrinsic parameters and extrinsic parameters for each view. The coordinates of 3D object points and their correspondent 2D projections must be specified. This function also minimizes back-projection error. 
+            </summary>
+            <param name="objectPoints">The array of object points</param>
+            <param name="imagePoints">The array of corresponding image points</param>
+            <param name="intrinsicMatrix">The camera matrix (A) [fx 0 cx; 0 fy cy; 0 0 1]. </param>
+            <param name="distortionCoeffs">The vector of distortion coefficients, 4x1 or 1x4 [k1, k2, p1, p2]. If it is IntPtr.Zero, all distortion coefficients are considered 0's.</param>
+            <param name="rotationVector">The output 3x1 or 1x3 rotation vector (compact representation of a rotation matrix, see cvRodrigues2). </param>
+            <param name="translationVector">The output 3x1 or 1x3 translation vector</param>
+            <param name="useExtrinsicGuess">Use the input rotation and translation parameters as a guess</param>
+            <param name="method">Method for solving a PnP problem</param>
+            <returns>The extrinsic parameters</returns>
+        </member>
         <member name="M:Emgu.CV.CvInvoke.SolvePnP(Emgu.CV.IInputArray,Emgu.CV.IInputArray,Emgu.CV.IInputArray,Emgu.CV.IInputArray,Emgu.CV.IOutputArray,Emgu.CV.IOutputArray,System.Boolean,Emgu.CV.CvEnum.SolvePnpMethod)">
             <summary>
             Estimates extrinsic camera parameters using known intrinsic parameters and extrinsic parameters for each view. The coordinates of 3D object points and their correspondent 2D projections must be specified. This function also minimizes back-projection error
@@ -525,6 +571,27 @@
             <param name="minInliersCount">Number of inliers. If the algorithm at some stage finds more inliers than minInliersCount, it finishes.</param>
             <param name="inliers">Output vector that contains indices of inliers in objectPoints and imagePoints .</param>
             <param name="flags">Method for solving a PnP problem </param>
+        </member>
+        <member name="M:Emgu.CV.CvInvoke.StereoCalibrate(Emgu.CV.Structure.MCvPoint3D32f[][],System.Drawing.PointF[][],System.Drawing.PointF[][],Emgu.CV.IInputOutputArray,Emgu.CV.IInputOutputArray,Emgu.CV.IInputOutputArray,Emgu.CV.IInputOutputArray,System.Drawing.Size,Emgu.CV.IOutputArray,Emgu.CV.IOutputArray,Emgu.CV.IOutputArray,Emgu.CV.IOutputArray,Emgu.CV.CvEnum.CalibType,Emgu.CV.Structure.MCvTermCriteria)">
+            <summary>
+            Estimates transformation between the 2 cameras making a stereo pair. If we have a stereo camera, where the relative position and orientatation of the 2 cameras is fixed, and if we computed poses of an object relative to the fist camera and to the second camera, (R1, T1) and (R2, T2), respectively (that can be done with cvFindExtrinsicCameraParams2), obviously, those poses will relate to each other, i.e. given (R1, T1) it should be possible to compute (R2, T2) - we only need to know the position and orientation of the 2nd camera relative to the 1st camera. That's what the described function does. It computes (R, T) such that:
+            R2=R*R1,
+            T2=R*T1 + T
+            </summary>
+            <param name="objectPoints">The 3D location of the object points. The first index is the index of image, second index is the index of the point</param>
+            <param name="imagePoints1">The 2D image location of the points for camera 1. The first index is the index of the image, second index is the index of the point</param>
+            <param name="imagePoints2">The 2D image location of the points for camera 2. The first index is the index of the image, second index is the index of the point</param>
+            <param name="cameraMatrix1">The input/output camera matrices [fxk 0 cxk; 0 fyk cyk; 0 0 1]. If CV_CALIB_USE_INTRINSIC_GUESS or CV_CALIB_FIX_ASPECT_RATIO are specified, some or all of the elements of the matrices must be initialized</param>
+            <param name="distCoeffs1">The input/output vectors of distortion coefficients for each camera, 4x1, 1x4, 5x1 or 1x5</param>
+            <param name="cameraMatrix2">The input/output camera matrices [fxk 0 cxk; 0 fyk cyk; 0 0 1]. If CV_CALIB_USE_INTRINSIC_GUESS or CV_CALIB_FIX_ASPECT_RATIO are specified, some or all of the elements of the matrices must be initialized</param>
+            <param name="distCoeffs2">The input/output vectors of distortion coefficients for each camera, 4x1, 1x4, 5x1 or 1x5</param>
+            <param name="imageSize">Size of the image, used only to initialize intrinsic camera matrix</param>
+            <param name="r">The rotation matrix between the 1st and the 2nd cameras' coordinate systems </param>
+            <param name="t">The translation vector between the cameras' coordinate systems</param>
+            <param name="e">The optional output essential matrix</param>
+            <param name="f">The optional output fundamental matrix </param>
+            <param name="termCrit">Termination criteria for the iterative optimization algorithm</param>
+            <param name="flags">The calibration flags</param>
         </member>
         <member name="M:Emgu.CV.CvInvoke.StereoCalibrate(Emgu.CV.IInputArray,Emgu.CV.IInputArray,Emgu.CV.IInputArray,Emgu.CV.IInputOutputArray,Emgu.CV.IInputOutputArray,Emgu.CV.IInputOutputArray,Emgu.CV.IInputOutputArray,System.Drawing.Size,Emgu.CV.IOutputArray,Emgu.CV.IOutputArray,Emgu.CV.IOutputArray,Emgu.CV.IOutputArray,Emgu.CV.CvEnum.CalibType,Emgu.CV.Structure.MCvTermCriteria)">
             <summary>
@@ -606,35 +673,6 @@
             <param name="corners">The array of corners detected</param>
             <param name="patternWasFound">Indicates whether the complete board was found (!=0) or not (=0). One may just pass the return value cvFindChessboardCorners here. </param>
         </member>
-        <member name="M:Emgu.CV.CvInvoke.cvCreatePOSITObject(System.Single[0:,0:],System.Int32)">
-            <summary>
-            Allocates memory for the object structure and computes the object inverse matrix. 
-            </summary>
-            <remarks>The preprocessed object data is stored in the structure CvPOSITObject, internal for OpenCV, which means that the user cannot directly access the structure data. The user may only create this structure and pass its pointer to the function. 
-            Object is defined as a set of points given in a coordinate system. The function cvPOSIT computes a vector that begins at a camera-related coordinate system center and ends at the points[0] of the object. 
-            Once the work with a given object is finished, the function cvReleasePOSITObject must be called to free memory</remarks>
-            <param name="points3D">A two dimensional array contains the points of the 3D object model, the second dimension must be 3. </param>
-            <param name="pointCount">Number of object points</param>
-            <returns>A pointer to the CvPOSITObject</returns>
-        </member>
-        <member name="M:Emgu.CV.CvInvoke.cvPOSIT(System.IntPtr,System.IntPtr,System.Double,Emgu.CV.Structure.MCvTermCriteria,System.IntPtr,System.IntPtr)">
-            <summary>
-            Implements POSIT algorithm. Image coordinates are given in a camera-related coordinate system. The focal length may be retrieved using camera calibration functions. At every iteration of the algorithm new perspective projection of estimated pose is computed. 
-            </summary>
-            <remarks>Difference norm between two projections is the maximal distance between corresponding points. </remarks>
-            <param name="positObject">Pointer to the object structure</param>
-            <param name="imagePoints">2D array to the object points projections on the 2D image plane, the second dimension must be 2.</param>
-            <param name="focalLength">Focal length of the camera used</param>
-            <param name="criteria">Termination criteria of the iterative POSIT algorithm. The parameter criteria.epsilon serves to stop the algorithm if the difference is small.</param>
-            <param name="rotationMatrix">A vector which contains the 9 elements of the 3x3 rotation matrix</param>
-            <param name="translationVector">Translation vector (3x1)</param>
-        </member>
-        <member name="M:Emgu.CV.CvInvoke.cvReleasePOSITObject(System.IntPtr@)">
-            <summary>
-            The function cvReleasePOSITObject releases memory previously allocated by the function cvCreatePOSITObject. 
-            </summary>
-            <param name="positObject">pointer to CvPOSIT structure</param>
-        </member>
         <member name="M:Emgu.CV.CvInvoke.TriangulatePoints(Emgu.CV.IInputArray,Emgu.CV.IInputArray,Emgu.CV.IInputArray,Emgu.CV.IInputArray,Emgu.CV.IOutputArray)">
             <summary>
             Reconstructs points by triangulation.
@@ -689,7 +727,7 @@
             <param name="userData">Arbitrary pointer that is transparently passed to the error handler.</param>
             <returns></returns>
         </member>
-        <member name="M:Emgu.CV.CvInvoke.cvRedirectError(Emgu.CV.CvInvoke.CvErrorCallback,System.IntPtr,System.IntPtr)">
+        <member name="M:Emgu.CV.CvInvoke.RedirectError(Emgu.CV.CvInvoke.CvErrorCallback,System.IntPtr,System.IntPtr)">
             <summary>
             Sets a new error handler that can be one of standard handlers or a custom handler that has the certain interface. The handler takes the same parameters as cvError function. If the handler returns non-zero value, the program is terminated, otherwise, it continues. The error handler may check the current error mode with cvGetErrMode to make a decision.
             </summary>
@@ -698,7 +736,7 @@
             <param name="prevUserdata">Pointer to the previously assigned user data pointer.</param>
             <returns></returns>
         </member>
-        <member name="M:Emgu.CV.CvInvoke.cvRedirectError(System.IntPtr,System.IntPtr,System.IntPtr)">
+        <member name="M:Emgu.CV.CvInvoke.RedirectError(System.IntPtr,System.IntPtr,System.IntPtr)">
             <summary>
             Sets a new error handler that can be one of standard handlers or a custom handler that has the certain interface. The handler takes the same parameters as cvError function. If the handler returns non-zero value, the program is terminated, otherwise, it continues. The error handler may check the current error mode with cvGetErrMode to make a decision.
             </summary>
@@ -707,157 +745,37 @@
             <param name="prevUserdata">Pointer to the previously assigned user data pointer.</param>
             <returns></returns>
         </member>
-        <member name="M:Emgu.CV.CvInvoke.cvSetErrMode(System.Int32)">
+        <member name="M:Emgu.CV.CvInvoke.SetErrMode(System.Int32)">
             <summary>
             Sets the specified error mode.
             </summary>
             <param name="errorMode">The error mode</param>
             <returns></returns>
         </member>
-        <member name="M:Emgu.CV.CvInvoke.cvGetErrMode">
+        <member name="M:Emgu.CV.CvInvoke.GetErrMode">
             <summary>
             Returns the current error mode
             </summary>
             <returns></returns>
         </member>
-        <member name="M:Emgu.CV.CvInvoke.cvGetErrStatus">
+        <member name="M:Emgu.CV.CvInvoke.GetErrStatus">
             <summary>
             Returns the current error status - the value set with the last cvSetErrStatus call. Note, that in Leaf mode the program terminates immediately after error occurred, so to always get control after the function call, one should call cvSetErrMode and set Parent or Silent error mode.
             </summary>
             <returns>the current error status</returns>
         </member>
-        <member name="M:Emgu.CV.CvInvoke.cvSetErrStatus(Emgu.CV.CvEnum.ErrorCodes)">
+        <member name="M:Emgu.CV.CvInvoke.SetErrStatus(Emgu.CV.CvEnum.ErrorCodes)">
             <summary>
             Sets the error status to the specified value. Mostly, the function is used to reset the error status (set to it CV_StsOk) to recover after error. In other cases it is more natural to call cvError or CV_ERROR.
             </summary>
             <param name="code">The error status.</param>
         </member>
-        <member name="M:Emgu.CV.CvInvoke.cvCreateSeq(System.Int32,System.Int32,System.Int32,System.IntPtr)">
+        <member name="M:Emgu.CV.CvInvoke.ErrorStr(System.Int32)">
             <summary>
-            Creates a sequence and returns the pointer to it. The function allocates the sequence header in the storage block as one continuous chunk and sets the structure fields flags, elem_size, header_size and storage to passed values, sets delta_elems to the default value (that may be reassigned using cvSetSeqBlockSize function), and clears other header fields, including the space after the first sizeof(CvSeq) bytes
+            Returns the textual description for the specified error status code. In case of unknown status the function returns NULL pointer. 
             </summary>
-            <param name="seqFlags">Flags of the created sequence. If the sequence is not passed to any function working with a specific type of sequences, the sequence value may be set to 0, otherwise the appropriate type must be selected from the list of predefined sequence types</param>
-            <param name="headerSize">Size of the sequence header; must be greater or equal to sizeof(CvSeq). If a specific type or its extension is indicated, this type must fit the base type header</param>
-            <param name="elemSize">Size of the sequence elements in bytes. The size must be consistent with the sequence type. For example, for a sequence of points to be created, the element type CV_SEQ_ELTYPE_POINT should be specified and the parameter elem_size must be equal to sizeof(CvPoint). </param>
-            <param name="storage">Sequence location.</param>
-            <returns>A pointer to the sequence</returns>
-        </member>
-        <member name="M:Emgu.CV.CvInvoke.cvSeqPush(System.IntPtr,System.IntPtr)">
-            <summary>
-            Adds an element to the end of sequence and returns pointer to the allocated element. If the input element is NULL, the function simply allocates a space for one more element.
-            </summary>
-            <param name="seq">Sequence</param>
-            <param name="element">Added element</param>
-        </member>
-        <member name="M:Emgu.CV.CvInvoke.cvSeqPushFront(System.IntPtr,System.IntPtr)">
-            <summary>
-            Adds an element to the front of sequence and returns pointer to the allocated element. If the input element is NULL, the function simply allocates a space for one more element.
-            </summary>
-            <param name="seq">Sequence</param>
-            <param name="element">Added element</param>
-        </member>
-        <member name="M:Emgu.CV.CvInvoke.cvSeqPop(System.IntPtr,System.IntPtr)">
-            <summary>
-            Removes element from sequence end.
-            </summary>
-            <param name="seq">Sequence</param>
-            <param name="element">If the pointer is not zero, the function copies the removed element to this location</param>
-        </member>
-        <member name="M:Emgu.CV.CvInvoke.cvSeqPopFront(System.IntPtr,System.IntPtr)">
-            <summary>
-            Removes element from sequence beginning.
-            </summary>
-            <param name="seq">Sequence</param>
-            <param name="element">If the pointer is not zero, the function copies the removed element to this location</param>
-        </member>
-        <member name="M:Emgu.CV.CvInvoke.cvSeqRemove(System.IntPtr,System.Int32)">
-            <summary>
-            Removes element from sequence middle
-            </summary>
-            <param name="seq">Sequence</param>
-            <param name="index">Index of removed element</param>
-        </member>
-        <member name="M:Emgu.CV.CvInvoke.cvSeqInsert(System.IntPtr,System.Int32,System.IntPtr)">
-            <summary>
-            Shifts the sequence elements from the inserted position to the nearest end of the sequence and copies the element content there if the pointer is not IntPtr.Zero
-            </summary>
-            <param name="seq">Sequence</param>
-            <param name="beforeIndex">Index before which the element is inserted. Inserting before 0 (the minimal allowed value of the parameter) is equal to cvSeqPushFront and inserting before seq->total (the maximal allowed value of the parameter) is equal to cvSeqPush</param>
-            <param name="element">Inserted element</param>
-            <returns>Pointer to the inserted element</returns>
-        </member>
-        <member name="M:Emgu.CV.CvInvoke.cvSeqPushMulti(System.IntPtr,System.IntPtr,System.Int32,Emgu.CV.CvEnum.BackOrFront)">
-            <summary>
-            Adds several elements to either end of the sequence. The elements are added to the sequence in the same order as they are arranged in the input array but they can fall into different sequence blocks.
-            </summary>
-            <param name="seq">Sequence</param>
-            <param name="elements">Added elements</param>
-            <param name="count">Number of elements to push</param>
-            <param name="backOrFront">
-            If != 0, the elements are added to the beginning of sequence;
-            Otherwise the elements are added to the end of sequence </param>
-        </member>
-        <member name="M:Emgu.CV.CvInvoke.cvSeqPopMulti(System.IntPtr,System.IntPtr,System.Int32,Emgu.CV.CvEnum.BackOrFront)">
-            <summary>
-            Removes several elements from either end of the sequence. If the number of the elements to be removed exceeds the total number of elements in the sequence, the function removes as many elements as possible
-            </summary>
-            <param name="seq">Sequence</param>
-            <param name="elements">Removed elements</param>
-            <param name="count">Number of elements to remove</param>
-            <param name="backOrFront">
-            If != 0, the elements are added to the beginning of sequence;
-            Otherwise the elements are added to the end of sequence </param>
-        </member>
-        <member name="M:Emgu.CV.CvInvoke.cvChangeSeqBlock(Emgu.CV.Structure.MCvSeqReader@,System.Int32)">
-            <summary>
-            
-            </summary>
-            <param name="reader"></param>
-            <param name="direction"></param>
-        </member>
-        <member name="M:Emgu.CV.CvInvoke.cvNextSeqElem(System.Int32,Emgu.CV.Structure.MCvSeqReader@)">
-            <summary>
-            Move to the next element in the sequence
-            </summary>
-            <param name="elemSize">the size of the element</param>
-            <param name="reader">the sequence reader</param>
-        </member>
-        <member name="M:Emgu.CV.CvInvoke.cvReadSeqElem``1(Emgu.CV.Structure.MCvSeqReader@)">
-            <summary>
-            forward reading the sequence reader
-            </summary>
-            <typeparam name="T">The type of structure to be read</typeparam>
-            <param name="reader">The sequence reader</param>
-            <returns>The read object</returns>
-        </member>
-        <member name="M:Emgu.CV.CvInvoke.cvIsSetElem(System.IntPtr)">
-            <summary>
-            Determined whether the specified node is occupied or not
-            </summary>
-            <param name="ptr">Pointer to the node</param>
-            <returns>true if the specified node is occupied</returns>
-        </member>
-        <member name="M:Emgu.CV.CvInvoke.cvStartReadSeq(System.IntPtr,Emgu.CV.Structure.MCvSeqReader@,System.Boolean)">
-            <summary>
-            Initializes the reader state
-            </summary>
-            <param name="seq">Sequence</param>
-            <param name="reader">Reader state; initialized by the function</param>
-            <param name="reverse">Determines the direction of the sequence traversal. If reverse is 0, the reader is positioned at the first sequence element, otherwise it is positioned at the last element.</param>
-        </member>
-        <member name="M:Emgu.CV.CvInvoke.cvGetSeqElem(System.IntPtr,System.Int32)">
-            <summary>
-            Finds the element with the given index in the sequence and returns the pointer to it. If the element is not found, the function returns 0. The function supports negative indices, where -1 stands for the last sequence element, -2 stands for the one before last, etc. If the sequence is most likely to consist of a single sequence block or the desired element is likely to be located in the first block, then the macro CV_GET_SEQ_ELEM( elemType, seq, index ) should be used, where the parameter elemType is the type of sequence elements ( CvPoint for example), the parameter seq is a sequence, and the parameter index is the index of the desired element. The macro checks first whether the desired element belongs to the first block of the sequence and returns it if it does, otherwise the macro calls the main function GetSeqElem. Negative indices always cause the cvGetSeqElem call. The function has O(1) time complexity assuming that number of blocks is much smaller than the number of elements.
-            </summary>
-            <param name="seq">Sequence</param>
-            <param name="index">Index of element</param>
-            <returns>the pointer to the element with the given index in the sequence</returns>
-        </member>
-        <member name="M:Emgu.CV.CvInvoke.cvClearSeq(System.IntPtr)">
-            <summary>
-            Removes all elements from the sequence. The function does not return the memory to the storage, but this memory is reused later when new elements are added to the sequence. This function time complexity is O(1). 
-            </summary>
-            <param name="seq">Sequence</param>
+            <param name="status">The error status</param>
+            <returns>the textual description for the specified error status code.</returns>
         </member>
         <member name="M:Emgu.CV.CvInvoke.cvReshape(System.IntPtr,System.IntPtr,System.Int32,System.Int32)">
             <summary>
@@ -1412,52 +1330,6 @@
             </summary>
             <param name="mat">Reference of the pointer to the array</param>
         </member>
-        <member name="M:Emgu.CV.CvInvoke.cvCreateMemStorage(System.Int32)">
-            <summary>
-            Creates a memory storage and returns pointer to it. Initially the storage is empty. All fields of the header, except the block_size, are set to 0.
-            </summary>
-            <param name="blockSize"></param>
-            <returns>Size of the storage blocks in bytes. If it is 0, the block size is set to default value - currently it is 64K. </returns>
-        </member>
-        <member name="M:Emgu.CV.CvInvoke.cvCreateChildMemStorage(System.IntPtr)">
-            <summary>
-            Creates a child memory storage that is similar to simple memory storage except for the differences in the memory allocation/deallocation mechanism. When a child storage needs a new block to add to the block list, it tries to get this block from the parent. The first unoccupied parent block available is taken and excluded from the parent block list. If no blocks are available, the parent either allocates a block or borrows one from its own parent, if any. In other words, the chain, or a more complex structure, of memory storages where every storage is a child/parent of another is possible. When a child storage is released or even cleared, it returns all blocks to the parent. In other aspects, the child storage is the same as the simple storage.
-            </summary>
-            <param name="parent">Parent memory storage</param>
-            <returns>ChildMemStorage</returns>
-        </member>
-        <member name="M:Emgu.CV.CvInvoke.cvClearMemStorage(System.IntPtr)">
-            <summary>
-            Resets the top (free space boundary) of the storage to the very beginning. This function does not deallocate any memory. If the storage has a parent, the function returns all blocks to the parent.
-            </summary>
-            <param name="storage">Memory storage</param>
-        </member>
-        <member name="M:Emgu.CV.CvInvoke.cvReleaseMemStorage(System.IntPtr@)">
-            <summary>
-            Deallocates all storage memory blocks or returns them to the parent, if any. Then it deallocates the storage header and clears the pointer to the storage. All children of the storage must be released before the parent is released.
-            </summary>
-            <param name="storage">Pointer to the released storage</param>
-        </member>
-        <member name="M:Emgu.CV.CvInvoke.cvSeqSlice(System.IntPtr,Emgu.CV.Structure.MCvSlice,System.IntPtr,System.Int32)">
-            <summary>
-            Creates a sequence that represents the specified slice of the input sequence. The new sequence either shares the elements with the original sequence or has own copy of the elements. So if one needs to process a part of sequence but the processing function does not have a slice parameter, the required sub-sequence may be extracted using this function.
-            </summary>
-            <param name="seq">Sequence</param>
-            <param name="slice">The part of the sequence to extract</param>
-            <param name="storage">The destination storage to keep the new sequence header and the copied data if any. If it is IntPtr.Zero, the function uses the storage containing the input sequence.</param>
-            <param name="copyData">The flag that indicates whether to copy the elements of the extracted slice (copy_data!=0) or not (copy_data=0)</param>
-            <returns>A pointer to CvSeq</returns>
-        </member>
-        <member name="M:Emgu.CV.CvInvoke.cvSeqSlice(System.IntPtr,Emgu.CV.Structure.MCvSlice,System.IntPtr,System.Boolean)">
-            <summary>
-            Creates a sequence that represents the specified slice of the input sequence. The new sequence either shares the elements with the original sequence or has own copy of the elements. So if one needs to process a part of sequence but the processing function does not have a slice parameter, the required sub-sequence may be extracted using this function.
-            </summary>
-            <param name="seq">Sequence</param>
-            <param name="slice">The part of the sequence to extract</param>
-            <param name="storage">The destination storage to keep the new sequence header and the copied data if any. If it is IntPtr.Zero, the function uses the storage containing the input sequence.</param>
-            <param name="copyData">The flag that indicates whether to copy the elements of the extracted slice (copyData == true) or not (copyData=false)</param>
-            <returns>A pointer to CvSeq</returns>
-        </member>
         <member name="M:Emgu.CV.CvInvoke.cvSetReal1D(System.IntPtr,System.Int32,System.Double)">
             <summary>
             Assign the new value to the particular element of single-channel array
@@ -1769,28 +1641,6 @@
             <param name="lineType">Line type</param>
             <param name="bottomLeftOrigin">When true, the image data origin is at the bottom-left corner. Otherwise, it is at the top-left corner.</param>
         </member>
-        <member name="M:Emgu.CV.CvInvoke.cvCvtSeqToArray(System.IntPtr,System.IntPtr,Emgu.CV.Structure.MCvSlice)">
-            <summary>
-            Copies the entire sequence or subsequence to the specified buffer and returns the pointer to the buffer
-            </summary>
-            <param name="seq">Sequence</param>
-            <param name="elements">Pointer to the destination array that must be large enough. It should be a pointer to data, not a matrix header</param>
-            <param name="slice">The sequence part to copy to the array</param>
-            <returns>the pointer to the buffer</returns>
-        </member>
-        <member name="M:Emgu.CV.CvInvoke.cvMakeSeqHeaderForArray(System.Int32,System.Int32,System.Int32,System.IntPtr,System.Int32,System.IntPtr,System.IntPtr)">
-            <summary>
-            Initializes sequence header for array. The sequence header as well as the sequence block are allocated by the user (for example, on stack). No data is copied by the function. The resultant sequence will consists of a single block and have IntPtr.Zero storage pointer, thus, it is possible to read its elements, but the attempts to add elements to the sequence will raise an error in most cases
-            </summary>
-            <param name="seqType">Type of the created sequence</param>
-            <param name="headerSize">Size of the header of the sequence. Parameter sequence must point to the structure of that size or greater size.</param>
-            <param name="elemSize">Size of the sequence element</param>
-            <param name="elements">Elements that will form a sequence</param>
-            <param name="total">Total number of elements in the sequence. The number of array elements must be equal to the value of this parameter</param>
-            <param name="seq">Pointer to the local variable that is used as the sequence header. </param>
-            <param name="block">Pointer to the local variable that is the header of the single sequence block. </param>
-            <returns>Pointer to the local variable that is used as the sequence header</returns>
-        </member>
         <member name="M:Emgu.CV.CvInvoke.MinMaxLoc(Emgu.CV.IInputArray,System.Double@,System.Double@,System.Drawing.Point@,System.Drawing.Point@,Emgu.CV.IInputArray)">
             <summary>
             Finds minimum and maximum element values and their positions. The extremums are searched over the whole array, selected ROI (in case of IplImage) or, if mask is not IntPtr.Zero, in the specified array region. If the array has more than one channel, it must be IplImage with COI set. In case if multi-dimensional arrays min_loc->x and max_loc->x will contain raw (linear) positions of the extremums
@@ -1869,19 +1719,13 @@
             <param name="idx2">The third zero-based component of the element index </param>
             <returns>the particular element of single-channel array</returns>
         </member>
-        <member name="M:Emgu.CV.CvInvoke.cvUseOptimized(System.Int32)">
+        <member name="M:Emgu.CV.CvInvoke.Randn(Emgu.CV.IInputOutputArray,Emgu.CV.Structure.MCvScalar,Emgu.CV.Structure.MCvScalar)">
             <summary>
-            Switches between the mode, where only pure C implementations from cxcore, OpenCV etc. are used, and the mode, where IPP and MKL functions are used if available. When cvUseOptimized(0) is called, all the optimized libraries are unloaded. The function may be useful for debugging, IPP&amp;MKL upgrade on the fly, online speed comparisons etc.  Note that by default the optimized plugins are loaded, so it is not necessary to call cvUseOptimized(1) in the beginning of the program (actually, it will only increase the startup time)
+            Fills the array with normally distributed random numbers.
             </summary>
-            <param name="optimize">1 to turn on optimization, 0 to turn off</param>
-            <returns>The number of optimized functions loaded</returns>
-        </member>
-        <member name="M:Emgu.CV.CvInvoke.cvUseOptimized(System.Boolean)">
-            <summary>
-            Switches between the mode, where only pure C implementations from cxcore, OpenCV etc. are used, and the mode, where IPP and MKL functions are used if available. When cvUseOptimized(0) is called, all the optimized libraries are unloaded. The function may be useful for debugging, IPP&amp;MKL upgrade on the fly, online speed comparisons etc.  Note that by default the optimized plugins are loaded, so it is not necessary to call cvUseOptimized(1) in the beginning of the program (actually, it will only increase the startup time)
-            </summary>
-            <param name="optimize">true to turn on optimization, false to turn off</param>
-            <returns>The number of optimized functions loaded</returns>
+            <param name="dst">Output array of random numbers; the array must be pre-allocated and have 1 to 4 channels.</param>
+            <param name="mean">Mean value (expectation) of the generated random numbers.</param>
+            <param name="stddev">Standard deviation of the generated random numbers; it can be either a vector (in which case a diagonal standard deviation matrix is assumed) or a square matrix.</param>
         </member>
         <member name="M:Emgu.CV.CvInvoke.Randn(Emgu.CV.IInputOutputArray,Emgu.CV.IInputArray,Emgu.CV.IInputArray)">
             <summary>
@@ -1891,7 +1735,7 @@
             <param name="mean">Mean value (expectation) of the generated random numbers.</param>
             <param name="stddev">Standard deviation of the generated random numbers; it can be either a vector (in which case a diagonal standard deviation matrix is assumed) or a square matrix.</param>
         </member>
-        <member name="M:Emgu.CV.CvInvoke.Randu(Emgu.CV.IInputOutputArray,Emgu.CV.IInputArray,Emgu.CV.IInputArray)">
+        <member name="M:Emgu.CV.CvInvoke.Randu(Emgu.CV.IInputOutputArray,Emgu.CV.Structure.MCvScalar,Emgu.CV.Structure.MCvScalar)">
             <summary>
             Generates a single uniformly-distributed random number or an array of random numbers.
             </summary>
@@ -1899,15 +1743,13 @@
             <param name="low">Inclusive lower boundary of the generated random numbers.</param>
             <param name="high">Exclusive upper boundary of the generated random numbers.</param>
         </member>
-        <member name="M:Emgu.CV.CvInvoke.cvDotProduct(System.IntPtr,System.IntPtr)">
+        <member name="M:Emgu.CV.CvInvoke.Randu(Emgu.CV.IInputOutputArray,Emgu.CV.IInputArray,Emgu.CV.IInputArray)">
             <summary>
-            Calculates and returns the Euclidean dot product of two arrays.
-            src1 dot src2 = sumI(src1(I)*src2(I))
-            In case of multiple channel arrays the results for all channels are accumulated. In particular, cvDotProduct(a,a), where a is a complex vector, will return ||a||2. The function can process multi-dimensional arrays, row by row, layer by layer and so on.
+            Generates a single uniformly-distributed random number or an array of random numbers.
             </summary>
-            <param name="src1">The first source array.</param>
-            <param name="src2">The second source array</param>
-            <returns>the Euclidean dot product of two arrays</returns>
+            <param name="dst">Output array of random numbers; the array must be pre-allocated.</param>
+            <param name="low">Inclusive lower boundary of the generated random numbers.</param>
+            <param name="high">Exclusive upper boundary of the generated random numbers.</param>
         </member>
         <member name="M:Emgu.CV.CvInvoke.Eigen(Emgu.CV.IInputArray,Emgu.CV.IOutputArray,Emgu.CV.IOutputArray)">
             <summary>
@@ -1930,14 +1772,6 @@
             <param name="normType">The normalization type</param>
             <param name="mask">The operation mask. Makes the function consider and normalize only certain array elements</param>
             <param name="dType">Optional depth type for the dst array</param>
-        </member>
-        <member name="M:Emgu.CV.CvInvoke.cvCrossProduct(System.IntPtr,System.IntPtr,System.IntPtr)">
-            <summary>
-            Calculates the cross product of two 3D vectors
-            </summary>
-            <param name="src1">The first source vector</param>
-            <param name="src2">The second source vector</param>
-            <param name="dst">The destination vect</param>
         </member>
         <member name="M:Emgu.CV.CvInvoke.Gemm(Emgu.CV.IInputArray,Emgu.CV.IInputArray,System.Double,Emgu.CV.IInputArray,System.Double,Emgu.CV.IOutputArray,Emgu.CV.CvEnum.GemmType)">
             <summary>
@@ -2033,7 +1867,7 @@
             <param name="method">Inversion method</param>
             <returns></returns>
         </member>
-        <member name="M:Emgu.CV.CvInvoke.cvSVD(System.IntPtr,System.IntPtr,System.IntPtr,System.IntPtr,Emgu.CV.CvEnum.SvdType)">
+        <member name="M:Emgu.CV.CvInvoke.SVDecomp(Emgu.CV.IInputArray,Emgu.CV.IOutputArray,Emgu.CV.IOutputArray,Emgu.CV.IOutputArray,Emgu.CV.CvEnum.SvdFlag)">
             <summary>
             Decomposes matrix A into a product of a diagonal matrix and two orthogonal matrices:
             A=U*W*VT
@@ -2046,11 +1880,21 @@
             3. least-squares solution of overdetermined linear systems. This and previous is done by cvSolve function with CV_SVD method 
             4. accurate calculation of different matrix characteristics such as rank (number of non-zero singular values), condition number (ratio of the largest singular value to the smallest one), determinant (absolute value of determinant is equal to the product of singular values). All the things listed in this item do not require calculation of U and V matrices. 
             </remarks>
-            <param name="a">Source MxN matrix</param>
+            <param name="src">Source MxN matrix</param>
             <param name="w">Resulting singular value matrix (MxN or NxN) or vector (Nx1). </param>
             <param name="u">Optional left orthogonal matrix (MxM or MxN). If CV_SVD_U_T is specified, the number of rows and columns in the sentence above should be swapped</param>
             <param name="v">Optional right orthogonal matrix (NxN)</param>
             <param name="flags">Operation flags</param>
+        </member>
+        <member name="M:Emgu.CV.CvInvoke.SVBackSubst(Emgu.CV.IInputArray,Emgu.CV.IInputArray,Emgu.CV.IInputArray,Emgu.CV.IInputArray,Emgu.CV.IOutputArray)">
+            <summary>
+            Performs a singular value back substitution.
+            </summary>
+            <param name="w">Singular values</param>
+            <param name="u">Left singular vectors</param>
+            <param name="vt">Transposed matrix of right singular vectors.</param>
+            <param name="rhs">Right-hand side of a linear system</param>
+            <param name="dst">Found solution of the system.</param>
         </member>
         <member name="M:Emgu.CV.CvInvoke.CalcCovarMatrix(Emgu.CV.IInputArray,Emgu.CV.IOutputArray,Emgu.CV.IInputOutputArray,Emgu.CV.CvEnum.CovarMethod,Emgu.CV.CvEnum.DepthType)">
             <summary>
@@ -2071,35 +1915,41 @@
             <param name="iconvar">The inverse covariation matrix</param>
             <returns>the Mahalanobis distance</returns>
         </member>
-        <member name="M:Emgu.CV.CvInvoke.cvCalcPCA(System.IntPtr,System.IntPtr,System.IntPtr,System.IntPtr,Emgu.CV.CvEnum.PcaType)">
+        <member name="M:Emgu.CV.CvInvoke.PCACompute(Emgu.CV.IInputArray,Emgu.CV.IInputOutputArray,Emgu.CV.IOutputArray,System.Int32)">
             <summary>
-            Performs PCA analysis of the vector set. First, it uses cvCalcCovarMatrix to compute covariation matrix and then it finds its eigenvalues and eigenvectors. The output number of eigenvalues/eigenvectors should be less than or equal to MIN(rows(data),cols(data)). 
+            Performs Principal Component Analysis of the supplied dataset.
             </summary>
-            <param name="data">The input data; each vector is either a single row (CV_PCA_DATA_AS_ROW) or a single column (CV_PCA_DATA_AS_COL). </param>
-            <param name="avg">The mean (average) vector, computed inside the function or provided by user</param>
-            <param name="eigenvalues">The output eigenvalues of covariation matrix. </param>
-            <param name="eigenvectors">The output eigenvectors of covariation matrix (i.e. principal components); one vector per row.</param>
-            <param name="flags"></param>
+            <param name="data">Input samples stored as the matrix rows or as the matrix columns.</param>
+            <param name="mean">Optional mean value; if the matrix is empty, the mean is computed from the data.</param>
+            <param name="eigenvectors">The eigenvectors.</param>
+            <param name="maxComponents">Maximum number of components that PCA should retain; by default, all the components are retained.</param>
         </member>
-        <member name="M:Emgu.CV.CvInvoke.cvProjectPCA(System.IntPtr,System.IntPtr,System.IntPtr,System.IntPtr)">
+        <member name="M:Emgu.CV.CvInvoke.PCACompute(Emgu.CV.IInputArray,Emgu.CV.IInputOutputArray,Emgu.CV.IOutputArray,System.Double)">
             <summary>
-            Projects vectors to the specified subspace
+            Performs Principal Component Analysis of the supplied dataset.
             </summary>
-            <param name="data">The input data. Each vector is either a single row or a single column.</param>
-            <param name="avg">
-            The mean (average) vector. If it is a single-row vector, it means that the input vectors are stored as rows of data;
-            Otherwise, it should be a single-column vector, then the vectors are stored as columns of data.
-            </param>
-            <param name="eigenvectors">
-            The eigenvectors (principle components). One vector per row.
-            </param>
-            <param name="result">
-            The output matrix of decomposition coefficients.
-            The number of rows must be the same as the number of vectors, the number of columns
-            must be less than or equal to the number of rows in eigenvectos.
-            That it is less, the input vectors are projected into subspace of the first cols(result)
-            principle components.
-            </param>
+            <param name="data">Input samples stored as the matrix rows or as the matrix columns.</param>
+            <param name="mean">Optional mean value; if the matrix is empty, the mean is computed from the data.</param>
+            <param name="eigenvectors">The eigenvectors.</param>
+            <param name="retainedVariance">Percentage of variance that PCA should retain. Using this parameter will let the PCA decided how many components to retain but it will always keep at least 2.</param>
+        </member>
+        <member name="M:Emgu.CV.CvInvoke.PCAProject(Emgu.CV.IInputArray,Emgu.CV.IInputArray,Emgu.CV.IInputArray,Emgu.CV.IOutputArray)">
+            <summary>
+            Projects vector(s) to the principal component subspace.
+            </summary>
+            <param name="data">Input vector(s); must have the same dimensionality and the same layout as the input data used at PCA phase</param>
+            <param name="mean">The mean.</param>
+            <param name="eigenvectors">The eigenvectors.</param>
+            <param name="result">The result.</param>
+        </member>
+        <member name="M:Emgu.CV.CvInvoke.PCABackProject(Emgu.CV.IInputArray,Emgu.CV.IInputArray,Emgu.CV.IInputArray,Emgu.CV.IOutputArray)">
+            <summary>
+            Reconstructs vectors from their PC projections.
+            </summary>
+            <param name="data">Coordinates of the vectors in the principal component subspace</param>
+            <param name="mean">The mean.</param>
+            <param name="eigenvectors">The eigenvectors.</param>
+            <param name="result">The result.</param>
         </member>
         <member name="M:Emgu.CV.CvInvoke.cvGetRawData(System.IntPtr,System.IntPtr@,System.Int32@,System.Drawing.Size@)">
             <summary>
@@ -2141,19 +1991,19 @@
             <param name="maxVal">The exclusive upper boundary of valid values range. It is used only if CHECK_RANGE is set.</param>
             <returns>Returns nonzero if the check succeeded, i.e. all elements are valid and within the range, and zero otherwise. In the latter case if CV_CHECK_QUIET flag is not set, the function raises runtime error.</returns>
         </member>
-        <member name="M:Emgu.CV.CvInvoke.cvGetNumThreads">
+        <member name="M:Emgu.CV.CvInvoke.GetNumThreads">
             <summary>
             Return the current number of threads that are used by parallelized (via OpenMP) OpenCV functions.
             </summary>
             <returns>the current number of threads that are used by parallelized (via OpenMP) OpenCV functions</returns>
         </member>
-        <member name="M:Emgu.CV.CvInvoke.cvSetNumThreads(System.Int32)">
+        <member name="M:Emgu.CV.CvInvoke.SetNumThreads(System.Int32)">
             <summary>
             Sets the number of threads that are used by parallelized OpenCV functions. 
             </summary>
             <param name="threadsCount">The number of threads that are used by parallelized OpenCV functions. When the argument is zero or negative, and at the beginning of the program, the number of threads is set to the number of processors in the system, as returned by the function omp_get_num_procs() from OpenMP runtime. </param>
         </member>
-        <member name="M:Emgu.CV.CvInvoke.cvGetThreadNum">
+        <member name="M:Emgu.CV.CvInvoke.GetThreadNum">
             <summary>
             Returns the index, from 0 to cvGetNumThreads()-1, of the thread that called the function. It is a wrapper for the function omp_get_thread_num() from OpenMP runtime. The retrieved index may be used to access local-thread data inside the parallelized code fragments. 
             </summary>
@@ -2170,37 +2020,6 @@
             <param name="src2">The second image to compare with</param>
             <param name="dst">dst(I) is set to 0xff (all '1'-bits) if the particular relation between the elements is true and 0 otherwise.</param>
             <param name="cmpOp">The comparison operator type</param>
-        </member>
-        <member name="M:Emgu.CV.CvInvoke.cvErrorStr(System.Int32)">
-            <summary>
-            Returns the textual description for the specified error status code. In case of unknown status the function returns NULL pointer. 
-            </summary>
-            <param name="status">The error status</param>
-            <returns>the textual description for the specified error status code.</returns>
-        </member>
-        <member name="M:Emgu.CV.CvInvoke.cvOpenFileStorage(System.String,System.IntPtr,Emgu.CV.CvEnum.StorageOp)">
-            <summary>
-            Opens file storage for reading or writing data. In the latter case a new file is created or existing file is rewritten. Type of the read of written file is determined by the filename extension: .xml for XML, and .yml or .yaml for YAML
-            </summary>
-            <param name="filename">Name of the file associated with the storage</param>
-            <param name="memStorage">Memory storage used for temporary data and for storing dynamic structures, such as CvSeq or CvGraph. If it is NULL, a temporary memory storage is created and used</param>
-            <param name="flags"></param>
-            <returns>Pointer to CvFileStorage structure</returns>
-        </member>
-        <member name="M:Emgu.CV.CvInvoke.cvReleaseFileStorage(System.IntPtr@)">
-            <summary>
-            Closes the file associated with the storage and releases all the temporary structures. It must be called after all I/O operations with the storage are finished
-            </summary>
-            <param name="fs">Reference to the pointer of the released file storage</param>
-        </member>
-        <member name="M:Emgu.CV.CvInvoke.cvGetFileNodeByName(System.IntPtr,System.IntPtr,System.String)">
-            <summary>
-            Finds a file node by name
-            </summary>
-            <param name="fs">File storage</param>
-            <param name="map">The parent map. If it is NULL, the function searches in all the top-level nodes (streams), starting from the first one. </param>
-            <param name="name">The file node name</param>
-            <returns>Pointer to the specific file node</returns>
         </member>
         <member name="M:Emgu.CV.CvInvoke.CvArrToMat(System.IntPtr,System.Boolean,System.Boolean,System.Int32)">
             <summary>
@@ -2480,7 +2299,7 @@
             <param name="buf">Output buffer resized to fit the compressed image.</param>
             <param name="parameters">The pointer to the array of intergers, which contains the parameter for encoding, use IntPtr.Zero for default</param>
         </member>
-        <member name="M:Emgu.CV.CvInvoke.cvSampleLine(System.IntPtr,System.Drawing.Point,System.Drawing.Point,System.IntPtr,Emgu.CV.CvEnum.Connectivity)">
+        <member name="M:Emgu.CV.CvInvoke.cvSampleLine(System.IntPtr,System.Drawing.Point@,System.Drawing.Point@,System.IntPtr,Emgu.CV.CvEnum.Connectivity)">
             <summary>
             Implements a particular case of application of line iterators. The function reads all the image points lying on the line between pt1 and pt2, including the ending points, and stores them into the buffer
             </summary>
@@ -2526,6 +2345,16 @@
             <param name="warpMethod">Warp method</param>
             <param name="borderMode">Pixel extrapolation method</param>
             <param name="borderValue">A value used to fill outliers</param>
+        </member>
+        <member name="M:Emgu.CV.CvInvoke.GetAffineTransform(System.Drawing.PointF[],System.Drawing.PointF[])">
+            <summary>
+            Calculates the matrix of an affine transform such that:
+            (x'_i,y'_i)^T=map_matrix (x_i,y_i,1)^T
+            where dst(i)=(x'_i,y'_i), src(i)=(x_i,y_i), i=0..2.
+            </summary>
+            <param name="src">Coordinates of 3 triangle vertices in the source image. If the array contains more than 3 points, only the first 3 will be used</param>
+            <param name="dest">Coordinates of the 3 corresponding triangle vertices in the destination image. If the array contains more than 3 points, only the first 3 will be used</param>
+            <returns>The 2x3 rotation matrix that defines the Affine transform</returns>
         </member>
         <member name="M:Emgu.CV.CvInvoke.GetAffineTransform(Emgu.CV.IInputArray,Emgu.CV.IOutputArray)">
             <summary>
@@ -2654,7 +2483,7 @@
             <param name="image">The input 8-bit 3-channel image</param>
             <param name="markers">The input/output Int32 depth single-channel image (map) of markers. </param>
         </member>
-        <member name="M:Emgu.CV.CvInvoke.cvMaxRect(System.Drawing.Rectangle@,System.Drawing.Rectangle@)">
+        <member name="M:Emgu.CV.CvInvoke.cvMaxRect(System.Drawing.Rectangle,System.Drawing.Rectangle)">
             <summary>
             Finds minimum area rectangle that contains both input rectangles inside
             </summary>
@@ -3044,14 +2873,6 @@
             <param name="srcDepthType">The source image depth type</param>
             <param name="tryDataSharing">Try to create Bitmap that shares the data with the image</param>
             <returns>The Bitmap</returns>
-        </member>
-        <member name="M:Emgu.CV.CvInvoke.cvEndFindContours(System.IntPtr@)">
-            <summary>
-            Finishes the scanning process and returns a pointer to the first contour on the
-            highest level.
-            </summary>
-            <param name="scanner">Reference to the contour scanner</param>
-            <returns>pointer to the first contour on the highest level</returns>
         </member>
         <member name="M:Emgu.CV.CvInvoke.CvtColor(Emgu.CV.IInputArray,Emgu.CV.IOutputArray,System.Type,System.Type)">
             <summary>
@@ -3498,6 +3319,21 @@
             <param name="shift">Number of fractional bits in the point coordinates.</param>
             <param name="tipLength">The length of the arrow tip in relation to the arrow length</param>
         </member>
+        <member name="M:Emgu.CV.CvInvoke.Polylines(Emgu.CV.IInputOutputArray,System.Drawing.Point[],System.Boolean,Emgu.CV.Structure.MCvScalar,System.Int32,Emgu.CV.CvEnum.LineType,System.Int32)">
+            <summary>
+            Draws a single or multiple polygonal curves
+            </summary>
+            <param name="img">Image</param>
+            <param name="pts">Array points</param>
+            <param name="isClosed">
+            Indicates whether the polylines must be drawn closed. 
+            If !=0, the function draws the line from the last vertex of every contour to the first vertex.
+            </param>
+            <param name="color">Polyline color</param>
+            <param name="thickness">Thickness of the polyline edges</param>
+            <param name="lineType">Type of the line segments, see cvLine description</param>
+            <param name="shift">Number of fractional bits in the vertex coordinates</param>
+        </member>
         <member name="M:Emgu.CV.CvInvoke.Polylines(Emgu.CV.IInputOutputArray,Emgu.CV.IInputArray,System.Boolean,Emgu.CV.Structure.MCvScalar,System.Int32,Emgu.CV.CvEnum.LineType,System.Int32)">
             <summary>
             Draws a single or multiple polygonal curves
@@ -3718,39 +3554,6 @@
             <param name="duration">Maximal duration of motion track in milliseconds, the same as in cvUpdateMotionHistory</param>
             <returns>The angle</returns>
         </member>
-        <member name="M:Emgu.CV.CvInvoke.cvCreateKalman(System.Int32,System.Int32,System.Int32)">
-            <summary>
-            Allocates CvKalman and all its matrices and initializes them somehow. 
-            </summary>
-            <param name="dynamParams">dimensionality of the state vector</param>
-            <param name="measureParams">dimensionality of the measurement vector </param>
-            <param name="controlParams">dimensionality of the control vector </param>
-            <returns>Pointer to the created Kalman filter</returns>
-        </member>
-        <member name="M:Emgu.CV.CvInvoke.cvKalmanCorrect(Emgu.CV.Structure.MCvKalman@,System.IntPtr)">
-            <summary>
-            Adjusts stochastic model state on the basis of the given measurement of the model state.
-            The function stores adjusted state at kalman->state_post and returns it on output
-            </summary>
-            <param name="kalman">Pointer to the structure to be updated</param>
-            <param name="measurement">Pointer to the structure CvMat containing the measurement vector</param>
-            <returns>The function stores adjusted state at kalman->state_post and returns it on output</returns>
-        </member>
-        <member name="M:Emgu.CV.CvInvoke.cvKalmanPredict(Emgu.CV.Structure.MCvKalman@,System.IntPtr)">
-            <summary>
-            Estimates the subsequent stochastic model state by its current state and stores it at kalman->state_pre
-            The function returns the estimated state
-            </summary>
-            <param name="kalman">Kalman filter state</param>
-            <param name="control">Control vector (uk), should be NULL iff there is no external control (controlParams=0). </param>
-            <returns>the estimated state</returns>
-        </member>
-        <member name="M:Emgu.CV.CvInvoke.cvReleaseKalman(System.IntPtr@)">
-            <summary>
-            Releases the structure CvKalman and all underlying matrices
-            </summary>
-            <param name="kalman">reference of the pointer to the Kalman filter structure.</param>
-        </member>
         <member name="M:Emgu.CV.CvInvoke.CalcOpticalFlowPyrLK(Emgu.CV.IInputArray,Emgu.CV.IInputArray,System.Drawing.PointF[],System.Drawing.Size,System.Int32,Emgu.CV.Structure.MCvTermCriteria,System.Drawing.PointF[]@,System.Byte[]@,System.Single[]@,Emgu.CV.CvEnum.LKFlowFlag,System.Double)">
             <summary>
             Calculates optical flow for a sparse feature set using iterative Lucas-Kanade method in pyramids
@@ -3814,6 +3617,15 @@
             <param name="polyN">Size of the pixel neighborhood used to find polynomial expansion in each pixel. The larger values mean that the image will be approximated with smoother surfaces, yielding more robust algorithm and more blurred motion field. Typically, poly n=5 or 7</param>
             <param name="polySigma">Standard deviation of the Gaussian that is used to smooth derivatives that are used as a basis for the polynomial expansion. For poly n=5 you can set poly sigma=1.1, for poly n=7 a good value would be poly sigma=1.5</param>
             <param name="flags">The operation flags</param>
+        </member>
+        <member name="M:Emgu.CV.CvInvoke.EstimateRigidTransform(System.Drawing.PointF[],System.Drawing.PointF[],System.Boolean)">
+            <summary>
+            Estimate rigid transformation between 2 point sets.
+            </summary>
+            <param name="sourcePoints">The points from the source image</param>
+            <param name="destinationPoints">The corresponding points from the destination image</param>
+            <param name="fullAffine">Indicates if full affine should be performed</param>
+            <returns>If success, the 2x3 rotation matrix that defines the Affine transform. Otherwise null is returned.</returns>
         </member>
         <member name="M:Emgu.CV.CvInvoke.EstimateRigidTransform(Emgu.CV.IInputArray,Emgu.CV.IInputArray,System.Boolean)">
             <summary>
@@ -3887,6 +3699,15 @@
             <param name="writer">video writer structure.</param>
             <param name="image">the written frame</param>
             <returns>True on success, false otherwise</returns>
+        </member>
+        <member name="P:Emgu.CV.CvInvoke.UseOptimized">
+            <summary>
+            Enables or disables the optimized code.
+            </summary>
+            <value>
+              <c>true</c> if [use optimized]; otherwise, <c>false</c>.
+            </value>
+            <remarks>The function can be used to dynamically turn on and off optimized code (code that uses SSE2, AVX, and other instructions on the platforms that support it). It sets a global flag that is further checked by OpenCV functions. Since the flag is not checked in the inner OpenCV loops, it is only safe to call the function on the very top level in your application where you can be sure that no other OpenCV function is currently executed.</remarks>
         </member>
         <member name="P:Emgu.CV.CvInvoke.HaveOpenCL">
             <summary>
@@ -4139,7 +3960,7 @@
         </member>
         <member name="M:Emgu.CV.Quaternions.GetEuler(System.Double@,System.Double@,System.Double@)">
             <summary>
-            Get the equaivalent euler angle
+            Get the equivalent euler angle
             </summary>
             <param name="x">Rotation around x-axis (roll) in radian</param>
             <param name="y">Rotation around y-axis (pitch) in radian</param>
@@ -4153,7 +3974,7 @@
         </member>
         <member name="M:Emgu.CV.Quaternions.RotatePoints(Emgu.CV.Matrix{System.Double},Emgu.CV.Matrix{System.Double})">
             <summary>
-            Rotate the points in <paramref name="pointsSrc"/> and save the result in <paramref name="pointsDst"/>. Inplace operation is supported (<paramref name="pointsSrc"/> == <paramref name="pointsDst"/>).
+            Rotate the points in <paramref name="pointsSrc"/> and save the result in <paramref name="pointsDst"/>. In-place operation is supported (<paramref name="pointsSrc"/> == <paramref name="pointsDst"/>).
             </summary>
             <param name="pointsSrc">The points to be rotated</param>
             <param name="pointsDst">The result of the rotation, should be the same size as <paramref name="pointsSrc"/>, can be <paramref name="pointsSrc"/> as well for inplace rotation</param>
@@ -4233,7 +4054,7 @@
         </member>
         <member name="P:Emgu.CV.Quaternions.AxisAngle">
             <summary>
-            Get or set the equaivalent axis angle representation. (x,y,z) is the rotatation axis and |(x,y,z)| is the rotation angle in radians
+            Get or set the equivalent axis angle representation. (x,y,z) is the rotation axis and |(x,y,z)| is the rotation angle in radians
             </summary>
         </member>
         <member name="P:Emgu.CV.Quaternions.RotationAxis">
@@ -4391,12 +4212,30 @@
             <param name="type">Mat element type</param>
             <param name="channels">Number of channels</param>
         </member>
+        <member name="M:Emgu.CV.Mat.#ctor(System.Drawing.Size,Emgu.CV.CvEnum.DepthType,System.Int32)">
+            <summary>
+            Create a mat of the specific type.
+            </summary>
+            <param name="size">Size of the Mat</param>
+            <param name="type">Mat element type</param>
+            <param name="channels">Number of channels</param>
+        </member>
         <member name="M:Emgu.CV.Mat.#ctor(System.Int32,System.Int32,Emgu.CV.CvEnum.DepthType,System.Int32,System.IntPtr,System.Int32)">
             <summary>
             Create a Mat header from existing data
             </summary>
             <param name="rows">Number of rows in a 2D array.</param>
             <param name="cols">Number of columns in a 2D array.</param>
+            <param name="type">Mat element type</param>
+            <param name="channels">Number of channels</param>
+            <param name="data">Pointer to the user data. Matrix constructors that take data and step parameters do not allocate matrix data. Instead, they just initialize the matrix header that points to the specified data, which means that no data is copied. This operation is very efficient and can be used to process external data using OpenCV functions. The external data is not automatically deallocated, so you should take care of it.</param>
+            <param name="step">Number of bytes each matrix row occupies. The value should include the padding bytes at the end of each row, if any.</param>
+        </member>
+        <member name="M:Emgu.CV.Mat.#ctor(System.Drawing.Size,Emgu.CV.CvEnum.DepthType,System.Int32,System.IntPtr,System.Int32)">
+            <summary>
+            Create a Mat header from existing data
+            </summary>
+            <param name="size">Size of the Mat</param>
             <param name="type">Mat element type</param>
             <param name="channels">Number of channels</param>
             <param name="data">Pointer to the user data. Matrix constructors that take data and step parameters do not allocate matrix data. Instead, they just initialize the matrix header that points to the specified data, which means that no data is copied. This operation is very efficient and can be used to process external data using OpenCV functions. The external data is not automatically deallocated, so you should take care of it.</param>
@@ -4446,6 +4285,12 @@
             </summary>
             <param name="m">The input array to copy to</param>
             <param name="mask">Operation mask. Its non-zero elements indicate which matrix elements need to be copied.</param>
+        </member>
+        <member name="M:Emgu.CV.Mat.CopyTo(System.Array)">
+            <summary>
+            Copies the values of the Mat to <paramref name="data"/>.
+            </summary>
+            <param name="data">The data storage, must match the size of the Mat</param>
         </member>
         <member name="M:Emgu.CV.Mat.ConvertTo(Emgu.CV.IOutputArray,Emgu.CV.CvEnum.DepthType,System.Double,System.Double)">
             <summary>
@@ -4497,6 +4342,12 @@
             <typeparam name="TColor">The type of Color</typeparam>
             <typeparam name="TDepth">The type of Depth</typeparam>
             <returns>The image</returns>
+        </member>
+        <member name="M:Emgu.CV.Mat.SetTo(System.Array)">
+            <summary>
+            Copies the values of the <paramref name="data"/> to Mat.
+            </summary>
+            <param name="data">The data storage, must match the size of the Mat</param>
         </member>
         <member name="M:Emgu.CV.Mat.SetTo(Emgu.CV.Structure.MCvScalar,Emgu.CV.IInputArray)">
             <summary>
@@ -5702,13 +5553,6 @@
             <param name="minDistance">The minimum distance that an object is away from the camera</param>
             <returns>The maximum valid disparity</returns>
         </member>
-        <member name="M:Emgu.CV.KinectCapture.GetOpenNIContext">
-            <summary>
-            Get the unmanaged OpenNI Context from the capture.
-            </summary>
-            <returns>Pointer to the OpenNI context</returns>
-            <remarks>This function required the opencv_highgui module patched by EMGU CV, otherwise it will throw entry point not found exception.</remarks>
-        </member>
         <member name="T:Emgu.CV.KinectCapture.ImageGeneratorOutputMode">
             <summary>
             Camera output mode
@@ -5792,31 +5636,6 @@
         <member name="F:Emgu.CV.KinectCapture.DeviceType.Xtion">
             <summary>
             Asus xtion
-            </summary>
-        </member>
-        <member name="T:Emgu.CV.KinectCapture.ColorPoint">
-            <summary>
-            A point with Bgr color information
-            </summary>
-        </member>
-        <member name="F:Emgu.CV.KinectCapture.ColorPoint.Position">
-            <summary>
-            The position in meters
-            </summary>
-        </member>
-        <member name="F:Emgu.CV.KinectCapture.ColorPoint.Blue">
-            <summary>
-            The blue color
-            </summary>
-        </member>
-        <member name="F:Emgu.CV.KinectCapture.ColorPoint.Green">
-            <summary>
-            The green color
-            </summary>
-        </member>
-        <member name="F:Emgu.CV.KinectCapture.ColorPoint.Red">
-            <summary>
-            The red color
             </summary>
         </member>
         <member name="T:Emgu.CV.CascadeClassifier">
@@ -6496,264 +6315,6 @@
             Get or Set the equivalent MCvScalar value
             </summary>
         </member>
-        <member name="T:Emgu.CV.Contour`1">
-            <summary>
-            Wrapped class for Contour
-            </summary>
-            <typeparam name="T">The type of elements in the Contour, either PointF or Point.</typeparam>
-        </member>
-        <member name="T:Emgu.CV.Seq`1">
-            <summary>
-             Wrapper to cvSeq of OpenCV. 
-            </summary>
-            <typeparam name="T">The type of elements in this sequence, must be a structure</typeparam>
-        </member>
-        <member name="F:Emgu.CV.Seq`1._ptr">
-            <summary>
-            The pointer to this sequence
-            </summary>
-        </member>
-        <member name="F:Emgu.CV.Seq`1._stor">
-            <summary>
-            The pointer to the storage used by this sequence
-            </summary>
-        </member>
-        <member name="F:Emgu.CV.Seq`1._sizeOfElement">
-            <summary>
-            The size of the elements in this sequence
-            </summary>
-        </member>
-        <member name="M:Emgu.CV.Seq`1.#ctor(System.Int32,Emgu.CV.MemStorage)">
-            <summary>
-            Create a sequence using the specific <paramref name="seqFlag"/> and <paramref name="storage"/>
-            </summary>
-            <param name="seqFlag">Flags of the created sequence. If the sequence is not passed to any function working with a specific type of sequences, the sequence value may be set to 0, otherwise the appropriate type must be selected from the list of predefined sequence types</param>
-            <param name="storage">the storage</param>
-        </member>
-        <member name="M:Emgu.CV.Seq`1.#ctor(Emgu.CV.CvEnum.SeqEltype,Emgu.CV.CvEnum.SeqKind,Emgu.CV.CvEnum.SeqFlag,Emgu.CV.MemStorage)">
-            <summary>
-            Create a contour of the specific kind, type and flag
-            </summary>
-            <param name="kind">The kind of the sequence</param>
-            <param name="eltype">The type of the sequence</param>
-            <param name="flag">The flag of the sequence</param>
-            <param name="stor">The storage</param>
-        </member>
-        <member name="M:Emgu.CV.Seq`1.#ctor(Emgu.CV.MemStorage)">
-            <summary>
-            Create a sequence using the specific <paramref name="storage"/>
-            </summary>
-            <param name="storage">the storage</param>
-        </member>
-        <member name="M:Emgu.CV.Seq`1.FixElementType(System.Int32)">
-            <summary>
-            Fix the input element type and return the correct one
-            </summary>
-            <param name="seqType">The input sequence type</param>
-            <returns>The best element type that match this sequence</returns>
-        </member>
-        <member name="M:Emgu.CV.Seq`1.#ctor(System.IntPtr,Emgu.CV.MemStorage)">
-            <summary>
-            Create a sequence from the unmanaged pointer and the storage used by the pointer
-            </summary>
-            <param name="seq">The unmanaged sequence</param>
-            <param name="storage">The memory storage this sequence utilize</param>
-        </member>
-        <member name="M:Emgu.CV.Seq`1.Push(`0)">
-            <summary>
-            Push the data to the sequence
-            </summary>
-            <param name="data">The data to be pushed into the sequence</param>
-        </member>
-        <member name="M:Emgu.CV.Seq`1.PushFront(`0)">
-            <summary>
-            Push the data to the sequence
-            </summary>
-            <param name="data">The data to be pushed into the sequence</param>
-        </member>
-        <member name="M:Emgu.CV.Seq`1.PushMulti(`0[],Emgu.CV.CvEnum.BackOrFront)">
-            <summary>
-            Push multiple elements to the sequence
-            </summary>
-            <param name="data">The data to push to the sequence</param>
-            <param name="backOrFront">Specify if pushing to the back or front</param>
-        </member>
-        <member name="M:Emgu.CV.Seq`1.Pop">
-            <summary>
-            Pop an element from the back of the sequence 
-            </summary>
-            <returns>An element from the back of the sequence</returns>
-        </member>
-        <member name="M:Emgu.CV.Seq`1.PopFront">
-            <summary>
-            Pop an element from the front of the sequence 
-            </summary>
-            <returns>An element from the front of the sequence</returns>
-        </member>
-        <member name="M:Emgu.CV.Seq`1.PopMulti(System.Int32,Emgu.CV.CvEnum.BackOrFront)">
-            <summary>
-            Pop multiple elements from the sequence
-            </summary>
-            <param name="count">The number of elements to be poped</param>
-            <param name="backOrFront">The location the pop operation is started</param>
-            <returns>The elements poped from the sequence</returns>
-        </member>
-        <member name="M:Emgu.CV.Seq`1.RemoveAt(System.Int32)">
-            <summary>
-            Removes element from sequence middle
-            </summary>
-            <param name="index">Index of removed element</param>
-        </member>
-        <member name="M:Emgu.CV.Seq`1.Insert(System.Int32,`0)">
-            <summary>
-            Inserts element in sequence middle
-            </summary>
-            <param name="index">Index before which the element is inserted. Inserting before 0 (the minimal allowed value of the parameter) is equal to cvSeqPushFront and inserting before seq->total (the maximal allowed value of the parameter) is equal to cvSeqPush</param>
-            <param name="data">Inserted element</param>
-        </member>
-        <member name="M:Emgu.CV.Seq`1.ToArray">
-            <summary>
-            Convert this sequence to array
-            </summary>
-            <returns>the array representation of this sequence</returns>
-        </member>
-        <member name="M:Emgu.CV.Seq`1.GetEnumerator">
-            <summary>
-            return an enumerator of the elements in the sequence
-            </summary>
-            <returns>an enumerator of the elements in the sequence</returns>
-        </member>
-        <member name="M:Emgu.CV.Seq`1.System#Collections#IEnumerable#GetEnumerator">
-            <summary>
-            return an enumerator of the elements in the sequence
-            </summary>
-            <returns>an enumerator of the elements in the sequence</returns>
-        </member>
-        <member name="M:Emgu.CV.Seq`1.Slice(Emgu.CV.Structure.MCvSlice,Emgu.CV.MemStorage,System.Boolean)">
-            <summary>
-            Creates a sequence that represents the specified slice of the input sequence. The new sequence either shares the elements with the original sequence or has own copy of the elements. So if one needs to process a part of sequence but the processing function does not have a slice parameter, the required sub-sequence may be extracted using this function
-            </summary>
-            <param name="slice">The part of the sequence to extract</param>
-            <param name="storage">The destination storage to keep the new sequence header and the copied data if any. If it is NULL, the function uses the storage containing the input sequence.</param>
-            <param name="copy_data">The flag that indicates whether to copy the elements of the extracted slice </param>
-            <returns>A sequence that represents the specified slice of the input sequence</returns>
-        </member>
-        <member name="M:Emgu.CV.Seq`1.Clear">
-            <summary>
-            Removes all elements from the sequence. The function does not return the memory to the storage, but this memory is reused later when new elements are added to the sequence. This function time complexity is O(1). 
-            </summary>
-        </member>
-        <member name="M:Emgu.CV.Seq`1.op_Implicit(Emgu.CV.Seq{`0})~System.IntPtr">
-            <summary>
-            Implicit operator for IntPtr
-            </summary>
-            <param name="sequence">The sequence</param>
-            <returns>The unmanaged pointer for this object</returns>
-        </member>
-        <member name="P:Emgu.CV.Seq`1.Ptr">
-            <summary>
-            Get the pointer of this sequence
-            </summary>
-        </member>
-        <member name="P:Emgu.CV.Seq`1.ElementType">
-            <summary>
-            Get or Set the element Type
-            </summary>
-        </member>
-        <member name="P:Emgu.CV.Seq`1.Storage">
-            <summary>
-            A Pointer to the storage used by this Seq
-            </summary>
-        </member>
-        <member name="P:Emgu.CV.Seq`1.MCvSeq">
-            <summary>
-            Get the MCvSeq structure
-            </summary>
-        </member>
-        <member name="P:Emgu.CV.Seq`1.Item(System.Int32)">
-            <summary>
-            Obtain the <paramref name="index"/> element in this sequence
-            </summary>
-            <param name="index">the index of the element</param>
-            <returns>the <paramref name="index"/> element in this sequence</returns>
-        </member>
-        <member name="P:Emgu.CV.Seq`1.HNext">
-            <summary>
-            Same as h_next pointer in CvSeq
-            </summary>
-        </member>
-        <member name="P:Emgu.CV.Seq`1.HPrev">
-            <summary>
-            Same as h_prev pointer in CvSeq
-            </summary>
-        </member>
-        <member name="P:Emgu.CV.Seq`1.VNext">
-            <summary>
-            Same as v_next pointer in CvSeq
-            </summary>
-        </member>
-        <member name="P:Emgu.CV.Seq`1.VPrev">
-            <summary>
-            Same as v_prev pointer in CvSeq
-            </summary>
-        </member>
-        <member name="P:Emgu.CV.Seq`1.Total">
-            <summary> Get the number of eelments in the sequence</summary>
-        </member>
-        <member name="M:Emgu.CV.Contour`1.#ctor(System.IntPtr,Emgu.CV.MemStorage)">
-            <summary>
-            Craete a contour from the specific IntPtr and storage
-            </summary>
-            <param name="ptr">The unmanged Pointer to the sequence</param>
-            <param name="storage">The storage used by this contour</param>
-        </member>
-        <member name="M:Emgu.CV.Contour`1.#ctor(System.Int32,Emgu.CV.MemStorage)">
-            <summary>
-            Create a contour using the specific <paramref name="seqFlag"/> and <paramref name="storage"/>
-            </summary>
-            <param name="seqFlag">Flags of the created contour. If the contour is not passed to any function working with a specific type of sequences, the sequence value may be set to 0, otherwise the appropriate type must be selected from the list of predefined contour types</param>
-            <param name="storage">The storage</param>
-        </member>
-        <member name="M:Emgu.CV.Contour`1.#ctor(Emgu.CV.CvEnum.SeqEltype,Emgu.CV.CvEnum.SeqKind,Emgu.CV.CvEnum.SeqFlag,Emgu.CV.MemStorage)">
-            <summary>
-            Create a contour of the specific kind, type and flag
-            </summary>
-            <param name="kind">The kind of the sequence</param>
-            <param name="eltype">The type of the sequence</param>
-            <param name="flag">The flag of the sequence</param>
-            <param name="stor">The storage</param>
-        </member>
-        <member name="M:Emgu.CV.Contour`1.#ctor(Emgu.CV.MemStorage)">
-            <summary>
-            Create a contour using the specific <paramref name="storage"/>
-            </summary>
-            <param name="storage">The storage to be used</param>
-        </member>
-        <member name="P:Emgu.CV.Contour`1.MCvContour">
-            <summary>
-            Return the MCvContour structure
-            </summary>
-        </member>
-        <member name="P:Emgu.CV.Contour`1.HNext">
-            <summary>
-            Same as h_next pointer in CvSeq
-            </summary>
-        </member>
-        <member name="P:Emgu.CV.Contour`1.HPrev">
-            <summary>
-            Same as h_prev pointer in CvSeq
-            </summary>
-        </member>
-        <member name="P:Emgu.CV.Contour`1.VNext">
-            <summary>
-            Same as v_next pointer in CvSeq
-            </summary>
-        </member>
-        <member name="P:Emgu.CV.Contour`1.VPrev">
-            <summary>
-            Same as v_prev pointer in CvSeq
-            </summary>
-        </member>
         <member name="T:Emgu.CV.ConvolutionKernelF">
             <summary>
             A convolution kernel 
@@ -7391,6 +6952,12 @@
             <returns>Destination back projection matrix of the sametype as the source matrices</returns>
             <typeparam name="TDepth">The type of depth of the matrix</typeparam>
         </member>
+        <member name="M:Emgu.CV.DenseHistogram.GetBinValues">
+            <summary>
+            Gets the bin values.
+            </summary>
+            <returns>The bin values</returns>
+        </member>
         <member name="P:Emgu.CV.DenseHistogram.BinDimension">
             <summary>
             Get the size of the bin dimensions
@@ -7401,7 +6968,7 @@
             Get the ranges of this histogram
             </summary>
         </member>
-        <member name="T:Emgu.CV.DenseOpticalFlow">
+        <member name="T:Emgu.CV.IDenseOpticalFlow">
             <summary>
             Dense Optical flow
             </summary>
@@ -7417,27 +6984,114 @@
             </summary>
             <returns>The pointer to the algorithm object</returns>
         </member>
-        <member name="M:Emgu.CV.DenseOpticalFlow.Calc(Emgu.CV.IInputArray,Emgu.CV.IInputArray,Emgu.CV.IInputOutputArray)">
+        <member name="P:Emgu.CV.IDenseOpticalFlow.DenseOpticalFlowPtr">
+            <summary>
+            Gets the dense optical flow pointer.
+            </summary>
+            <value>
+            The dense optical flow .
+            </value>
+        </member>
+        <member name="T:Emgu.CV.DenseOpticalFlowExtensions">
+            <summary>
+            Extension methods for IDenseOpticalFlow
+            </summary>
+        </member>
+        <member name="M:Emgu.CV.DenseOpticalFlowExtensions.Calc(Emgu.CV.IDenseOpticalFlow,Emgu.CV.IInputArray,Emgu.CV.IInputArray,Emgu.CV.IInputOutputArray)">
             <summary>
             Calculates an optical flow.
             </summary>
             <param name="i0">First 8-bit single-channel input image.</param>
             <param name="i1">Second input image of the same size and the same type as prev.</param>
             <param name="flow">Computed flow image that has the same size as prev and type CV_32FC2 </param>
+            <param name="opticalFlow">The dense optical flow object</param>
         </member>
-        <member name="M:Emgu.CV.DenseOpticalFlow.DisposeObject">
-            <summary>
-            Release the unmanaged object related to this dense optical flow
-            </summary>
-        </member>
-        <member name="T:Emgu.CV.OpticalFlowDualTVL1">
+        <member name="T:Emgu.CV.DualTVL1OpticalFlow">
             <summary>
             Dual TV L1 Optical Flow Algorithm.
             </summary>
         </member>
-        <member name="M:Emgu.CV.OpticalFlowDualTVL1.#ctor">
+        <member name="M:Emgu.CV.DualTVL1OpticalFlow.#ctor">
             <summary>
             Create Dual TV L1 Optical Flow.
+            </summary>
+        </member>
+        <member name="M:Emgu.CV.DualTVL1OpticalFlow.DisposeObject">
+            <summary>
+            Release the unmanaged resources
+            </summary>
+        </member>
+        <member name="P:Emgu.CV.DualTVL1OpticalFlow.DenseOpticalFlowPtr">
+            <summary>
+            Gets the dense optical flow pointer.
+            </summary>
+            <value>
+            The pointer to the dense optical flow object.
+            </value>
+        </member>
+        <member name="P:Emgu.CV.DualTVL1OpticalFlow.AlgorithmPtr">
+            <summary>
+            Return the pointer to the algorithm object
+            </summary>
+        </member>
+        <member name="P:Emgu.CV.DualTVL1OpticalFlow.Tau">
+            <summary>
+            Time step of the numerical scheme
+            </summary>
+        </member>
+        <member name="P:Emgu.CV.DualTVL1OpticalFlow.Lambda">
+            <summary>
+            Weight parameter for the data term, attachment parameter
+            </summary>
+        </member>
+        <member name="P:Emgu.CV.DualTVL1OpticalFlow.Theta">
+            <summary>
+            Weight parameter for (u - v)^2, tightness parameter
+            </summary>
+        </member>
+        <member name="P:Emgu.CV.DualTVL1OpticalFlow.Gamma">
+            <summary>
+            Coefficient for additional illumination variation term
+            </summary>
+        </member>
+        <member name="P:Emgu.CV.DualTVL1OpticalFlow.ScalesNumber">
+            <summary>
+            Number of scales used to create the pyramid of images
+            </summary>
+        </member>
+        <member name="P:Emgu.CV.DualTVL1OpticalFlow.WarpingsNumber">
+            <summary>
+            Number of warpings per scale
+            </summary>
+        </member>
+        <member name="P:Emgu.CV.DualTVL1OpticalFlow.Epsilon">
+            <summary>
+            Stopping criterion threshold used in the numerical scheme, which is a trade-off between precision and running time
+            </summary>
+        </member>
+        <member name="P:Emgu.CV.DualTVL1OpticalFlow.InnerIterations">
+            <summary>
+            Inner iterations (between outlier filtering) used in the numerical scheme
+            </summary>
+        </member>
+        <member name="P:Emgu.CV.DualTVL1OpticalFlow.OuterIterations">
+            <summary>
+            Outer iterations (number of inner loops) used in the numerical scheme
+            </summary>
+        </member>
+        <member name="P:Emgu.CV.DualTVL1OpticalFlow.UseInitialFlow">
+            <summary>
+            Use initial flow
+            </summary>
+        </member>
+        <member name="P:Emgu.CV.DualTVL1OpticalFlow.ScaleStep">
+            <summary>
+            Step between scales (less than 1)
+            </summary>
+        </member>
+        <member name="P:Emgu.CV.DualTVL1OpticalFlow.MedianFiltering">
+            <summary>
+            Median filter kernel size (1 = no filter) (3 or 5)
             </summary>
         </member>
         <member name="T:Emgu.CV.Features2D.AKAZE">
@@ -7918,7 +7572,7 @@
         </member>
         <member name="T:Emgu.CV.Features2D.MSERDetector">
             <summary>
-            Wrapped CvMSERParams structure
+            MSER detector
             </summary>
         </member>
         <member name="M:Emgu.CV.Features2D.MSERDetector.#ctor(System.Int32,System.Int32,System.Int32,System.Double,System.Double,System.Int32,System.Double,System.Double,System.Int32)">
@@ -7934,11 +7588,6 @@
             <param name="areaThreshold">The area threshold to cause re-initialize</param>
             <param name="minMargin">Ignore too small margin</param>
             <param name="edgeBlurSize">The aperture size for edge blur</param>
-        </member>
-        <member name="M:Emgu.CV.Features2D.MSERDetector.#ctor">
-            <summary>
-            Create the default MSER detector
-            </summary>
         </member>
         <member name="M:Emgu.CV.Features2D.MSERDetector.DisposeObject">
             <summary>
@@ -7962,6 +7611,7 @@
             <param name="WTK_A">How many random points are used to produce each cell of the descriptor (2, 3, 4 ...).</param>
             <param name="scoreType">Type of the score to use.</param>
             <param name="patchSize">Patch size.</param>
+            <param name="fastThreshold">FAST threshold</param>
         </member>
         <member name="M:Emgu.CV.Features2D.ORBDetector.DisposeObject">
             <summary>
@@ -8500,6 +8150,16 @@
             Release all the memory associated with this IndexParam
             </summary>
         </member>
+        <member name="T:Emgu.CV.Flann.HierarchicalClusteringIndexParams">
+            <summary>
+            Hierarchical Clustering Index Parameters
+            </summary>
+        </member>
+        <member name="M:Emgu.CV.Flann.HierarchicalClusteringIndexParams.#ctor(System.Int32,Emgu.CV.Flann.CenterInitType,System.Int32,System.Int32)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Emgu.CV.Flann.HierarchicalClusteringIndexParams"/>.
+            </summary>
+        </member>
         <member name="M:Emgu.CV.Flann.HierarchicalClusteringIndexParams.DisposeObject">
             <summary>
             Release all the memory associated with this IndexParam
@@ -8625,7 +8285,7 @@
             <param name="winSize">Detection window size. Must be aligned to block size and block stride. Must match the size of the training image. Use (64, 128) for default.</param>
             <param name="derivAperture"></param>
         </member>
-        <member name="M:Emgu.CV.HOGDescriptor.#ctor(Emgu.CV.Image{Emgu.CV.Structure.Bgr,System.Byte},System.Drawing.Size,System.Drawing.Size,System.Drawing.Size,System.Int32,System.Int32,System.Double,System.Double,System.Boolean)">
+        <member name="M:Emgu.CV.HOGDescriptor.#ctor(Emgu.CV.IInputArray,System.Drawing.Size,System.Drawing.Size,System.Drawing.Size,System.Int32,System.Int32,System.Double,System.Double,System.Boolean)">
             <summary>
             Create a new HOGDescriptor using the specific parameters.
             </summary>
@@ -8639,7 +8299,7 @@
             <param name="winSigma">Gaussian smoothing window parameter. Use -1 for default. </param>
             <param name="derivAperture">Use 1 for default.</param>
         </member>
-        <member name="M:Emgu.CV.HOGDescriptor.#ctor(Emgu.CV.Image{Emgu.CV.Structure.Bgr,System.Byte})">
+        <member name="M:Emgu.CV.HOGDescriptor.#ctor(Emgu.CV.IInputArray)">
             <summary>
             Create a new HogDescriptor using the specific template and default parameters.
             </summary>
@@ -10298,124 +9958,88 @@
             Pointer to the stereo matcher
             </summary>
         </member>
-        <member name="T:Emgu.CV.Kalman">
+        <member name="T:Emgu.CV.KalmanFilter">
             <summary>
-            Kalman Filter 
+            The class implements a standard Kalman filter. However, you can modify transitionMatrix, controlMatrix, and measurementMatrix to get
+            an extended Kalman filter functionality.
             </summary>
         </member>
-        <member name="M:Emgu.CV.Kalman.#ctor(Emgu.CV.Matrix{System.Single},Emgu.CV.Matrix{System.Single},Emgu.CV.Matrix{System.Single},Emgu.CV.Matrix{System.Single},Emgu.CV.Matrix{System.Single},Emgu.CV.Matrix{System.Single})">
+        <member name="M:Emgu.CV.KalmanFilter.#ctor(System.Int32,System.Int32,System.Int32,Emgu.CV.CvEnum.DepthType)">
             <summary>
-            Create a Kalman Filter using the specific values
+            Initializes a new instance of the <see cref="T:Emgu.CV.KalmanFilter"/> class.
             </summary>
-            <param name="initialState">The m x 1 matrix</param>
-            <param name="transitionMatrix">The m x m matrix (A) </param>
-            <param name="controlMatrix">The m x n matrix (B)</param>
-            <param name="measurementMatrix">The n x m matrix (H)</param>
-            <param name="processNoiseCovarianceMatrix">The n x n matrix (Q)</param>
-            <param name="measurementNoiseCovarianceMatrix">The m x m matrix (R)</param>
+            <param name="dynamParams">Dimensionality of the state.</param>
+            <param name="measureParams">Dimensionality of the measurement.</param>
+            <param name="controlParams">Dimensionality of the control vector.</param>
+            <param name="type">Type of the created matrices that should be Cv32F or Cv64F</param>
         </member>
-        <member name="M:Emgu.CV.Kalman.#ctor(Emgu.CV.Matrix{System.Single},Emgu.CV.Matrix{System.Single},Emgu.CV.Matrix{System.Single},Emgu.CV.Matrix{System.Single},Emgu.CV.Matrix{System.Single})">
+        <member name="M:Emgu.CV.KalmanFilter.Predict(Emgu.CV.Mat)">
             <summary>
-            Create a Kalman Filter using the specific values
+            Perform the predict operation using the option control input
             </summary>
-            <param name="initialState">The m x 1 matrix</param>
-            <param name="transitionMatrix">The m x m matrix (A) </param>
-            <param name="measurementMatrix">The n x m matrix (H)</param>
-            <param name="processNoiseCovarianceMatrix">The n x n matrix (Q)</param>
-            <param name="measurementNoiseCovarianceMatrix">The m x m matrix (R)</param>
+            <param name="control">The control.</param>
+            <returns>The predicted state. </returns>
         </member>
-        <member name="M:Emgu.CV.Kalman.#ctor(System.Int32,System.Int32,System.Int32)">
+        <member name="M:Emgu.CV.KalmanFilter.Correct(Emgu.CV.Mat)">
             <summary>
-            Allocates CvKalman and all its matrices and initializes them somehow. 
+            Updates the predicted state from the measurement.
             </summary>
-            <param name="dynamParams">dimensionality of the state vector</param>
-            <param name="measureParams">dimensionality of the measurement vector </param>
-            <param name="controlParams">dimensionality of the control vector </param>
+            <param name="measurement">The measured system parameters</param>
+            <returns></returns>
         </member>
-        <member name="M:Emgu.CV.Kalman.Predict(Emgu.CV.Matrix{System.Single})">
+        <member name="M:Emgu.CV.KalmanFilter.DisposeObject">
             <summary>
-            Estimates the subsequent stochastic model state by its current state and stores it at PredictedState
-            </summary>
-            <param name="control">the control vector</param>
-            <returns>The predicted state</returns>
-        </member>
-        <member name="M:Emgu.CV.Kalman.Correct(Emgu.CV.Matrix{System.Single})">
-            <summary>
-            Adjusts stochastic model state on the basis of the given measurement of the model state
-            </summary>
-            <remarks>The function stores adjusted state at kalman->state_post and returns it on output</remarks>
-            <param name="measurement">The measurement data</param>
-            <returns>The corrected state</returns>
-        </member>
-        <member name="M:Emgu.CV.Kalman.Predict">
-            <summary>
-            Estimates the subsequent stochastic model state by its current state
-            </summary>
-            <returns>The predicted state</returns>
-        </member>
-        <member name="M:Emgu.CV.Kalman.DisposeObject">
-            <summary>
-            Release unmanaged resource
+            Release the unmanaged resources
             </summary>
         </member>
-        <member name="M:Emgu.CV.Kalman.ReleaseManagedResources">
+        <member name="P:Emgu.CV.KalmanFilter.StatePre">
             <summary>
-            Release all the matrix associated to this object
+            Predicted state (x'(k)): x(k)=A*x(k-1)+B*u(k)
             </summary>
         </member>
-        <member name="P:Emgu.CV.Kalman.MCvKalman">
+        <member name="P:Emgu.CV.KalmanFilter.StatePost">
             <summary>
-            Get the MCvKalman structure
+            Corrected state (x(k)): x(k)=x'(k)+K(k)*(z(k)-H*x'(k))
             </summary>
         </member>
-        <member name="P:Emgu.CV.Kalman.PredictedState">
+        <member name="P:Emgu.CV.KalmanFilter.TransitionMatrix">
             <summary>
-            Get or Set the Predicted State
+            State transition matrix (A)
             </summary>
         </member>
-        <member name="P:Emgu.CV.Kalman.CorrectedState">
+        <member name="P:Emgu.CV.KalmanFilter.ControlMatrix">
             <summary>
-            Get or Set the Corrected State
+            Control matrix (B) (not used if there is no control)
             </summary>
         </member>
-        <member name="P:Emgu.CV.Kalman.MeasurementMatrix">
+        <member name="P:Emgu.CV.KalmanFilter.MeasurementMatrix">
             <summary>
-            Get or Set the measurement matrix
+            Measurement matrix (H)
             </summary>
         </member>
-        <member name="P:Emgu.CV.Kalman.TransitionMatrix">
+        <member name="P:Emgu.CV.KalmanFilter.ProcessNoiseCov">
             <summary>
-            Get or Set the state transition matrix
+            Process noise covariance matrix (Q)
             </summary>
         </member>
-        <member name="P:Emgu.CV.Kalman.ProcessNoiseCovariance">
+        <member name="P:Emgu.CV.KalmanFilter.MeasurementNoiseCov">
             <summary>
-            Get or Set the process noise covariance matrix
+            Measurement noise covariance matrix (R)
             </summary>
         </member>
-        <member name="P:Emgu.CV.Kalman.MeasurementNoiseCovariance">
+        <member name="P:Emgu.CV.KalmanFilter.ErrorCovPre">
             <summary>
-            Get or Set the measurement noise covariance matrix
+            priori error estimate covariance matrix (P'(k)): P'(k)=A*P(k-1)*At + Q)
             </summary>
         </member>
-        <member name="P:Emgu.CV.Kalman.ErrorCovariancePost">
+        <member name="P:Emgu.CV.KalmanFilter.Gain">
             <summary>
-            Get or Set the posteriori error estimate covariance matrix
+            Kalman gain matrix (K(k)): K(k)=P'(k)*Ht*inv(H*P'(k)*Ht+R)
             </summary>
         </member>
-        <member name="P:Emgu.CV.Kalman.ErrorCovariancePre">
+        <member name="P:Emgu.CV.KalmanFilter.ErrorCovPost">
             <summary>
-            Get or Set the prior error convariance matrix
-            </summary>
-        </member>
-        <member name="P:Emgu.CV.Kalman.ControlMatrix">
-            <summary>
-            Get or Set the control matrix 
-            </summary>
-        </member>
-        <member name="P:Emgu.CV.Kalman.Gain">
-            <summary>
-            Get or Set the Kalman Gain
+            posteriori error estimate covariance matrix (P(k)): P(k)=(I-K(k)*H)*P'(k)
             </summary>
         </member>
         <member name="T:Emgu.CV.LatentSvmDetector">
@@ -10442,6 +10066,22 @@
             <summary>
             Release the unmanaged memory associated with the LatenSvnDetector
             </summary>
+        </member>
+        <member name="P:Emgu.CV.LatentSvmDetector.ClassCount">
+            <summary>
+            Gets the class count.
+            </summary>
+            <value>
+            The class count.
+            </value>
+        </member>
+        <member name="P:Emgu.CV.LatentSvmDetector.ClassNames">
+            <summary>
+            Gets the class names.
+            </summary>
+            <value>
+            The class names.
+            </value>
         </member>
         <member name="T:Emgu.CV.Map`2">
             <summary>
@@ -10669,32 +10309,6 @@
             The MCvMatND structure
             </summary>
         </member>
-        <member name="T:Emgu.CV.MemStorage">
-            <summary>
-            A MemStorage is a wrapper to cvMemStorage of OpenCV. 
-            </summary>
-        </member>
-        <member name="M:Emgu.CV.MemStorage.#ctor">
-            <summary>
-            Create a OpenCV MemStorage
-            </summary>
-        </member>
-        <member name="M:Emgu.CV.MemStorage.Clear">
-            <summary>
-            Resets the top (free space boundary) of the storage to the very beginning. This function does not deallocate any memory. If the storage has a parent, the function returns all blocks to the parent
-            </summary>
-        </member>
-        <member name="M:Emgu.CV.MemStorage.CreateChildMemStorage">
-            <summary>
-            Creates a child memory storage that is similar to simple memory storage except for the differences in the memory allocation/deallocation mechanism. When a child storage needs a new block to add to the block list, it tries to get this block from the parent. The first unoccupied parent block available is taken and excluded from the parent block list. If no blocks are available, the parent either allocates a block or borrows one from its own parent, if any. In other words, the chain, or a more complex structure, of memory storages where every storage is a child/parent of another is possible. When a child storage is released or even cleared, it returns all blocks to the parent. In other aspects, the child storage is the same as the simple storage
-            </summary>
-            <returns>Child MemStorage</returns>
-        </member>
-        <member name="M:Emgu.CV.MemStorage.DisposeObject">
-            <summary>
-            Release the storage
-            </summary>
-        </member>
         <member name="T:Emgu.CV.MergeExposures">
             <summary>
             The base class algorithms that can merge exposure sequence to a single image.
@@ -10727,16 +10341,16 @@
             Create a motion history object
             </summary>
             <param name="mhiDuration">In second, the duration of motion history you wants to keep</param>
-            <param name="maxTimeDelta">In second. Any change happens between a time interval greater than this will not be considerred</param>
-            <param name="minTimeDelta">In second. Any change happens between a time interval smaller than this will not be considerred.</param>
+            <param name="maxTimeDelta">In second. Any change happens between a time interval greater than this will not be considered</param>
+            <param name="minTimeDelta">In second. Any change happens between a time interval smaller than this will not be considered.</param>
         </member>
         <member name="M:Emgu.CV.MotionHistory.#ctor(System.Double,System.Double,System.Double,System.DateTime)">
             <summary>
             Create a motion history object
             </summary>
             <param name="mhiDuration">In second, the duration of motion history you wants to keep</param>
-            <param name="maxTimeDelta">In second. Any change happens between a time interval larger than this will not be considerred</param>
-            <param name="minTimeDelta">In second. Any change happens between a time interval smaller than this will not be considerred.</param>
+            <param name="maxTimeDelta">In second. Any change happens between a time interval larger than this will not be considered</param>
+            <param name="minTimeDelta">In second. Any change happens between a time interval smaller than this will not be considered.</param>
             <param name="startTime">The start time of the motion history</param>
         </member>
         <member name="M:Emgu.CV.MotionHistory.Update(Emgu.CV.Mat)">
@@ -13979,29 +13593,31 @@
             All the input vectors are stored in a single matrix, as its columns
             </summary>
         </member>
-        <member name="T:Emgu.CV.CvEnum.SvdType">
+        <member name="T:Emgu.CV.CvEnum.SvdFlag">
             <summary>
             Type for cvSVD
             </summary>
         </member>
-        <member name="F:Emgu.CV.CvEnum.SvdType.Default">
+        <member name="F:Emgu.CV.CvEnum.SvdFlag.Default">
             <summary>
             The default type
             </summary>
         </member>
-        <member name="F:Emgu.CV.CvEnum.SvdType.ModifyA">
+        <member name="F:Emgu.CV.CvEnum.SvdFlag.ModifyA">
             <summary>
             enables modification of matrix src1 during the operation. It speeds up the processing. 
             </summary>
         </member>
-        <member name="F:Emgu.CV.CvEnum.SvdType.Ut">
+        <member name="F:Emgu.CV.CvEnum.SvdFlag.NoUV">
             <summary>
-            means that the transposed matrix U is returned. Specifying the flag speeds up the processing. 
+            indicates that only a vector of singular values `w` is to be processed, while u and vt will be set to empty matrices
             </summary>
         </member>
-        <member name="F:Emgu.CV.CvEnum.SvdType.Vt">
+        <member name="F:Emgu.CV.CvEnum.SvdFlag.FullUV">
             <summary>
-            means that the transposed matrix V is returned. Specifying the flag speeds up the processing. 
+            when the matrix is not square, by default the algorithm produces u and vt matrices of
+            sufficiently large size for the further A reconstruction; if, however, FULL_UV flag is
+            specified, u and vt will be full-size square orthogonal matrices.
             </summary>
         </member>
         <member name="T:Emgu.CV.CvEnum.LKFlowFlag">
@@ -14901,6 +14517,31 @@
         <member name="F:Emgu.CV.CvEnum.WhiteBalanceMethod.Grayworld">
             <summary>
             Grayworld
+            </summary>
+        </member>
+        <member name="T:Emgu.CV.Structure.ColorPoint">
+            <summary>
+            A point with Bgr color information
+            </summary>
+        </member>
+        <member name="F:Emgu.CV.Structure.ColorPoint.Position">
+            <summary>
+            The position in meters
+            </summary>
+        </member>
+        <member name="F:Emgu.CV.Structure.ColorPoint.Blue">
+            <summary>
+            The blue color
+            </summary>
+        </member>
+        <member name="F:Emgu.CV.Structure.ColorPoint.Green">
+            <summary>
+            The green color
+            </summary>
+        </member>
+        <member name="F:Emgu.CV.Structure.ColorPoint.Red">
+            <summary>
+            The red color
             </summary>
         </member>
         <member name="T:Emgu.CV.Structure.Cuboid">
@@ -17265,7 +16906,7 @@
             <param name="points">The collection of points</param>
             <returns>The bounding rectangle for the array of points</returns>
         </member>
-        <member name="M:Emgu.CV.PointCollection.ReprojectImageTo3D(Emgu.CV.Mat,Emgu.CV.IInputArray)">
+        <member name="M:Emgu.CV.PointCollection.ReprojectImageTo3D(Emgu.CV.IInputArray,Emgu.CV.IInputArray)">
             <summary>
             Re-project pixels on a 1-channel disparity map to array of 3D points.
             </summary>
@@ -17975,6 +17616,14 @@
             <param name="type">Mat element type</param>
             <param name="channels">Number of channels</param>
         </member>
+        <member name="M:Emgu.CV.UMat.#ctor(System.Drawing.Size,Emgu.CV.CvEnum.DepthType,System.Int32)">
+            <summary>
+            Create a umat of the specific type.
+            </summary>
+            <param name="size">Size of the UMat</param>
+            <param name="type">Mat element type</param>
+            <param name="channels">Number of channels</param>
+        </member>
         <member name="M:Emgu.CV.UMat.#ctor(Emgu.CV.UMat,System.Drawing.Rectangle)">
             <summary>
             Get the Umat header for the specific roi of the parent
@@ -17993,10 +17642,16 @@
         </member>
         <member name="M:Emgu.CV.UMat.CopyTo(Emgu.CV.IOutputArray,Emgu.CV.IInputArray)">
             <summary>
-            Copy the data in this mat to the other mat
+            Copy the data in this umat to the other mat
             </summary>
             <param name="mask">Operation mask. Its non-zero elements indicate which matrix elements need to be copied.</param>
             <param name="m">The input array to copy to</param>
+        </member>
+        <member name="M:Emgu.CV.UMat.CopyTo(System.Array)">
+            <summary>
+            Copies the values of the UMat to <paramref name="data"/>.
+            </summary>
+            <param name="data">The data storage, must match the size of the UMat</param>
         </member>
         <member name="M:Emgu.CV.UMat.SetTo(Emgu.CV.IInputArray,Emgu.CV.IInputArray)">
             <summary>
@@ -18011,6 +17666,12 @@
             </summary>
             <param name="value">Assigned scalar value.</param>
             <param name="mask">Operation mask of the same size as the umat.</param>
+        </member>
+        <member name="M:Emgu.CV.UMat.SetTo(System.Array)">
+            <summary>
+            Copies the values of the <paramref name="data"/> to Mat.
+            </summary>
+            <param name="data">The data storage, must match the size of the Mat</param>
         </member>
         <member name="M:Emgu.CV.UMat.ToMat(Emgu.CV.CvEnum.AccessType)">
             <summary>
@@ -18330,12 +17991,6 @@
             <param name="rTable">Lookup table for the R channel</param>
             <param name="aTable">Lookup table for the A channel</param>
         </member>
-        <member name="M:Emgu.CV.Util.CvToolbox.OptimizeCV(System.Boolean)">
-            <summary>
-            Enable or diable IPL optimization for opencv
-            </summary>
-            <param name="enable">true to enable optimization, false to disable</param>
-        </member>
         <member name="M:Emgu.CV.Util.CvToolbox.GetMatrixFromArrays``1(``0[][])">
             <summary>
             Convert arrays of data to matrix
@@ -18479,6 +18134,32 @@
             Extension methods to the IAlgorithm interface
             </summary>
         </member>
+        <member name="M:Emgu.CV.AlgorithmExtensions.Read(Emgu.CV.IAlgorithm,Emgu.CV.FileNode)">
+            <summary>
+            Reads algorithm parameters from a file storage.
+            </summary>
+            <param name="algorithm">The algorithm.</param>
+            <param name="node">The node from file storage.</param>
+        </member>
+        <member name="M:Emgu.CV.AlgorithmExtensions.Write(Emgu.CV.IAlgorithm,Emgu.CV.FileStorage)">
+            <summary>
+            Stores algorithm parameters in a file storage
+            </summary>
+            <param name="algorithm">The algorithm.</param>
+            <param name="storage">The storage.</param>
+        </member>
+        <member name="T:Emgu.CV.IInputArrayExtensions">
+            <summary>
+            Extension methods for IInputArrays
+            </summary>
+        </member>
+        <member name="M:Emgu.CV.IInputArrayExtensions.IsUmat(Emgu.CV.IInputArray)">
+            <summary>
+            Determines whether the specified input array is umat.
+            </summary>
+            <param name="arr">The array</param>
+            <returns>True if it is a umat</returns>
+        </member>
         <member name="T:Emgu.CV.InputArray">
             <summary>
             This is the proxy class for passing read-only input arrays into OpenCV functions.
@@ -18542,26 +18223,34 @@
             Release all the unmanaged memory associated with this InputArray
             </summary>
         </member>
+        <member name="P:Emgu.CV.InputArray.IsMat">
+            <summary>
+            True if the input array is a Mat
+            </summary>
+        </member>
+        <member name="P:Emgu.CV.InputArray.IsUMat">
+            <summary>
+            True if the input array is an UMat
+            </summary>
+        </member>
+        <member name="P:Emgu.CV.InputArray.IsMatVector">
+            <summary>
+            True if the input array is a vector of Mat
+            </summary>
+        </member>
+        <member name="P:Emgu.CV.InputArray.IsUMatVector">
+            <summary>
+            True if the input array is a vector of UMat
+            </summary>
+        </member>
+        <member name="P:Emgu.CV.InputArray.IsMatx">
+            <summary>
+            True if the input array is a Matx
+            </summary>
+        </member>
         <member name="T:Emgu.CV.InputOutputArray">
             <summary>
             This type is very similar to InputArray except that it is used for input/output function parameters.
-            </summary>
-        </member>
-        <member name="M:Emgu.CV.InputOutputArray.#ctor(System.IntPtr)">
-            <summary>
-            Create an InputOutputArray from an existing unmanaged inputOutputArray pointer
-            </summary>
-            <param name="inputOutputArrayPtr">The pointer to the existing inputOutputArray</param>
-        </member>
-        <member name="M:Emgu.CV.InputOutputArray.GetEmpty">
-            <summary>
-            Get an empty InputOutputArray
-            </summary>
-            <returns>An empty InputOutputArray</returns>
-        </member>
-        <member name="M:Emgu.CV.InputOutputArray.DisposeObject">
-            <summary>
-            Release all the memory associated with this InputOutputArry
             </summary>
         </member>
         <member name="T:Emgu.CV.OutputArray">
@@ -18584,6 +18273,38 @@
         <member name="M:Emgu.CV.OutputArray.DisposeObject">
             <summary>
             Release the unmanaged memory associated with this output array.
+            </summary>
+        </member>
+        <member name="P:Emgu.CV.OutputArray.FixedSize">
+            <summary>
+            True if the output array is fixed size
+            </summary>
+        </member>
+        <member name="P:Emgu.CV.OutputArray.FixedType">
+            <summary>
+            True if the output array is fixed type
+            </summary>
+        </member>
+        <member name="P:Emgu.CV.OutputArray.Needed">
+            <summary>
+            True if the output array is needed
+            </summary>
+        </member>
+        <member name="M:Emgu.CV.InputOutputArray.#ctor(System.IntPtr)">
+            <summary>
+            Create an InputOutputArray from an existing unmanaged inputOutputArray pointer
+            </summary>
+            <param name="inputOutputArrayPtr">The pointer to the existing inputOutputArray</param>
+        </member>
+        <member name="M:Emgu.CV.InputOutputArray.GetEmpty">
+            <summary>
+            Get an empty InputOutputArray
+            </summary>
+            <returns>An empty InputOutputArray</returns>
+        </member>
+        <member name="M:Emgu.CV.InputOutputArray.DisposeObject">
+            <summary>
+            Release all the memory associated with this InputOutputArry
             </summary>
         </member>
         <member name="T:Emgu.CV.ScalarArray">
@@ -18786,6 +18507,96 @@
             </summary>
         </member>
         <member name="P:Emgu.CV.Util.VectorOfByte.Item(System.Int32)">
+            <summary>
+            Get the item in the specific index
+            </summary>
+            <param name="index">The index</param>
+            <returns>The item in the specific index</returns>
+        </member>
+        <member name="T:Emgu.CV.Util.VectorOfColorPoint">
+            <summary>
+            Wrapped class of the C++ standard vector of ColorPoint.
+            </summary>
+        </member>
+        <member name="M:Emgu.CV.Util.VectorOfColorPoint.#ctor(System.Runtime.Serialization.SerializationInfo,System.Runtime.Serialization.StreamingContext)">
+            <summary>
+            Constructor used to deserialize runtime serialized object
+            </summary>
+            <param name="info">The serialization info</param>
+            <param name="context">The streaming context</param>
+        </member>
+        <member name="M:Emgu.CV.Util.VectorOfColorPoint.GetObjectData(System.Runtime.Serialization.SerializationInfo,System.Runtime.Serialization.StreamingContext)">
+            <summary>
+            A function used for runtime serialization of the object
+            </summary>
+            <param name="info">Serialization info</param>
+            <param name="context">Streaming context</param>
+        </member>
+        <member name="M:Emgu.CV.Util.VectorOfColorPoint.#ctor">
+            <summary>
+            Create an empty standard vector of ColorPoint
+            </summary>
+        </member>
+        <member name="M:Emgu.CV.Util.VectorOfColorPoint.#ctor(System.Int32)">
+            <summary>
+            Create an standard vector of ColorPoint of the specific size
+            </summary>
+            <param name="size">The size of the vector</param>
+        </member>
+        <member name="M:Emgu.CV.Util.VectorOfColorPoint.#ctor(Emgu.CV.Structure.ColorPoint[])">
+            <summary>
+            Create an standard vector of ColorPoint with the initial values
+            </summary>
+            <param name="values">The initial values</param>
+        </member>
+        <member name="M:Emgu.CV.Util.VectorOfColorPoint.Push(Emgu.CV.Structure.ColorPoint[])">
+            <summary>
+            Push an array of value into the standard vector
+            </summary>
+            <param name="value">The value to be pushed to the vector</param>
+        </member>
+        <member name="M:Emgu.CV.Util.VectorOfColorPoint.ToArray">
+            <summary>
+            Convert the standard vector to an array of ColorPoint
+            </summary>
+            <returns>An array of ColorPoint</returns>
+        </member>
+        <member name="M:Emgu.CV.Util.VectorOfColorPoint.Clear">
+            <summary>
+            Clear the vector
+            </summary>
+        </member>
+        <member name="M:Emgu.CV.Util.VectorOfColorPoint.DisposeObject">
+            <summary>
+            Release the standard vector
+            </summary>
+        </member>
+        <member name="M:Emgu.CV.Util.VectorOfColorPoint.GetInputArray">
+            <summary>
+            Get the pointer to cv::_InputArray
+            </summary>
+        </member>
+        <member name="M:Emgu.CV.Util.VectorOfColorPoint.GetOutputArray">
+            <summary>
+            Get the pointer to cv::_OutputArray
+            </summary>
+        </member>
+        <member name="M:Emgu.CV.Util.VectorOfColorPoint.GetInputOutputArray">
+            <summary>
+            Get the pointer to cv::_InputOutputArray
+            </summary>
+        </member>
+        <member name="P:Emgu.CV.Util.VectorOfColorPoint.Size">
+            <summary>
+            Get the size of the vector
+            </summary>
+        </member>
+        <member name="P:Emgu.CV.Util.VectorOfColorPoint.StartAddress">
+            <summary>
+            The pointer to the first element on the vector. In case of an empty vector, IntPtr.Zero will be returned.
+            </summary>
+        </member>
+        <member name="P:Emgu.CV.Util.VectorOfColorPoint.Item(System.Int32)">
             <summary>
             Get the item in the specific index
             </summary>

@@ -132,47 +132,44 @@ namespace Huddle.Engine.Processor.OpenCv
             //Convert the image to grayscale and filter out the noise
             var grayImage = image.Convert<Gray, Byte>();
 
-            using (var storage = new MemStorage())
+            Emgu.CV.Util.VectorOfVectorOfPoint contours = new Emgu.CV.Util.VectorOfVectorOfPoint();
+            CvInvoke.FindContours(grayImage,
+                contours,
+                null,
+                IsRetrieveExternal ? RetrType.External : RetrType.List,
+                ChainApproxMethod.ChainApproxSimple);
+
+            for (int i = 0; i < contours.Size; i++ )
             {
-                Emgu.CV.Util.VectorOfVectorOfPoint contours = new Emgu.CV.Util.VectorOfVectorOfPoint();
-                CvInvoke.FindContours(grayImage,
-                    contours,
-                    null,
-                    IsRetrieveExternal ? RetrType.External : RetrType.List,
-                    ChainApproxMethod.ChainApproxSimple);
+                Emgu.CV.Util.VectorOfPointF currentContour = new Emgu.CV.Util.VectorOfPointF(); // TODO move me and my siblings
+                CvInvoke.ApproxPolyDP(contours[i],
+                    currentContour,
+                    CvInvoke.ArcLength(contours[i], true) * 0.05,
+                    true);
 
-                for (int i = 0; i < contours.Size; i++ )
+                //Console.WriteLine("AREA {0}", currentContour.Area);
+
+                //if (currentContour.Area > MinContourArea) //only consider contours with area greater than 250
+                //{
+                //outputImage.Draw(currentContour.GetConvexHull(ORIENTATION.CV_CLOCKWISE), Rgbs.White, 2);
+                Emgu.CV.Util.VectorOfPoint ret = null;
+                CvInvoke.ConvexHull(currentContour,
+                    ret,
+                    true,
+                    true);
+
+                outputImage.FillConvexPoly(ret.ToArray(), Rgbs.White);
+
+                if (IsRenderContent)
                 {
-                    Emgu.CV.Util.VectorOfPointF currentContour = new Emgu.CV.Util.VectorOfPointF(); // TODO move me and my siblings
-                    CvInvoke.ApproxPolyDP(contours[i],
-                        currentContour,
-                        CvInvoke.ArcLength(contours[i], true) * 0.05,
-                        true);
-
-                    //Console.WriteLine("AREA {0}", currentContour.Area);
-
-                    //if (currentContour.Area > MinContourArea) //only consider contours with area greater than 250
-                    //{
-                    //outputImage.Draw(currentContour.GetConvexHull(ORIENTATION.CV_CLOCKWISE), Rgbs.White, 2);
-                    Emgu.CV.Util.VectorOfPoint ret = null;
-                    CvInvoke.ConvexHull(currentContour,
-                        ret,
-                        true,
-                        true);
-
-                    outputImage.FillConvexPoly(ret.ToArray(), Rgbs.White);
-
-                    if (IsRenderContent)
-                    {
-                        debugImage.FillConvexPoly(ret.ToArray(), Rgbs.White);
-                    }
-                    //}
-                    //else
-                    //{
-                    //    if (IsRenderContent)
-                    //        debugImage.FillConvexPoly(currentContour.GetConvexHull(ORIENTATION.CV_CLOCKWISE).ToArray(), Rgbs.Red);
-                    //}
+                    debugImage.FillConvexPoly(ret.ToArray(), Rgbs.White);
                 }
+                //}
+                //else
+                //{
+                //    if (IsRenderContent)
+                //        debugImage.FillConvexPoly(currentContour.GetConvexHull(ORIENTATION.CV_CLOCKWISE).ToArray(), Rgbs.Red);
+                //}
             }
 
             Task.Factory.StartNew(() =>
