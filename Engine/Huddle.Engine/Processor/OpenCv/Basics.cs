@@ -318,6 +318,7 @@ namespace Huddle.Engine.Processor.OpenCv
 
         #endregion
 
+
         public override IData Process(IData data)
         {
             var roi = data as ROI;
@@ -327,46 +328,25 @@ namespace Huddle.Engine.Processor.OpenCv
             return base.Process(data);
         }
 
-        public override UMatData PreProcess(UMatData data)
+        public override UMatData PreProcess(UMatData umatData)
         {
-            if (data.Key != "color" || data.Key != "confidence") // TODO can i check the type earlier or how can i avoid unecesary calls 
-            {
-                return data;
-            }
-
             if (!IsInitialized)
             {
-                ROI = new Rectangle(0, 0, data.Width, data.Height);
+                ROI = new Rectangle(0, 0, umatData.Width, umatData.Height);
 
                 IsInitialized = true;
             }
 
-            var _data = base.PreProcess(data);
+            var image = base.PreProcess(umatData);
 
-            if (data.Key == "confidence")
-            {
-                _data.Data.ToImage<Rgb,byte>().Draw(ROI, Rgbs.Red, 1);
-            }
-            else if (data.Key == "color")
-            {
-                _data.Data.ToImage<Rgb, byte>().Draw(ROI, Rgbs.Red, 1);
-            }
-            //TODO leak?
-            //var img = _data.Data.Clone().ToImage<Rgb, byte>();
-            //img.Draw(ROI, Rgbs.Red, 1);
-            //_data.Data.Dispose();
-            //_data.Data = img.ToUMat();
+            //TODO draw me. If not possible -> second umat with rectangle and bitwise and?
+            //image.Draw(ROI, Rgbs.Red, 1);
 
-            return _data;
+            return image;
         }
 
         public override UMatData ProcessAndView(UMatData data)
         {
-            if (!(data.Key == "color" || data.Key == "confidence"))
-            {
-                return data;
-            }
-
             // mirror image
             try
             {
@@ -404,11 +384,11 @@ namespace Huddle.Engine.Processor.OpenCv
 
                 if (flipCode != FlipType.None)
                 {
-                    CvInvoke.Flip(imageCopy, data.Ptr, flipCode);
+                    CvInvoke.Flip(imageCopy, data.Data, flipCode);
                 }
                 else
                 {
-                    data.Ptr = imageCopy;
+                    data.Data = imageCopy;
                 }
 
                 return data;

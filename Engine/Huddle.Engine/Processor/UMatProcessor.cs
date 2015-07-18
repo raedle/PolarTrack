@@ -123,26 +123,18 @@ namespace Huddle.Engine.Processor
                     true);
         }
 
-        public virtual UMatData PreProcess(UMatData data)
-        {
-            return data;
-        }
-
         public override IData Process(IData data)
         {
             var umatData = data as UMatData;
 
             return umatData != null ? Process(umatData) : data;
         }
-        private IData Process(UMatData data)
+
+        public IData Process(UMatData data)
         {
             if (IsRenderContent)
             {
-                // draw debug information on image -> TODO might worth be worth it to bind that information to the data template directly
-                UMat tmp = data.Data.Clone();
-                //data.Data.CopyTo(tmp);
-                var preProcessImage = tmp.ToImage();
-                //var preProcessImage = data.Data.Clone().ToImage();
+                var preProcessImage = data.Data.Clone().ToImage();
 
                 Task.Factory.StartNew(() =>
                 {
@@ -214,7 +206,13 @@ namespace Huddle.Engine.Processor
             return data;
         }
 
-        public abstract UMatData ProcessAndView(UMatData data);
+
+        public virtual UMatData PreProcess(UMatData image)
+        {
+            return image;
+        }
+
+        public abstract UMatData ProcessAndView(UMatData image);
 
         private void WriteImage(UMat data)
         {

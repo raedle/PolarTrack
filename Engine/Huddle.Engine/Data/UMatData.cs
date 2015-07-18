@@ -1,4 +1,5 @@
 ﻿using Emgu.CV;
+using Emgu.CV.External.Extensions;
 using Huddle.Engine.Processor;
 
 namespace Huddle.Engine.Data
@@ -27,7 +28,7 @@ namespace Huddle.Engine.Data
                     _data = null;
                 }
                 // TODO revise!!! is this good?
-                _data = value.Clone();
+                _data = value;
             }
         }
 
@@ -76,16 +77,23 @@ namespace Huddle.Engine.Data
         public UMatData(IProcessor source, string key, UMat data)
             : base(source, key)
         {
+            //CvInvoke.UseOpenCL = false;
             Data = data;
+            
+            //Data = data;
         }
 
         #endregion
 
         public override IData Copy()
         {
-            return new UMatData(Source, Key, Data);
+            // this is the magic copy which soiuld be used by all clone() calls
+            // this returns a deep copy!
+            return new UMatData(Source,
+                Key,
+                new UMat(Data, new System.Drawing.Rectangle(0, 0, Data.Cols, Data.Rows)));
         }
-
+     
         public override void Dispose()
         {
             Data.Dispose();

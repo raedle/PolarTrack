@@ -135,7 +135,7 @@ namespace Huddle.Engine.Processor.OpenCv
                     Emgu.CV.CvEnum.BorderType.Default,
                     new MCvScalar());
                 CvInvoke.Dilate(ret,
-                    ret,
+                    data.Data,
                     new Mat(),
                     new System.Drawing.Point(-1, -1),
                     NumDilate,
@@ -152,15 +152,13 @@ namespace Huddle.Engine.Processor.OpenCv
                     Emgu.CV.CvEnum.BorderType.Default,
                     new MCvScalar());
                 CvInvoke.Erode(ret,
-                    ret,
+                    data.Data,
                     new Mat(),
                     new System.Drawing.Point(-1, -1),
                     NumErode,
                     Emgu.CV.CvEnum.BorderType.Default,
                     new MCvScalar());
             }
-
-            data.Data = ret;
 
             return data;
         }
