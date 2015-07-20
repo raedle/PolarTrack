@@ -786,6 +786,24 @@ namespace Huddle.Engine.Processor.Sensors
 
         #endregion
 
+        #region dtor
+
+        ~Senz3DSoftKinetic()
+        {
+            try
+            {
+                //TODO
+                //DSW.Dispose();
+                DSW = null;
+            }
+            finally
+            {
+                //base.Finalize();
+            }
+        }
+
+        #endregion
+
         public override IData Process(IData data)
         {
             return null;
@@ -837,7 +855,7 @@ namespace Huddle.Engine.Processor.Sensors
             _colorImage.Data = sample.Data;
             UMat colorImage = new UMat();
             CvInvoke.CvtColor(_colorImage.ToUMat(), colorImage, ColorConversion.Bgr2Rgb);
-            UMat colorImageCopy = colorImage.Clone();
+            UMat colorImageCopy = colorImage.DeepClone();
             ColorImageFrameTime = sw.ElapsedMilliseconds;
 
             if (IsRenderContent)

@@ -495,7 +495,7 @@ namespace Huddle.Engine.ViewModel
             Model.Sources.Clear();
             Model.Targets.Clear();
 
-            //Dispose();
+            //Model.Dispose();
         }
 
         public virtual void Start()

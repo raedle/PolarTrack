@@ -486,6 +486,10 @@ namespace Huddle.Engine.Processor
         {
         }
 
+        public virtual void Dispose() {
+
+        }
+
         #endregion
 
         #region Processing

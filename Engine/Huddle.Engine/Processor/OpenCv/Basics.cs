@@ -339,6 +339,8 @@ namespace Huddle.Engine.Processor.OpenCv
 
             var image = base.PreProcess(umatData);
 
+            CvInvoke.Rectangle(umatData.Ptr, ROI, new MCvScalar(255,0,0));
+
             //TODO draw me. If not possible -> second umat with rectangle and bitwise and?
             //image.Draw(ROI, Rgbs.Red, 1);
 

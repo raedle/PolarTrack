@@ -130,77 +130,56 @@ namespace Huddle.Engine.Processor
             return umatData != null ? Process(umatData) : data;
         }
 
+        private void Render(UMatData data, Boolean pre)
+        {
+            var image = data.Data.ToImage();
+
+            Task.Factory.StartNew(() =>
+            {
+                if (image == null) return null;
+
+                BitmapSource bitmap;
+                if (image is Image<Gray, float>)
+                    bitmap = (image as Image<Gray, float>).ToGradientBitmapSource(true, EmguExtensions.LowConfidence, EmguExtensions.Saturation);
+                else
+                    bitmap = image.ToBitmapSource(true);
+
+                image.Dispose();
+
+                return bitmap;
+            }).ContinueWith(s => pre ? PreProcessImage = s.Result : PostProcessImage = s.Result);
+        }
+
         public IData Process(UMatData data)
         {
             if (IsRenderContent)
             {
-                var preProcessImage = data.Data.Clone().ToImage();
-
-                Task.Factory.StartNew(() =>
-                {
-                    if (preProcessImage == null) return null;
-
-                    BitmapSource bitmap;
-                    if (preProcessImage is Image<Gray, float>)
-                        bitmap = (preProcessImage as Image<Gray, float>).ToGradientBitmapSource(true, EmguExtensions.LowConfidence, EmguExtensions.Saturation);
-                    else
-                        bitmap = preProcessImage.ToBitmapSource(true);
-
-                    preProcessImage.Dispose();
-
-                    return bitmap;
-                }).ContinueWith(s => PreProcessImage = s.Result);
+                Render(data.Copy() as UMatData, true);
             }
 
             try
             {
-                try
-                {
-                    var processedImage = ProcessAndView(data);
+                var processedImage = ProcessAndView(data);
 
-                    if (processedImage == null) return null;
+                if (processedImage == null) return null;
 
-                    data = processedImage;
+                data = processedImage;
 
-                }
-                catch (Exception e)
-                {
-                    LogFormat("Exception occured in ProcessAndView:{0}{1}{2}", e.Message, Environment.NewLine, e.StackTrace);
-                }
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                //DispatcherHelper.RunAsync(() =>
-                //{
-                //    //if (!Messages.Any(m => Equals(e.Message, m)))
-                //    //    Log(e.Message);
-                //});
+                LogFormat("Exception occured in ProcessAndView:{0}{1}{2}", e.Message, Environment.NewLine, e.StackTrace);
                 return data;
             }
 
             if (_enableVideoWriter && _videoWriter != null)
             {
-                WriteImage(data.Data.Clone());
+                WriteImage(data);
             }
 
             if (IsRenderContent)
             {
-                var postProcessImage = data.Data.Clone().ToImage();
-
-                Task.Factory.StartNew(() =>
-                {
-                    if (postProcessImage == null) return null;
-
-                    BitmapSource bitmap;
-                    if (postProcessImage is Image<Gray, float>)
-                        bitmap = (postProcessImage as Image<Gray, float>).ToGradientBitmapSource(true, EmguExtensions.LowConfidence, EmguExtensions.Saturation);
-                    else
-                        bitmap = postProcessImage.ToBitmapSource(true);
-
-                    postProcessImage.Dispose();
-
-                    return bitmap;
-                }).ContinueWith(s => PostProcessImage = s.Result);
+                Render(data.Copy() as UMatData, false);
             }
             
             return data;
@@ -214,13 +193,14 @@ namespace Huddle.Engine.Processor
 
         public abstract UMatData ProcessAndView(UMatData image);
 
-        private void WriteImage(UMat data)
+        private void WriteImage(UMatData data)
         {
+            var _data = (data.Copy() as UMatData).Data;
             //var bgrImage = image.Convert<Bgr, byte>();
             //image.Dispose();
 
             UMat ret = new UMat();
-            CvInvoke.Resize(data,
+            CvInvoke.Resize(_data,
                 ret,
                 new System.Drawing.Size(VideoWriterWidth,VideoWriterHeight),
                 0,

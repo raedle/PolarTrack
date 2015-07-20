@@ -145,6 +145,12 @@ namespace Emgu.CV.External.Extensions
         {
             return UMatToImage(mat);
         }
+
+        public static UMat DeepClone(this UMat umat)
+        {
+            return new UMat(umat, new System.Drawing.Rectangle(0, 0, umat.Cols, umat.Rows));
+        }
+
         //TODO remove me when changed
         public static IImage UMatToImage(this UMat umat)
         {

@@ -979,13 +979,13 @@ namespace Huddle.Engine.Processor.OpenCv
 
         public override IData Process(IData data)
         {
-            var depthImageData = data as GrayFloatImage;
+            var depthImageData = data as UMatData;
             if (depthImageData != null && Equals(depthImageData.Key, "depth"))
             {
                 if (_depthImage != null)
                     _depthImage.Dispose();
 
-                _depthImage = depthImageData.Image.Copy();
+                _depthImage = (depthImageData.Copy() as UMatData).Data.ToImage() as Image<Gray, float>;
             }
 
             var device = data as Device;
@@ -1028,14 +1028,14 @@ namespace Huddle.Engine.Processor.OpenCv
             return base.Process(data);
         }
 
-        public override UMatData ProcessAndView(UMatData image_rename)
+        public override UMatData ProcessAndView(UMatData data)
         {
-            if (image_rename.Key != "confidence") //TODO
+            if (data.Key != "confidence") //TODO
             {
-                return image_rename;
+                return data;
             }
 
-            UMat u_image = image_rename.Data;
+            UMat u_image = data.Data;
 
             var imageWidth = u_image.Cols;
             var imageHeight = u_image.Rows;
@@ -1059,7 +1059,7 @@ namespace Huddle.Engine.Processor.OpenCv
             {
                 // Try to identify objects even if they are connected tightly (without a gap).
                 //Parallel.ForEach(threadSafeObjects, obj => FindObjectByBlankingKnownObjects(image, ref outputImage[0], now, threadSafeObjects, obj)); // TODO Parallel.ForEach does not work :(
-                foreach (var foundObjects in threadSafeObjects.Select(obj => FindObjectByBlankingKnownObjects(false, u_image, ref outputImage[0], now, threadSafeObjects, obj, true)))
+                foreach (var foundObjects in threadSafeObjects.Select(obj => FindObjectByBlankingKnownObjects(false, ref u_image, ref outputImage[0], now, threadSafeObjects, obj, true)))
                 {
                     _objects.AddRange(foundObjects);
 
@@ -1072,7 +1072,7 @@ namespace Huddle.Engine.Processor.OpenCv
                     UpdateOccludedObjects(u_image, ref outputImage[0], now, threadSafeObjects);
 
                 // Try to find new objects.
-                var foundNewObjects = FindObjectByBlankingKnownObjects(false, u_image, ref outputImage[0], now, _objects.ToArray());
+                var foundNewObjects = FindObjectByBlankingKnownObjects(false, ref u_image, ref outputImage[0], now, _objects.ToArray());
                 _objects.AddRange(foundNewObjects);
 
                 if (foundNewObjects.Any())
@@ -1081,7 +1081,7 @@ namespace Huddle.Engine.Processor.OpenCv
             else
             {
                 // Find yet unidentified objects
-                var foundObjects = FindObjectByBlankingKnownObjects(false, u_image, ref outputImage[0], now, _objects.ToArray());
+                var foundObjects = FindObjectByBlankingKnownObjects(false, ref u_image, ref outputImage[0], now, _objects.ToArray());
                 _objects.AddRange(foundObjects);
 
                 if (foundObjects.Any())
@@ -1164,9 +1164,9 @@ namespace Huddle.Engine.Processor.OpenCv
 
             Push();
 
-            image_rename.Data = outputImage[0].ToUMat();
+            data.Data = outputImage[0].ToUMat();
 
-            return image_rename;
+            return data;
         }
 
         /// <summary>
@@ -1180,7 +1180,7 @@ namespace Huddle.Engine.Processor.OpenCv
         /// <param name="obj"></param>
         /// <param name="updateTime"></param>
         /// <param name="useROI"></param>
-        private RectangularObject[] FindObjectByBlankingKnownObjects(bool occlusionTracking, /*Image<Rgb, byte>*/UMat image, ref Image<Rgb, byte> outputImage, DateTime updateTime, RectangularObject[] objects, RectangularObject obj = null, bool useROI = false)
+        private RectangularObject[] FindObjectByBlankingKnownObjects(bool occlusionTracking, ref UMat image, ref Image<Rgb, byte> outputImage, DateTime updateTime, RectangularObject[] objects, RectangularObject obj = null, bool useROI = false)
         {
             var imageWidth = image.Cols;
             var imageHeight = image.Rows;
@@ -1190,10 +1190,8 @@ namespace Huddle.Engine.Processor.OpenCv
             // Blank previous objects from previous frame
             //var blankedImage = image.Clone();
             //var blankedImageGray = image.Clone();
-            UMat blankedImageGray = new UMat();
-            UMat blankedImage = new UMat();
-            image.CopyTo(blankedImage);
-            image.CopyTo(blankedImageGray);
+            UMat blankedImageGray = image.DeepClone();
+            UMat blankedImage = image.DeepClone();
 
             foreach (var otherObject in objectsToBlank)
             {
@@ -1236,7 +1234,7 @@ namespace Huddle.Engine.Processor.OpenCv
             {
                 #region Render Depth Fixed Image
 
-                var debugImageCopy = u_blankedImageGray.Clone();
+                var debugImageCopy = u_blankedImageGray.DeepClone();
                 Task.Factory.StartNew(() =>
                 {
                     var bitmapSource = debugImageCopy.ToImage().ToBitmapSource(true);
@@ -1385,14 +1383,14 @@ namespace Huddle.Engine.Processor.OpenCv
                 mask);
             UMat u_depthPatchesImage = depthPatchesImage.ToUMat();
 
-            var _originPixels = new Image<Rgb, byte>(imageWidth, imageHeight);
-            //UMat originPixels = new UMat();
-            //u_image.CopyTo(originPixels, mask.ToUMat()); // not impl atm
-            UMat u_imageCopy = u_image.Clone();
-            CvInvoke.cvCopy(u_image.ToImage<Rgb, byte>(),
-                _originPixels,
-                mask);
-            UMat originPixels = _originPixels.ToUMat();
+            //var _originPixels = new Image<Rgb, byte>(imageWidth, imageHeight);
+            UMat originPixels = new UMat();
+            u_image.CopyTo(originPixels, mask.ToUMat()); // not impl atm
+            //UMat u_imageCopy = u_image.DeepClone();
+            //CvInvoke.cvCopy(u_imageCopy.ToImage<Rgb, byte>(),
+            //    _originPixels,
+            //    mask);
+            //UMat originPixels = _originPixels.ToUMat();
 
 
             Mat cn1 = new Mat(imageWidth, imageHeight, DepthType.Cv8U, 1);
@@ -1481,7 +1479,7 @@ namespace Huddle.Engine.Processor.OpenCv
 
                 #region Render Depth Fixed Image
 
-                UMat depthFixedImageCopy = depthFixedImage.Clone();
+                UMat depthFixedImageCopy = depthFixedImage.DeepClone();
                 Task.Factory.StartNew(() =>
                 {
                     var bitmapSource = depthFixedImageCopy.ToBitmapSource(true);
@@ -1492,7 +1490,7 @@ namespace Huddle.Engine.Processor.OpenCv
                 #endregion
             }
 
-            FindObjectByBlankingKnownObjects(true, depthFixedImage, ref outputImage, updateTime, objects, obj, true);
+            FindObjectByBlankingKnownObjects(true, ref depthFixedImage, ref outputImage, updateTime, objects, obj, true);
         }
 
         /// <summary>
