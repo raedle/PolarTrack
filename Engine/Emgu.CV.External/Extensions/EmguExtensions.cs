@@ -171,6 +171,11 @@ namespace Emgu.CV.External.Extensions
             {
                 img = umat.ToImage<Gray, float>();
             }
+            // <Gray, byte>
+            else if (nc == 1 && depth == CvEnum.DepthType.Cv8U)
+            {
+                img = umat.ToImage<Gray, byte>();
+            }
 
             return img;
 
