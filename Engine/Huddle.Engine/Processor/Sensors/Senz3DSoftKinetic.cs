@@ -26,7 +26,6 @@ namespace Huddle.Engine.Processor.Sensors
     public class Senz3DSoftKinetic : BaseProcessor
     {
         #region private fields
-        
 
         private bool _isRunning;
 
@@ -853,16 +852,18 @@ namespace Huddle.Engine.Processor.Sensors
             Stopwatch sw = Stopwatch.StartNew();
             var _colorImage = new Image<Bgr, byte>(sample.Width, sample.Height);
             _colorImage.Data = sample.Data;
-            UMat colorImage = new UMat();
-            CvInvoke.CvtColor(_colorImage.ToUMat(), colorImage, ColorConversion.Bgr2Rgb);
-            UMat colorImageCopy = colorImage.DeepClone();
+
+            var colorImage = new Image<Rgb, byte>(sample.Width, sample.Height);
+            CvInvoke.CvtColor(_colorImage, colorImage, ColorConversion.Bgr2Rgb);
+
             ColorImageFrameTime = sw.ElapsedMilliseconds;
 
             if (IsRenderContent)
             {
+                var colorImageCopy = colorImage.Copy(); ;
                 Task.Factory.StartNew(() =>
                 {
-                    var bitmap = colorImageCopy.ToImage().ToBitmapSource(true);
+                    var bitmap = colorImageCopy.ToBitmapSource(true);
                     colorImageCopy.Dispose();
                     return bitmap;
                 }).ContinueWith(s => ColorImageSource = s.Result);
@@ -870,7 +871,7 @@ namespace Huddle.Engine.Processor.Sensors
 
             var dc = new Huddle.Engine.Data.DataContainer(++_frameId, DateTime.Now)
                     {
-                        new UMatData(this, "color", colorImage)
+                        new UMatData(this, "color", colorImage.ToUMat())
                     };
 
             Publish(dc);
