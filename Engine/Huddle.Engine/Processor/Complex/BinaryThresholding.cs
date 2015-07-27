@@ -122,11 +122,6 @@ namespace Huddle.Engine.Processor.Complex
 
         public override UMatData ProcessAndView(UMatData data)
         {
-            if (data.Key != "color") //Image<Rgb, byte>
-            {
-                return data;
-            }
-
             var binaryThreshold = new Gray(BinaryThreshold);
             var binaryThresholdMax = new Gray(BinaryThresholdMax);
             var isBinaryThresholdInv = IsBinaryThresholdInv;

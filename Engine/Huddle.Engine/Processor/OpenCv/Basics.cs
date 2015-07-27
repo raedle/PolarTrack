@@ -318,7 +318,6 @@ namespace Huddle.Engine.Processor.OpenCv
 
         #endregion
 
-
         public override IData Process(IData data)
         {
             var roi = data as ROI;
@@ -341,9 +340,6 @@ namespace Huddle.Engine.Processor.OpenCv
 
             CvInvoke.Rectangle(umatData.Ptr, ROI, new MCvScalar(255,0,0));
 
-            //TODO draw me. If not possible -> second umat with rectangle and bitwise and?
-            //image.Draw(ROI, Rgbs.Red, 1);
-
             return image;
         }
 
@@ -352,12 +348,10 @@ namespace Huddle.Engine.Processor.OpenCv
             // mirror image
             try
             {
-                UMat imageCopy = new UMat();
+                UMat imageCopy;
                 if (IsUseROI)
                 {
-                    imageCopy.Dispose();
-                    imageCopy = new UMat(data.Data, ROI); //TODO does this work?
-                    //data.Data.CopyTo(imageCopy, ROI);
+                    imageCopy = new UMat(data.Data, ROI);
                 }
                 else
                 {

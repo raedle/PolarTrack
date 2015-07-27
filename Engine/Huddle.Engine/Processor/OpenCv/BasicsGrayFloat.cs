@@ -328,11 +328,6 @@ namespace Huddle.Engine.Processor.OpenCv
 
         public override UMatData PreProcess(UMatData data)
         {
-            if (data.Key != "depth") // TODO can i check the type earlier or how can i avoid unecesary calls 
-            {
-                return data;
-            }
-
             if (!IsInitialized)
             {
                 ROI = new Rectangle(0, 0, data.Width, data.Height);
@@ -349,11 +344,6 @@ namespace Huddle.Engine.Processor.OpenCv
 
         public override UMatData ProcessAndView(UMatData data)
         {
-            if (data.Key != "depth")
-            {
-                return data;
-            }
-
             // mirror image
             try
             {

@@ -1030,11 +1030,6 @@ namespace Huddle.Engine.Processor.OpenCv
 
         public override UMatData ProcessAndView(UMatData data)
         {
-            if (data.Key != "confidence") //TODO
-            {
-                return data;
-            }
-
             UMat u_image = data.Data;
 
             var imageWidth = u_image.Cols;
