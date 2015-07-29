@@ -24,12 +24,12 @@ using System.Threading.Tasks;
 namespace Huddle.Engine.Processor
 {
     [ViewTemplate("Polar Tracker", "PolarTracker")]
-    public class PolarTracker : RgbProcessor
+    public class PolarTracker : UMatProcessor
     {
         #region private members
 
-        private Image<Rgb, byte> _prevImage;
-        private Image<Rgb, byte> _prevGpuImage;
+        private UMat _prevImage;
+        private UMat _prevGpuImage;
 
         #endregion
 
@@ -65,76 +65,6 @@ namespace Huddle.Engine.Processor
                 RaisePropertyChanging(ThresholdPropertyName);
                 _threshold = value;
                 RaisePropertyChanged(ThresholdPropertyName);
-            }
-        }
-
-        #endregion
-
-        #region IsUseGpu
-
-        /// <summary>
-        /// The <see cref="IsUseGpu" /> property's name.
-        /// </summary>
-        public const string IsUseGpuPropertyName = "IsUseGpu";
-
-        private bool _isUseGpu = false;
-
-        /// <summary>
-        /// Sets and gets the IsUseGpu property.
-        /// Changes to that property's value raise the PropertyChanged event. 
-        /// </summary>
-        public bool IsUseGpu
-        {
-            get
-            {
-                return _isUseGpu;
-            }
-
-            set
-            {
-                if (_isUseGpu == value)
-                {
-                    return;
-                }
-
-                RaisePropertyChanging(IsUseGpuPropertyName);
-                _isUseGpu = value;
-                RaisePropertyChanged(IsUseGpuPropertyName);
-            }
-        }
-
-        #endregion
-
-        #region IsUseOpenCL
-
-        /// <summary>
-        /// The <see cref="IsUseOpenCL" /> property's name.
-        /// </summary>
-        public const string IsUseOpenCLPropertyName = "IsUseOpenCL";
-
-        private bool _isUseOpenCL = false;
-
-        /// <summary>
-        /// Sets and gets the IsUseOpenCL property.
-        /// Changes to that property's value raise the PropertyChanged event. 
-        /// </summary>
-        public bool IsUseOpenCL
-        {
-            get
-            {
-                return _isUseOpenCL;
-            }
-
-            set
-            {
-                if (_isUseOpenCL == value)
-                {
-                    return;
-                }
-
-                RaisePropertyChanging(IsUseOpenCLPropertyName);
-                _isUseOpenCL = value;
-                RaisePropertyChanged(IsUseOpenCLPropertyName);
             }
         }
 
@@ -199,113 +129,27 @@ namespace Huddle.Engine.Processor
             _gpu.LoadModule(km);
         }
 
-        public override Image<Rgb, byte> ProcessAndView(Image<Rgb, byte> image)
+        public override UMatData ProcessAndView(UMatData data)
         {
-            var imageCopy = image.Copy();
-
-            if (IsUseOpenCL)
-            {
-                if (_prevImage == null || _gpu == null)
-                {
-                    _prevImage = imageCopy;
-                    return image;
-                }
-
-                const int gridSize = 320;
-                //var dim3 = new dim3(gridSize, gridSize, 1);//, Math.Min(gridSize, image.Width), 3);
-                //var dim3 = new dim3(Math.Min(gridSize, image.Height), Math.Min(gridSize, image.Width), 3);
-                //var dim3 = new dim3(image.Height, image.Width, 3);
-                var dim3 = new dim3(image.Height);
-
-                var img1 = _gpu.CopyToDevice(_prevImage.Data);
-                var img2 = _gpu.CopyToDevice(image.Data);
-
-                var resultImage = new Image<Rgb, byte>(image.Width, image.Height);
-                var resultGpu = _gpu.Allocate(resultImage.Data);
-
-                _gpu.Launch(dim3, 1).RunStuff(image.Width, (byte)Threshold, img1, img2, resultGpu);
-                _gpu.CopyFromDevice(resultGpu, resultImage.Data);
-                _gpu.Free(img1);
-                _gpu.Free(img2);
-                _gpu.Free(resultGpu);
-
-                _prevImage = imageCopy;
-
-                return resultImage;
-            }
-
-            var isUseGpu = IsUseGpu;
-
-            Image<Rgb, byte> gpuImage = null;
-            if (IsCudaSupported && isUseGpu)
-            {
-                gpuImage = imageCopy.Copy();
-            }
-                
+            var imageCopy = data.Data.Clone();
             if (_prevImage == null)
             {
                 _prevImage = imageCopy;
-
-                if (IsCudaSupported && isUseGpu)
-                    _prevGpuImage = gpuImage;
-
-                return image;
             }
 
-            //var imageCopy = image.Copy();
-            //var absDiff = _prevImage.AbsDiff(imageCopy);
-            //_prevImage = imageCopy;
+            UMat ret = new UMat(data.Height, data.Width,DepthType.Cv8U,3);
 
-            //return absDiff;
+            CvInvoke.AbsDiff(_prevImage, data.Data, ret);
+            CvInvoke.CvtColor(ret, ret, ColorConversion.Rgb2Gray);
+            CvInvoke.Threshold(ret,ret,Threshold,255,ThresholdType.Binary);
 
-            Image<Rgb, byte> output;
-            if (IsCudaSupported && isUseGpu)
-            {
-                var gpuDiffImage = gpuImage.Copy();
-                CvInvoke.AbsDiff(gpuImage, _prevGpuImage, gpuDiffImage);
-                var grayScaleGpuImage = gpuDiffImage.Convert<Gray, byte>();
-                CvInvoke.Threshold(grayScaleGpuImage, grayScaleGpuImage, Threshold, 255, Emgu.CV.CvEnum.ThresholdType.Binary);
-
-                output = grayScaleGpuImage.Convert<Rgb, byte>();
-            }
-            else
-            {
-                output = new Image<Rgb, byte>(image.Width, image.Height);
-
-                var data1 = _prevImage.Data;
-                var data2 = image.Data;
-                var outputData = output.Data;
-
-                var threshold = Threshold;
-
-                var width = _prevImage.Width;
-                var height = _prevImage.Height;
-                Parallel.For(0, width, j =>
-                {
-                    for (var i = 0; i < height; i++)
-                    {
-                        var b = Math.Abs(data1[i, j, 0] - data2[i, j, 0]);
-                        var g = Math.Abs(data1[i, j, 1] - data2[i, j, 1]);
-                        var r = Math.Abs(data1[i, j, 2] - data2[i, j, 2]);
-
-                        if (b > threshold || g > threshold || r > threshold)
-                        {
-                            outputData[i, j, 0] = 255;
-                        }
-                    }
-                });
-            }
-
-            //_prevImage.Dispose();
+            // save image for nxt turn
             _prevImage = imageCopy;
 
-            if (IsCudaSupported && isUseGpu)
-            {
-                _prevGpuImage.Dispose();
-                _prevGpuImage = gpuImage;
-            }
+            data.Data = ret;
+            return data;
 
-            return output;
+
         }
 
         [Cudafy]

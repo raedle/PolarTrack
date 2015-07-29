@@ -131,7 +131,7 @@ namespace Huddle.Engine.Processor
 
                     var image = new Image<Rgb, byte>(file);
 
-                    Stage(new RgbImageData(this, "Image", image));
+                    Stage(new UMatData(this, "color", image.ToUMat()));
                     Push();
 
                     Thread.Sleep(1000 / Fps);

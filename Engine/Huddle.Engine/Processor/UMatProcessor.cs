@@ -32,6 +32,21 @@ namespace Huddle.Engine.Processor
 
         #endregion
 
+        #region IsCudaSupported
+
+        /// <summary>
+        /// Gets the IsCudaSupported property.
+        /// Changes to that property's value raise the PropertyChanged event. 
+        /// </summary>
+        public bool IsCudaSupported
+        {
+            get
+            {
+                return Emgu.CV.CvInvoke.HaveOpenCLCompatibleGpuDevice;
+            }
+        }
+
+        #endregion
 
         #region PreProcessImage
 
