@@ -1214,19 +1214,39 @@ namespace Huddle.Engine.Processor.OpenCv
 
             foreach (var otherObject in objectsToBlank)
             {
+                PointF[] vert = otherObject.Shape.GetVertices();
+                DPoint[] vertices = { new DPoint((int)vert[0].X, (int)vert[0].Y),
+                                        new DPoint((int)vert[1].X, (int)vert[1].Y),
+                                        new DPoint((int)vert[2].X, (int)vert[2].Y),
+                                        new DPoint((int)vert[3].X, (int)vert[3].Y)};
+                CvInvoke.Polylines(blankedImage,
+                    vertices,
+                    true,
+                    Rgbs.Black.MCvScalar,
+                    1);
+                CvInvoke.FillConvexPoly(blankedImage,
+                    new Emgu.CV.Util.VectorOfPoint(vertices),
+                    Rgbs.Black.MCvScalar);
                 //TODO
-                (blankedImage.ToImage() as Image<Rgb, byte>).Draw(otherObject.Shape, Rgbs.Black, -1);
+                //(blankedImage.ToImage() as Image<Rgb, byte>).Draw(otherObject.Shape, Rgbs.Black, -1);
             }
 
 
             UMat u_blankedImageGray = new UMat();
-            CvInvoke.CvtColor(blankedImage, u_blankedImageGray, ColorConversion.Rgb2Gray);
+            if (blankedImage.NumberOfChannels == 3 || blankedImage.NumberOfChannels == 4)
+            {
+                CvInvoke.CvtColor(blankedImage, u_blankedImageGray, ColorConversion.Rgb2Gray);
+            }
+            else
+            {
+                blankedImage.ConvertTo(u_blankedImageGray, DepthType.Cv8U);
+            }
             //var blankedImageGray2 = (blankedImageGray.ToImage() as Image<Rgb, Byte>).Convert<Gray, Byte>();
             //UMat u_blankedImageGray = blankedImageGray2.ToUMat();
 
             //blankedImageGray = blankedImageGray.Erode(3);
 
-            var roi = (blankedImage.ToImage() as Image<Rgb, byte>).ROI;
+            var roi = CvInvoke.cvGetImageROI(blankedImage);
             if (useROI)
             {
                 const int threshold = 20;
@@ -1401,13 +1421,16 @@ namespace Huddle.Engine.Processor.OpenCv
             }
 
             // TODO UMat or toimage
-            CvInvoke.cvCopy(depthMap,
-                depthPatchesImage,
-                mask);
+            //depthMap.CopyTo(depthPatchesImage, mask); //TODO mask not impl
+            depthMap.CopyToMask(ref depthPatchesImage, mask);
+            //CvInvoke.cvCopy(depthMap,
+            //    depthPatchesImage,
+            //    mask);
 
             //var _originPixels = new Image<Rgb, byte>(imageWidth, imageHeight);
-            UMat originPixels = new UMat();
-            u_image.CopyTo(originPixels, mask); // not impl atm
+            UMat originPixels = new UMat(imageHeight,imageWidth,DepthType.Cv8U,3);
+            //u_image.CopyTo(originPixels, mask); // not impl atm
+            u_image.CopyToMask(ref originPixels, mask);
             //UMat u_imageCopy = u_image.DeepClone();
             //CvInvoke.cvCopy(u_imageCopy.ToImage<Rgb, byte>(),
             //    _originPixels,
