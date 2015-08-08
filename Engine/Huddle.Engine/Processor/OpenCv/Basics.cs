@@ -183,78 +183,6 @@ namespace Huddle.Engine.Processor.OpenCv
 
         #endregion
 
-        #region FlipVertical
-
-        /// <summary>
-        /// The <see cref="FlipVertical" /> property's name.
-        /// </summary>
-        public const string FlipVerticalPropertyName = "FlipVertical";
-
-        private bool _flipVertical = false;
-
-        /// <summary>
-        /// Sets and gets the FlipVertical property.
-        /// Changes to that property's value raise the PropertyChanged event. 
-        /// </summary>
-        [XmlAttribute]
-        public bool FlipVertical
-        {
-            get
-            {
-                return _flipVertical;
-            }
-
-            set
-            {
-                if (_flipVertical == value)
-                {
-                    return;
-                }
-
-                RaisePropertyChanging(FlipVerticalPropertyName);
-                _flipVertical = value;
-                RaisePropertyChanged(FlipVerticalPropertyName);
-            }
-        }
-
-        #endregion
-
-        #region FlipHorizontal
-
-        /// <summary>
-        /// The <see cref="FlipHorizontal" /> property's name.
-        /// </summary>
-        public const string FlipHorizontalPropertyName = "FlipHorizontal";
-
-        private bool _flipHorizontal = false;
-
-        /// <summary>
-        /// Sets and gets the FlipHorizontal property.
-        /// Changes to that property's value raise the PropertyChanged event. 
-        /// </summary>
-        [XmlAttribute]
-        public bool FlipHorizontal
-        {
-            get
-            {
-                return _flipHorizontal;
-            }
-
-            set
-            {
-                if (_flipHorizontal == value)
-                {
-                    return;
-                }
-
-                RaisePropertyChanging(FlipHorizontalPropertyName);
-                _flipHorizontal = value;
-                RaisePropertyChanged(FlipHorizontalPropertyName);
-            }
-        }
-
-        #endregion
-
         #endregion
 
         #region ctor
@@ -345,55 +273,26 @@ namespace Huddle.Engine.Processor.OpenCv
 
         public override UMatData ProcessAndView(UMatData data)
         {
-            // mirror image
-            try
+            UMat ret = new UMat();
+
+            if (IsUseROI)
             {
-                UMat imageCopy;
-                if (IsUseROI)
-                {
-                    imageCopy = new UMat(data.Data, ROI);
-                }
-                else
-                {
-                    imageCopy = data.Data;
-                }
-
-                // TODO Revise code.
-                if (Scale != 1.0)
-                {
-                    UMat tmp = new UMat();
-                    CvInvoke.Resize(imageCopy,
-                        tmp,
-                        new System.Drawing.Size(),
-                        Scale,
-                        Scale,
-                        Emgu.CV.CvEnum.Inter.Cubic);
-                    imageCopy = tmp;
-                }
-
-                var flipCode = FlipType.None;
-
-                if (FlipHorizontal)
-                    flipCode |= FlipType.Horizontal;
-                if (FlipVertical)
-                    flipCode |= FlipType.Vertical;
-
-                if (flipCode != FlipType.None)
-                {
-                    CvInvoke.Flip(imageCopy, data.Data, flipCode);
-                }
-                else
-                {
-                    data.Data = imageCopy;
-                }
-
-                return data;
+                data.Data = new UMat(data.Data, ROI);
             }
-            catch (Exception e)
+
+            // resize if scale is != 1
+            if (Scale != 1.0)
             {
-                LogFormat("{0}", e.StackTrace);
-                return null;
+                CvInvoke.Resize(data.Data,
+                    ret,
+                    new System.Drawing.Size(),
+                    Scale,
+                    Scale,
+                    Emgu.CV.CvEnum.Inter.Cubic);
+                data.Data = ret;
             }
+
+            return data;
         }
     }
 }

@@ -326,6 +326,7 @@
     <Compile Include="Filter\OneEuroSmoothing.cs" />
     <Compile Include="Filter\SmoothingFilterFactory.cs" />
     <Compile Include="Processor\Dummy.cs" />
+    <Compile Include="Processor\OpenCv\Flip.cs" />
     <Compile Include="Processor\UMatProcessor.cs" />
     <Compile Include="Processor\PolarTracker.cs" />
     <Compile Include="Processor\ImagesToVideo.cs" />

@@ -54,9 +54,6 @@
                 <Button Content="Apply" />
             </StackPanel>
 
-            <CheckBox Content="Flip Vertical" VerticalAlignment="Center" IsChecked="{Binding Path=FlipVertical}" />
-            <CheckBox Content="Flip Horizontal" VerticalAlignment="Center" IsChecked="{Binding Path=FlipHorizontal}" />
-
             <StackPanel Orientation="Horizontal">
                 <Label Content="ROI"/>
                 <TextBox Width="100" Text="{Binding Path=ROI, Converter={util:StringToRectangleConverter} }" VerticalAlignment="Center" TextAlignment="Center" />
@@ -116,7 +113,33 @@
             </StackPanel>
         </StackPanel>
     </DataTemplate>
-    
+
+    <DataTemplate x:Key="Flip" DataType="openCv:Flip">
+        <StackPanel>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="320" />
+                    <ColumnDefinition Width="320" />
+                </Grid.ColumnDefinitions>
+
+                <GroupBox Header="Pre Processed Image"
+                          Grid.Column="0">
+                    <Grid>
+                        <Image x:Name="PreProcessImage" Source="{Binding Path=PreProcessImage}" />
+                    </Grid>
+                </GroupBox>
+                <GroupBox Header="Post Processed Image"
+                          Grid.Column="1">
+                    <Image Source="{Binding Path=PostProcessImage}" />
+                </GroupBox>
+            </Grid>
+
+            <CheckBox Content="Flip Vertical" VerticalAlignment="Center" IsChecked="{Binding Path=FlipVertical}" />
+            <CheckBox Content="Flip Horizontal" VerticalAlignment="Center" IsChecked="{Binding Path=FlipHorizontal}" />
+
+        </StackPanel>
+    </DataTemplate>
+
     <DataTemplate x:Key="HandTracker" DataType="openCv:HandTracker">
         <StackPanel>
             <Grid>
