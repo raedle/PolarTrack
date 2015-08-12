@@ -337,21 +337,22 @@ namespace Emgu.CV.External.Extensions
             return isRectangle;
         }
 
+        //TODO check if resize with small/negatiev values will work
         public static Rectangle GetInflatedBy(this Rectangle rectangle, float increaseByFactor, Rectangle maxRectangle)
         {
             var x = rectangle.X;
             var y = rectangle.Y;
             var width = rectangle.Width;
             var height = rectangle.Height;
-            var factoredMarginX = width * increaseByFactor;
-            var factoredMarginY = height * increaseByFactor;
+            var factoredMarginX = width * (increaseByFactor);
+            var factoredMarginY = height * (increaseByFactor);
 
-            var roiX = Math.Max(0, x - factoredMarginX);
-            var roiY = Math.Max(0, y - factoredMarginY);
-            var roiWidth = Math.Min(maxRectangle.Width - roiX, width + (2 * factoredMarginX));
-            var roiHeight = Math.Min(maxRectangle.Height - roiY, height + (2 * factoredMarginY));
+            var roiX = Math.Max(0, x + width / 2 - factoredMarginX / 2);
+            var roiY = Math.Max(0, y + height / 2 - factoredMarginY / 2);
+            var roiWidth = Math.Min(maxRectangle.Width, factoredMarginX);
+            var roiHeight = Math.Min(maxRectangle.Height, factoredMarginY);
 
-            return new Rectangle(
+                return new Rectangle(
                 (int)roiX,
                 (int)roiY,
                 (int)roiWidth,
