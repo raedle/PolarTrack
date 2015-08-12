@@ -201,12 +201,12 @@ namespace Huddle.Engine.Processor
         }
 
 
-        public virtual UMatData PreProcess(UMatData image)
+        public virtual UMatData PreProcess(UMatData data)
         {
-            return image;
+            return data;
         }
 
-        public abstract UMatData ProcessAndView(UMatData image);
+        public abstract UMatData ProcessAndView(UMatData data);
 
         private void WriteImage(UMatData data)
         {
