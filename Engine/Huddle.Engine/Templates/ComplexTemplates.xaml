@@ -82,7 +82,7 @@
 
             <StackPanel Orientation="Horizontal">
                 <Label Content="ROI Expand Factor"/>
-                <Slider Value="{Binding Path=RoiExpandFactor}" Width="340" Height="25" Minimum="0.000" Maximum="1.000" IsSnapToTickEnabled="False" TickFrequency="0.005" />
+                <Slider Value="{Binding Path=RoiExpandFactor}" Width="340" Height="25" Minimum="0.000" Maximum="2.000" IsSnapToTickEnabled="False" TickFrequency="0.005" />
                 <TextBlock Text="{Binding Path=RoiExpandFactor, StringFormat={}{0:#.###}}"/>
             </StackPanel>
 

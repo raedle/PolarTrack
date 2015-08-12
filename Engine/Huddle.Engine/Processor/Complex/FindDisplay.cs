@@ -411,7 +411,7 @@ namespace Huddle.Engine.Processor.Complex
                 return null;
 
             UMat u_rgbImage = rgbImages.First().Data.DeepClone();
-            var debugImage = u_rgbImage.DeepClone().ToImage<Rgb, byte>();
+            var debugImage = u_rgbImage.DeepClone();
             //UMat u_debugImage = debugImage.ToUMat();
 
             if (IsRenderContent)
@@ -427,8 +427,10 @@ namespace Huddle.Engine.Processor.Complex
 
             var u_colorImage = u_rgbImage.DeepClone();
 
-            // TODO: is the copy required or does convert already create a copy? _lastRgbImage.Copy() 
-            var grayscaleImage = u_rgbImage.DeepClone().ToImage<Rgb, byte>().Convert<Gray, byte>();
+            // TODO: is the copy required or does convert already create a copy? _lastRgbImage.Copy()
+            //var grayscaleImage = u_rgbImage.DeepClone().ToImage<Rgb, byte>().Convert<Gray, byte>();
+            UMat grayscaleImage = new UMat();
+            CvInvoke.CvtColor(u_rgbImage, grayscaleImage, ColorConversion.Rgb2Gray);
 
             var width = u_rgbImage.Cols;
             var height = u_rgbImage.Rows;
@@ -436,7 +438,7 @@ namespace Huddle.Engine.Processor.Complex
             foreach (var device in devicesToFind)
             {
                 ProcessDevice(device,
-                    u_colorImage.ToImage<Rgb, byte>(),
+                    u_colorImage,
                     grayscaleImage,
                     width, height,
                     ref debugImage);
@@ -475,24 +477,43 @@ namespace Huddle.Engine.Processor.Complex
 
         #region private methods
 
-        private void ProcessDevice(Device device, Image<Rgb, byte> colorImage, Image<Gray, byte> grayscaleImage, int width, int height, ref Image<Rgb, byte> debugImage)
+        private void ProcessDevice(Device device, /*Image<Rgb, byte>*/UMat colorImage, /*Image<Gray, byte>*/UMat grayscaleImage, int width, int height, ref /*Image<Rgb, byte>*/ UMat debugImage)
         {
             var deviceRoi = CalculateRoiFromNormalizedBounds(device.Area, colorImage);
-            deviceRoi = deviceRoi.GetInflatedBy(RoiExpandFactor, colorImage.ROI);
+            deviceRoi = deviceRoi.GetInflatedBy(RoiExpandFactor, new Rectangle(0,0, colorImage.Size.Width, colorImage.Size.Height) /*CvInvoke.cvGetImageROI(colorImage)*/);
 
-            var imageRoi = colorImage.ROI;
-            colorImage.ROI = deviceRoi;
+            var imageRoi = CvInvoke.cvGetImageROI(colorImage);
+
+            #region workaround
+            //var __i = colorImage.ToImage<Rgb, byte>();
+
+            deviceRoi.Width = 0;
+            deviceRoi.X = 0;
+
+            //CvInvoke.cvSetImageROI(colorImage, deviceRoi);
+            colorImage = new UMat(colorImage, deviceRoi);
+
+            //colorImage = __i.ToUMat();
+            #endregion
+
             List<Point[]> quadrilaterals;
             var markers = GetMarkers(ref colorImage, deviceRoi, width, height, ref debugImage, out quadrilaterals);
-            colorImage.ROI = imageRoi;
+            if (markers == null)
+            {
+                return;
+            }
 
-            var grayscaleImageRoi = grayscaleImage.ROI;
-            grayscaleImage.ROI = deviceRoi;
+            CvInvoke.cvSetImageROI(colorImage, imageRoi);
+
+            var grayscaleImageRoi = CvInvoke.cvGetImageROI(grayscaleImage);
+            CvInvoke.cvSetImageROI(grayscaleImage, deviceRoi);
 
             var i = 0;
             foreach (var marker in markers)
             {
-                grayscaleImage.FillConvexPoly(quadrilaterals[i], Grays.White);
+                CvInvoke.FillConvexPoly(grayscaleImage,
+                    new Emgu.CV.Util.VectorOfPoint(quadrilaterals[i]),
+                    Rgbs.White.MCvScalar);
 
                 var display = FindDisplayInImage(ref grayscaleImage, deviceRoi, width, height, marker, ref debugImage);
 
@@ -500,14 +521,14 @@ namespace Huddle.Engine.Processor.Complex
                 {
                     if (IsRenderContent && IsFindDisplayContiuously)
                     {
-                        var debugImageRoi = debugImage.ROI;
-                        debugImage.ROI = deviceRoi;
+                        var debugImageRoi = CvInvoke.cvGetImageROI(debugImage);
+                        CvInvoke.cvSetImageROI(debugImage, deviceRoi);
 
                         var enclosingRectangle = display.EnclosingRectangle;
                         DrawEdge(ref debugImage, enclosingRectangle.LongEdge, Rgbs.Red);
                         DrawEdge(ref debugImage, enclosingRectangle.ShortEdge, Rgbs.Green);
 
-                        debugImage.ROI = debugImageRoi;
+                        CvInvoke.cvSetImageROI(debugImage, debugImageRoi);
                     }
 
                     DisplaySample displaySample;
@@ -539,20 +560,25 @@ namespace Huddle.Engine.Processor.Complex
                 i++;
             }
 
-            grayscaleImage.ROI = grayscaleImageRoi;
+            CvInvoke.cvSetImageROI(grayscaleImage, grayscaleImageRoi);
         }
 
-        private IEnumerable<Marker> GetMarkers(ref Image<Rgb, byte> image, Rectangle roi, int width, int height, ref Image<Rgb, byte> debugImage, out List<Point[]> quadrilaterals)
+        private IEnumerable<Marker> GetMarkers(ref /*Image<Rgb, byte>*/UMat image, Rectangle roi, int width, int height, ref /*Image<Rgb, byte>*/UMat debugImage, out List<Point[]> quadrilaterals)
         {
             if (_glyphRecognizer == null)
             {
                 quadrilaterals = new List<Point[]>();
                 return null;
             }
+            if (image.Bitmap == null)
+            {
+                quadrilaterals = new List<Point[]>();
+                return null;
+            }
 
-            var imageWidth = image.Width;
-            var imageHeight = image.Height;
-            var imageRoi = image.ROI;
+            var imageWidth = image.Cols;
+            var imageHeight = image.Rows;
+            var imageRoi = CvInvoke.cvGetImageROI(image);
 
             var markers = new List<Marker>();
 
@@ -561,7 +587,7 @@ namespace Huddle.Engine.Processor.Complex
             // Draw new Roi
             if (IsRenderContent)
             {
-                debugImage.Draw(roi, Rgbs.Red, 2);
+                CvInvoke.Rectangle(debugImage, roi, Rgbs.Red.MCvScalar, 2);
             }
 
             _recognizedGlyphs.Clear();
@@ -586,12 +612,12 @@ namespace Huddle.Engine.Processor.Complex
 
                 if (IsRenderContent)
                 {
-                    var debugImageRoi = debugImage.ROI;
-                    debugImage.ROI = roi;
+                    var debugImageRoi = CvInvoke.cvGetImageROI(debugImage);
+                    CvInvoke.cvSetImageROI(debugImage, roi);
 
-                    debugImage.DrawPolyline(quad, true, Rgbs.Yellow, 1);
+                    CvInvoke.Polylines(debugImage, quad, true, Rgbs.Yellow.MCvScalar);
 
-                    debugImage.ROI = debugImageRoi;
+                    CvInvoke.cvSetImageROI(debugImage, debugImageRoi);
                 }
 
                 // if glyphs are recognized then store and draw name 
@@ -604,13 +630,13 @@ namespace Huddle.Engine.Processor.Complex
 
                     if (IsRenderContent)
                     {
-                        var debugImageRoi = debugImage.ROI;
-                        debugImage.ROI = roi;
+                        var debugImageRoi = CvInvoke.cvGetImageROI(debugImage);
+                        CvInvoke.cvSetImageROI(debugImage, roi);
 
                         var labelPos = new Point(recQuad[2].X, recQuad[2].Y);
                         debugImage.Draw(recGlyph.Name, EmguFontBig.Font, EmguFontBig.Scale, labelPos, Rgbs.Green);
 
-                        debugImage.ROI = debugImageRoi;
+                        CvInvoke.cvSetImageROI(debugImage, debugImageRoi);
                     }
                 }
             }
@@ -667,8 +693,8 @@ namespace Huddle.Engine.Processor.Complex
                         var degOrientation = (x > 0.0 ? x : (2.0 * Math.PI + x)) * 360 / (2.0 * Math.PI);
 
                         // find bounding rectangle
-                        float minX = image.Width;
-                        float minY = image.Height;
+                        float minX = image.Cols;
+                        float minY = image.Rows;
                         float maxX = 0;
                         float maxY = 0;
 
@@ -704,8 +730,23 @@ namespace Huddle.Engine.Processor.Complex
                                 (int)(markerCenter.Y + Math.Sin(orientation + Math.PI / 16) * 75.0)
                                 );
 
-                            debugImage.Draw(new Cross2DF(markerCenter, 6, 6), Rgbs.Green, 2);
-                            debugImage.Draw(new LineSegment2DF(markerCenter, p2), Rgbs.Green, 2);
+                            // draw a cross
+                            CvInvoke.Line(debugImage,
+                                new Point((int)markerCenter.X - 3, (int)markerCenter.Y),
+                                new Point((int)markerCenter.X + 3,(int)markerCenter.Y),
+                                Rgbs.Green.MCvScalar,
+                                2);
+                            CvInvoke.Line(debugImage,
+                                new Point((int)markerCenter.X, (int)markerCenter.Y - 3),
+                                new Point((int)markerCenter.X, (int)markerCenter.Y + 3),
+                                Rgbs.Green.MCvScalar,
+                                2);
+
+                            CvInvoke.Line(debugImage,
+                                new Point((int)markerCenter.X, (int)markerCenter.Y),
+                                p2,
+                                Rgbs.Green.MCvScalar,
+                                2);
                             debugImage.Draw(string.Format("{0} deg", Math.Round(degOrientation, 1)), EmguFont.Font, EmguFont.Scale, p3, Rgbs.Green);
                         }
                     }
@@ -717,15 +758,15 @@ namespace Huddle.Engine.Processor.Complex
                 }
             }
 
-            image.ROI = imageRoi;
+            CvInvoke.cvSetImageROI(image, imageRoi);
 
             return markers;
         }
 
-        private static Rectangle CalculateRoiFromNormalizedBounds(Rect inputRect, IImage inputImage, int marginX = 0, int marginY = 0)
+        private static Rectangle CalculateRoiFromNormalizedBounds(Rect inputRect, UMat inputImage, int marginX = 0, int marginY = 0)
         {
-            var width = inputImage.Width();
-            var height = inputImage.Height();
+            var width = inputImage.Cols;
+            var height = inputImage.Rows;
 
             var offsetX = (int)(inputRect.X * width);
             var offsetY = (int)(inputRect.Y * height);
@@ -743,20 +784,20 @@ namespace Huddle.Engine.Processor.Complex
                     );
         }
 
-        private Marker FindDisplayInImage(ref Image<Gray, byte> grayscaleImage, Rectangle roi, int width, int height, Marker marker, ref Image<Rgb, byte> debugImage)
+        private Marker FindDisplayInImage(ref /*Image<Gray, byte>*/UMat grayscaleImage, Rectangle roi, int width, int height, Marker marker, ref /*Image<Rgb, byte>*/UMat debugImage)
         {
-            var imageWidth = grayscaleImage.Width;
-            var imageHeight = grayscaleImage.Height;
+            var imageWidth = grayscaleImage.Cols;
+            var imageHeight = grayscaleImage.Rows;
 
             var x = (int)(marker.RelativeCenter.X * imageWidth) - roi.X;
             var y = (int)(marker.RelativeCenter.Y * imageHeight) - roi.Y;
 
-            var grayscaleImageRoi = grayscaleImage.ROI;
-            grayscaleImage.ROI = roi;
+            var grayscaleImageRoi = CvInvoke.cvGetImageROI(grayscaleImage);
+            CvInvoke.cvSetImageROI(grayscaleImage, roi);
 
             var enclosingRectangle = FindEnclosingRectangle(ref grayscaleImage, new Point(x, y), ref debugImage, roi);
 
-            grayscaleImage.ROI = grayscaleImageRoi;
+            CvInvoke.cvSetImageROI(grayscaleImage, grayscaleImageRoi);
 
             if (enclosingRectangle == null) return null;
 
@@ -774,10 +815,15 @@ namespace Huddle.Engine.Processor.Complex
             };
         }
 
-        private EnclosingRectangle FindEnclosingRectangle(ref Image<Gray, byte> grayscaleImage, Point center, ref Image<Rgb, byte> debugImage, Rectangle roi)
+        private EnclosingRectangle FindEnclosingRectangle(ref /*Image<Gray, byte>*/UMat grayscaleImage, Point center, ref /*Image<Rgb, byte>*/UMat debugImage, Rectangle roi)
         {
             var binaryThreshold = BinaryThreshold;
-            var binaryThresholdImage = grayscaleImage.ThresholdBinary(new Gray(binaryThreshold), Grays.White);
+            UMat binaryThresholdImage = new UMat();
+            CvInvoke.Threshold(grayscaleImage,
+                binaryThresholdImage,
+                binaryThreshold,
+                255,
+                ThresholdType.BinaryInv);
 
             #region Debug Binary Image
 
@@ -792,17 +838,17 @@ namespace Huddle.Engine.Processor.Complex
 
             #endregion
 
-            var floodFillImage = binaryThresholdImage.Copy();
+            var floodFillImage = binaryThresholdImage.Clone();
             binaryThresholdImage.Dispose();
 
-            var imageWidth = floodFillImage.Width;
-            var imageHeight = floodFillImage.Height;
+            var imageWidth = floodFillImage.Cols;
+            var imageHeight = floodFillImage.Rows;
 
             MCvConnectedComp comp;
 
             // mask needs to be 2 pixels wider and 2 pixels taller
             var mask = new Image<Gray, byte>(imageWidth + 2, imageHeight + 2);
-            CvInvoke.FloodFill(floodFillImage.ToUMat(),
+            CvInvoke.FloodFill(floodFillImage,
                 mask,
                 center,
                 new MCvScalar(255),
@@ -870,21 +916,31 @@ namespace Huddle.Engine.Processor.Complex
 
                 if (IsRenderContent)
                 {
-                    var debugImageRoi = debugImage.ROI;
-                    debugImage.ROI = roi;
+                    var debugImageRoi = CvInvoke.cvGetImageROI(debugImage);
+                    CvInvoke.cvSetImageROI(debugImage, roi);
 
                     Emgu.CV.Util.VectorOfPoint ret = null;
                     CvInvoke.ConvexHull(contour,
                         ret,
                         true,
                         true);
-                    debugImage.Draw(ret.ToArray(), Rgbs.Cyan, 2);
-                    debugImage.Draw(CvInvoke.MinAreaRect(contour), Rgbs.Cyan, 2);
+                    CvInvoke.Polylines(debugImage, ret, false, Rgbs.Cyan.MCvScalar, 2);
+                    var vert = CvInvoke.MinAreaRect(contour).GetVertices();
+                    Point[] vertices = { new Point((int)vert[0].X, (int)vert[0].Y),
+                                        new Point((int)vert[1].X, (int)vert[1].Y),
+                                        new Point((int)vert[2].X, (int)vert[2].Y),
+                                        new Point((int)vert[3].X, (int)vert[3].Y)};
+
+                    CvInvoke.Polylines(debugImage,
+                        new Emgu.CV.Util.VectorOfPoint(vertices),
+                        true,
+                        Rgbs.Cyan.MCvScalar,
+                        2);
 
                     DrawEdge(ref debugImage, edges[0], Rgbs.Red);
                     DrawEdge(ref debugImage, edges[1], Rgbs.Green);
 
-                    debugImage.ROI = debugImageRoi;
+                    CvInvoke.cvSetImageROI(debugImage, debugImageRoi);
                 }
 
                 enclosingRectangle = new EnclosingRectangle
@@ -923,9 +979,9 @@ namespace Huddle.Engine.Processor.Complex
             return new[] { longestEdge, nextEdgeToLongestEdge };
         }
 
-        private void DrawEdge(ref Image<Rgb, byte> debugImage, LineSegment2D edge, Rgb color)
+        private void DrawEdge(ref /*Image<Rgb, byte>*/UMat debugImage, LineSegment2D edge, Rgb color)
         {
-            debugImage.Draw(edge, color, 10);
+            CvInvoke.Line(debugImage, edge.P1, edge.P2, color.MCvScalar, 10);
 
             var p1 = edge.P1;
             var p2 = edge.P2;
