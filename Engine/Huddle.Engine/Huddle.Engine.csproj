@@ -385,7 +385,6 @@
     <Compile Include="Processor\ISnapshot.cs" />
     <Compile Include="Processor\ITakeLong.cs" />
     <Compile Include="Processor\Network\HuddleServer.cs" />
-    <Compile Include="Processor\OpenCv\BasicsGrayFloat.cs" />
     <Compile Include="Processor\OpenCv\HandTracker.cs" />
     <Compile Include="Processor\OpenCv\FloodFill.cs" />
     <Compile Include="Processor\OpenCv\ErodeDilate.cs" />
