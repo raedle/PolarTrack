@@ -1,30 +1,35 @@
-﻿using System;
-using System.Diagnostics;
-using System.Drawing;
-using System.Drawing.Imaging;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Runtime.Serialization;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Windows.Media.Imaging;
-using System.Xml.Serialization;
+﻿using DepthSenseWrapper;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.External.Extensions;
 using Emgu.CV.Structure;
+using GalaSoft.MvvmLight.Command;
 using Huddle.Engine.Data;
 using Huddle.Engine.Util;
-using PixelFormat = System.Drawing.Imaging.PixelFormat;
-using Point = System.Drawing.Point;
-
-using DepthSenseWrapper;
+using System;
+using System.Diagnostics;
+using System.Drawing;
+using System.Linq;
+using System.Runtime.Serialization;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Input;
+using System.Windows.Media.Imaging;
+using Point = System.Windows.Point;
 
 namespace Huddle.Engine.Processor.Sensors
 {
     [ViewTemplate("Senz3D (SoftKinetic)", "Senz3DSoftKinetic", "/Huddle.Engine;component/Resources/kinect.png")]
     public class Senz3DSoftKinetic : BaseProcessor
     {
+        #region commands
+
+        public RelayCommand<SenderAwareEventArgs> MouseDownCommand { get; private set; }
+        public RelayCommand<SenderAwareEventArgs> MouseMoveCommand { get; private set; }
+        public RelayCommand<SenderAwareEventArgs> MouseUpCommand { get; private set; }
+
+        #endregion
+
         #region private fields
 
         private bool _isRunning;
@@ -34,6 +39,9 @@ namespace Huddle.Engine.Processor.Sensors
         private Wrapper DSW;
         private ColorSampleCallBack _colorSampleCallback = null;
         private DepthSampleCallBack _depthSampleCallback = null;
+
+        private bool _mouseDown;
+        private Point _mousePoint;
 
         #endregion
 
@@ -768,6 +776,76 @@ namespace Huddle.Engine.Processor.Sensors
 
         #endregion
 
+        #region ROITemp
+
+        /// <summary>
+        /// The <see cref="ROITemp" /> property's name.
+        /// </summary>
+        public const string ROITempPropertyName = "ROITemp";
+
+        private Rectangle _roiTemp = Rectangle.Empty;
+
+        /// <summary>
+        /// Sets and gets the ROITemp property.
+        /// Changes to that property's value raise the PropertyChanged event. 
+        /// </summary>
+        public Rectangle ROITemp
+        {
+            get
+            {
+                return _roiTemp;
+            }
+
+            set
+            {
+                if (_roiTemp == value)
+                {
+                    return;
+                }
+
+                RaisePropertyChanging(ROITempPropertyName);
+                _roiTemp = value;
+                RaisePropertyChanged(ROITempPropertyName);
+            }
+        }
+
+        #endregion
+
+        #region ROI
+
+        /// <summary>
+        /// The <see cref="ROI" /> property's name.
+        /// </summary>
+        public const string ROIPropertyName = "ROI";
+
+        private Rectangle _roi = new Rectangle(0, 0, 1, 1);
+
+        /// <summary>
+        /// Sets and gets the ROI property.
+        /// Changes to that property's value raise the PropertyChanged event. 
+        /// </summary>
+        public Rectangle ROI
+        {
+            get
+            {
+                return _roi;
+            }
+
+            set
+            {
+                if (_roi == value)
+                {
+                    return;
+                }
+
+                RaisePropertyChanging(ROIPropertyName);
+                _roi = value;
+                RaisePropertyChanged(ROIPropertyName);
+            }
+        }
+
+        #endregion
+
         #endregion
 
         #region ctor
@@ -781,6 +859,83 @@ namespace Huddle.Engine.Processor.Sensors
             // TODO load settings and push them to driver
             _depthFrameRate = DSW.m_depthFrameRate;
             _colorFrameRate = DSW.m_colorFrameRate;
+
+            // ROI
+            MouseDownCommand = new RelayCommand<SenderAwareEventArgs>(args =>
+            {
+                var sender = args.Sender as IInputElement;
+                var e = args.OriginalEventArgs as MouseEventArgs;
+
+                if (sender == null || e == null) return;
+
+                _mouseDown = true;
+
+                sender.CaptureMouse();
+
+                _mousePoint = e.GetPosition(sender);
+
+                e.Handled = true;
+            });
+
+            MouseMoveCommand = new RelayCommand<SenderAwareEventArgs>(args =>
+            {
+                var sender = args.Sender as FrameworkElement;
+                var e = args.OriginalEventArgs as MouseEventArgs;
+
+                if (sender == null || e == null || !_mouseDown) return;
+
+                var position = e.GetPosition(sender);
+                var diff = position - _mousePoint;
+
+                var x = Math.Min(_mousePoint.X, position.X);
+                var y = Math.Min(_mousePoint.Y, position.Y);
+                var width = Math.Abs(diff.X);
+                var height = Math.Abs(diff.Y);
+
+                ROITemp = new Rectangle((int)x, (int)y, (int)width, (int)height);
+
+                e.Handled = true;
+            });
+
+            MouseUpCommand = new RelayCommand<SenderAwareEventArgs>(args =>
+            {
+                var sender = args.Sender as IInputElement;
+                var e = args.OriginalEventArgs as MouseEventArgs;
+
+                if (sender == null || e == null || !_mouseDown) return;
+
+                // check if ROI is valid
+                var newx = Math.Max(0, Math.Min(ROITemp.X, DepthImageSource.PixelWidth));
+                var newy = Math.Max(0, Math.Min(ROITemp.Y, DepthImageSource.PixelHeight));
+                var neww = ROITemp.Width;
+                var newh = ROITemp.Height;
+                if (ROITemp.X + ROITemp.Width > DepthImageSource.PixelWidth)
+                {
+                    neww = DepthImageSource.PixelWidth - ROITemp.X;
+                }
+                if (ROITemp.Y + ROITemp.Height > DepthImageSource.PixelHeight)
+                {
+                    newh = DepthImageSource.PixelHeight - ROITemp.Y;
+                }
+
+
+                ROI = new Rectangle(newx, newy, neww, newh);
+                ROITemp = Rectangle.Empty;
+
+                sender.ReleaseMouseCapture();
+
+                _mouseDown = false;
+                e.Handled = true;
+
+                var r = new ROI(this, "confidenceDepthROI");
+                r.RoiRectangle = ROI;
+                var dc = new Huddle.Engine.Data.DataContainer(++_frameId, DateTime.Now)
+                    {
+                        r
+                    };
+
+                Publish(dc);
+            });
         }
 
         #endregion

@@ -312,7 +312,30 @@
 
                     <GroupBox Header="depth" Grid.Column="1" Grid.Row="0">
                         <StackPanel>
-                            <Image Source="{Binding Path=DepthImageSource}" Width="320" Height="240" VerticalAlignment="Top" />
+                            <Grid>
+                            <Image Source="{Binding Path=DepthImageSource}" Width="320" Height="240" VerticalAlignment="Top" x:Name="DepthImage" >
+                                <i:Interaction.Triggers>
+                                    <util:EventTriggerAdvanced EventName="MouseDown">
+                                        <command:EventToCommand Command="{Binding Path=MouseDownCommand, Mode=OneWay}" PassEventArgsToCommand="True" />
+                                    </util:EventTriggerAdvanced>
+                                    <util:EventTriggerAdvanced EventName="MouseMove">
+                                        <command:EventToCommand Command="{Binding Path=MouseMoveCommand, Mode=OneWay}" PassEventArgsToCommand="True" />
+                                    </util:EventTriggerAdvanced>
+                                    <util:EventTriggerAdvanced EventName="MouseUp">
+                                        <command:EventToCommand Command="{Binding Path=MouseUpCommand, Mode=OneWay}" PassEventArgsToCommand="True" />
+                                    </util:EventTriggerAdvanced>
+                                </i:Interaction.Triggers>
+                            </Image>
+                            <Canvas Width="{Binding ElementName=DepthImage, Path=ActualWidth}"
+                                Height="{Binding ElementName=DepthImage, Path=ActualHeight}"
+                                Visibility="{Binding Path=DepthImage, Converter={util:NullToVisibilityConverter}}">
+                                <Rectangle Stroke="Red" StrokeThickness="3"
+                                       Canvas.Left="{Binding Path=ROITemp, Converter={util:ObjectPropertyConverter Path=X}}"
+                                       Canvas.Top="{Binding Path=ROITemp, Converter={util:ObjectPropertyConverter Path=Y}}"
+                                       Width="{Binding Path=ROITemp, Converter={util:ObjectPropertyConverter Path=Width}}"
+                                       Height="{Binding Path=ROITemp, Converter={util:ObjectPropertyConverter Path=Height}}" />
+                            </Canvas>
+                                </Grid>
                             <StackPanel Orientation="Horizontal">
                                 <Label Content="{Binding Path=DepthImageSource.PixelWidth}"/>
                                 <Label Content=" x "/>
@@ -343,7 +366,30 @@
 
                     <GroupBox Header="confidence" Grid.Column="2" Grid.Row="0">
                         <StackPanel>
-                            <Image Source="{Binding Path=ConfidenceMapImageSource}" Width="320" Height="240" VerticalAlignment="Top" />
+                            <Grid>
+                                <Image Source="{Binding Path=ConfidenceMapImageSource}" Width="320" Height="240" VerticalAlignment="Top" x:Name="ConfidenceImage" >
+                                    <i:Interaction.Triggers>
+                                        <util:EventTriggerAdvanced EventName="MouseDown">
+                                            <command:EventToCommand Command="{Binding Path=MouseDownCommand, Mode=OneWay}" PassEventArgsToCommand="True" />
+                                        </util:EventTriggerAdvanced>
+                                        <util:EventTriggerAdvanced EventName="MouseMove">
+                                            <command:EventToCommand Command="{Binding Path=MouseMoveCommand, Mode=OneWay}" PassEventArgsToCommand="True" />
+                                        </util:EventTriggerAdvanced>
+                                        <util:EventTriggerAdvanced EventName="MouseUp">
+                                            <command:EventToCommand Command="{Binding Path=MouseUpCommand, Mode=OneWay}" PassEventArgsToCommand="True" />
+                                        </util:EventTriggerAdvanced>
+                                    </i:Interaction.Triggers>
+                                </Image>
+                                <Canvas Width="{Binding ElementName=ConfidenceImage, Path=ActualWidth}"
+                                Height="{Binding ElementName=ConfidenceImage, Path=ActualHeight}"
+                                Visibility="{Binding Path=ConfidenceImage, Converter={util:NullToVisibilityConverter}}">
+                                    <Rectangle Stroke="Red" StrokeThickness="3"
+                                       Canvas.Left="{Binding Path=ROITemp, Converter={util:ObjectPropertyConverter Path=X}}"
+                                       Canvas.Top="{Binding Path=ROITemp, Converter={util:ObjectPropertyConverter Path=Y}}"
+                                       Width="{Binding Path=ROITemp, Converter={util:ObjectPropertyConverter Path=Width}}"
+                                       Height="{Binding Path=ROITemp, Converter={util:ObjectPropertyConverter Path=Height}}" />
+                                </Canvas>
+                            </Grid>
                             <StackPanel Orientation="Horizontal">
                                 <Label Content="{Binding Path=ConfidenceMapImageSource.PixelWidth}"/>
                                 <Label Content=" x "/>
