@@ -28,6 +28,9 @@ namespace Huddle.Engine.Processor.Sensors
         public RelayCommand<SenderAwareEventArgs> MouseDownCommand { get; private set; }
         public RelayCommand<SenderAwareEventArgs> MouseMoveCommand { get; private set; }
         public RelayCommand<SenderAwareEventArgs> MouseUpCommand { get; private set; }
+        public RelayCommand<SenderAwareEventArgs> ColorMouseDownCommand { get; private set; }
+        public RelayCommand<SenderAwareEventArgs> ColorMouseMoveCommand { get; private set; }
+        public RelayCommand<SenderAwareEventArgs> ColorMouseUpCommand { get; private set; }
 
         #endregion
 
@@ -43,6 +46,8 @@ namespace Huddle.Engine.Processor.Sensors
 
         private bool _mouseDown;
         private Point _mousePoint;
+        private bool _colorMouseDown;
+        private Point _colorMousePoint;
 
         private System.Timers.Timer timer = null;
 
@@ -884,7 +889,121 @@ namespace Huddle.Engine.Processor.Sensors
                 {
                     startEmitROITimer();
                 }
-                if (_isRunning == true && EmitROI == false)
+                if (_isRunning == true && EmitROI == false && EmitColorROI == false)
+                {
+                    stopEmitROITimer();
+                }
+            }
+        }
+
+        #endregion
+
+        #region ColorROITemp
+
+        /// <summary>
+        /// The <see cref="ColorROITemp" /> property's name.
+        /// </summary>
+        public const string ColorROITempPropertyName = "ColorROITemp";
+
+        private Rectangle _colorRoiTemp = Rectangle.Empty;
+
+        /// <summary>
+        /// Sets and gets the ColorROITemp property.
+        /// Changes to that property's value raise the PropertyChanged event. 
+        /// </summary>
+        public Rectangle ColorROITemp
+        {
+            get
+            {
+                return _colorRoiTemp;
+            }
+
+            set
+            {
+                if (_colorRoiTemp == value)
+                {
+                    return;
+                }
+
+                RaisePropertyChanging(ColorROITempPropertyName);
+                _colorRoiTemp = value;
+                RaisePropertyChanged(ColorROITempPropertyName);
+            }
+        }
+
+        #endregion
+
+        #region ColorROI
+
+        /// <summary>
+        /// The <see cref="ColorROI" /> property's name.
+        /// </summary>
+        public const string ColorROIPropertyName = "ColorROI";
+
+        private Rectangle _colorRoi = new Rectangle(0, 0, 1, 1);
+
+        /// <summary>
+        /// Sets and gets the ColorROI property.
+        /// Changes to that property's value raise the PropertyChanged event. 
+        /// </summary>
+        public Rectangle ColorROI
+        {
+            get
+            {
+                return _colorRoi;
+            }
+
+            set
+            {
+                if (_colorRoi == value)
+                {
+                    return;
+                }
+
+                RaisePropertyChanging(ColorROIPropertyName);
+                _colorRoi = value;
+                RaisePropertyChanged(ColorROIPropertyName);
+            }
+        }
+
+        #endregion
+
+        #region EmitColorROI
+
+        /// <summary>
+        /// The <see cref="EmitColorROI" /> property's name.
+        /// </summary>
+        public const string EmitColorROIPropertyName = "EmitColorROI";
+
+        private bool _emitColorROI = false;
+
+        /// <summary>
+        /// Sets and gets the EmitColorROI property.
+        /// Changes to that property's value raise the PropertyChanged event. 
+        /// </summary>
+        public bool EmitColorROI
+        {
+            get
+            {
+                return _emitColorROI;
+            }
+
+            set
+            {
+                if (_emitColorROI == value)
+                {
+                    return;
+                }
+
+                RaisePropertyChanging(EmitColorROIPropertyName);
+                _emitColorROI = value;
+                RaisePropertyChanged(EmitColorROIPropertyName);
+
+                if (_isRunning == true && EmitColorROI == true)
+                {
+                    startEmitROITimer();
+                }
+                if (_isRunning == true && EmitColorROI == false && EmitROI == false)
                 {
                     stopEmitROITimer();
                 }
@@ -986,6 +1105,76 @@ namespace Huddle.Engine.Processor.Sensors
 
                 emitROI();
             });
+
+            // color ROI
+            ColorMouseDownCommand = new RelayCommand<SenderAwareEventArgs>(args =>
+            {
+                var sender = args.Sender as IInputElement;
+                var e = args.OriginalEventArgs as MouseEventArgs;
+
+                if (sender == null || e == null) return;
+
+                _colorMouseDown = true;
+
+                sender.CaptureMouse();
+
+                _colorMousePoint = e.GetPosition(sender);
+
+                e.Handled = true;
+            });
+
+            ColorMouseMoveCommand = new RelayCommand<SenderAwareEventArgs>(args =>
+            {
+                var sender = args.Sender as FrameworkElement;
+                var e = args.OriginalEventArgs as MouseEventArgs;
+
+                if (sender == null || e == null || !_colorMouseDown) return;
+
+                var position = e.GetPosition(sender);
+                var diff = position - _colorMousePoint;
+
+                var x = Math.Min(_colorMousePoint.X, position.X);
+                var y = Math.Min(_colorMousePoint.Y, position.Y);
+                var width = Math.Abs(diff.X);
+                var height = Math.Abs(diff.Y);
+
+                ColorROITemp = new Rectangle((int)x, (int)y, (int)width, (int)height);
+
+                e.Handled = true;
+            });
+
+            ColorMouseUpCommand = new RelayCommand<SenderAwareEventArgs>(args =>
+            {
+                var sender = args.Sender as IInputElement;
+                var e = args.OriginalEventArgs as MouseEventArgs;
+
+                if (sender == null || e == null || !_colorMouseDown) return;
+
+                // check if ROI is valid
+                var newx = Math.Max(0, Math.Min(ColorROITemp.X * 4, ColorImageSource.PixelWidth));
+                var newy = Math.Max(0, Math.Min(ColorROITemp.Y * 4, ColorImageSource.PixelHeight));
+                var neww = ColorROITemp.Width * 4;
+                var newh = ColorROITemp.Height * 4;
+                if (ColorROITemp.X + ColorROITemp.Width > ColorImageSource.PixelWidth)
+                {
+                    neww = ColorImageSource.PixelWidth - ColorROITemp.X;
+                }
+                if (ColorROITemp.Y + ColorROITemp.Height > ColorImageSource.PixelHeight)
+                {
+                    newh = ColorImageSource.PixelHeight - ColorROITemp.Y;
+                }
+
+
+                ColorROI = new Rectangle(newx, newy, neww, newh);
+                ColorROITemp = Rectangle.Empty;
+
+                sender.ReleaseMouseCapture();
+
+                _colorMouseDown = false;
+                e.Handled = true;
+
+                emitROI();
+            });
         }
 
         #endregion
@@ -1032,7 +1221,7 @@ namespace Huddle.Engine.Processor.Sensors
                 _depthSampleCallback = new DepthSampleCallBack(DepthSampleCallBackFunc);
             DSW.regDepthSampleCallBack(_depthSampleCallback);
 
-            if (EmitROI == true)
+            if (EmitROI == true || EmitColorROI == true)
             {
                 emitROI();
                 startEmitROITimer();
@@ -1184,14 +1373,19 @@ namespace Huddle.Engine.Processor.Sensors
         // Publish ROI for depth and confidence
         private void emitROI()
         {
-            var roi = new ROI(this, "confidenceDepthROI");
-            roi.RoiRectangle = ROI;
-
-            var dc = new Huddle.Engine.Data.DataContainer(++_frameId, DateTime.Now)
+            var dc = new Huddle.Engine.Data.DataContainer(++_frameId, DateTime.Now);
+            if (EmitROI)
             {
-                roi
-            };
-
+                var roi = new ROI(this, "confidenceDepthROI");
+                roi.RoiRectangle = ROI;
+                dc.Add(roi);
+            }
+            if (EmitColorROI)
+            {
+                var roi = new ROI(this, "colorROI");
+                roi.RoiRectangle = ColorROI;
+                dc.Add(roi);
+            }
             Publish(dc);
         }
 
