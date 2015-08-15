@@ -1034,6 +1034,7 @@ namespace Huddle.Engine.Processor.Sensors
 
             if (EmitROI == true)
             {
+                emitROI();
                 startEmitROITimer();
             }
 
