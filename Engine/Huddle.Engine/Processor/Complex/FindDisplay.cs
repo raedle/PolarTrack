@@ -410,13 +410,13 @@ namespace Huddle.Engine.Processor.Complex
             if (!rgbImages.Any())
                 return null;
 
-            UMat u_rgbImage = rgbImages.First().Data.DeepClone();
-            var debugImage = u_rgbImage.DeepClone();
+            UMat u_rgbImage = rgbImages.First().Data.Clone();
+            UMat debugImage = u_rgbImage.Clone();
             //UMat u_debugImage = debugImage.ToUMat();
 
             if (IsRenderContent)
             {
-                var u_lastRgbImageCopy = u_rgbImage.DeepClone();
+                var u_lastRgbImageCopy = u_rgbImage.Clone();
                 Task.Factory.StartNew(() =>
                 {
                     var bitmapSource = u_lastRgbImageCopy.ToImage().ToBitmapSource(true);
@@ -425,7 +425,7 @@ namespace Huddle.Engine.Processor.Complex
                 }).ContinueWith(t => InputImageBitmapSource = t.Result);
             }
 
-            var u_colorImage = u_rgbImage.DeepClone();
+            var u_colorImage = u_rgbImage.Clone();
 
             // TODO: is the copy required or does convert already create a copy? _lastRgbImage.Copy()
             //var grayscaleImage = u_rgbImage.DeepClone().ToImage<Rgb, byte>().Convert<Gray, byte>();
@@ -454,7 +454,7 @@ namespace Huddle.Engine.Processor.Complex
                 var debugImageCopy = debugImage.Clone();
                 Task.Factory.StartNew(() =>
                 {
-                    var bitmapSource = debugImageCopy.ToBitmapSource(true);
+                    var bitmapSource = debugImageCopy.ToImage().ToBitmapSource(true);
                     debugImageCopy.Dispose();
                     return bitmapSource;
                 }).ContinueWith(t => DebugImageBitmapSource = t.Result);
