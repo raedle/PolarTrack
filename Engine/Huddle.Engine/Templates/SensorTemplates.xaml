@@ -361,6 +361,19 @@
                                 <Slider Value="{Binding Path=DepthFrameRate}" Width="340" Height="25" Minimum="25" Maximum="60" IsSnapToTickEnabled="True" Ticks="25, 30, 50, 60"/>
                                 <TextBlock Text="{Binding Path=DepthFrameRate}"/>
                             </StackPanel>
+                            <GroupBox Header="ROI" HorizontalAlignment="Left" HorizontalContentAlignment="Stretch">
+                                <StackPanel Orientation="Horizontal">
+                                    <CheckBox Content="Emit ROI"
+                                              ToolTip="Emits ROI every second"
+                                              VerticalAlignment="Center"
+                                              IsChecked="{Binding Path=EmitROI}"
+                                              Margin="5"/>
+                                    <TextBox Width="100"
+                                             Text="{Binding Path=ROI, Converter={util:StringToRectangleConverter} }"
+                                             VerticalAlignment="Center"
+                                             TextAlignment="Center" />
+                                </StackPanel>
+                            </GroupBox>
                         </StackPanel>
                     </GroupBox>
 
@@ -398,6 +411,19 @@
                                 <Label Content="{Binding Path=ConfidenceMapImageFrameTime}"/>
                                 <Label Content=" ms)"/>
                             </StackPanel>
+                            <GroupBox Header="ROI" HorizontalAlignment="Left" HorizontalContentAlignment="Stretch">
+                                <StackPanel Orientation="Horizontal">
+                                    <CheckBox Content="Emit ROI"
+                                              ToolTip="Emits ROI every second"
+                                              VerticalAlignment="Center"
+                                              IsChecked="{Binding Path=EmitROI}"
+                                              Margin="5"/>
+                                    <TextBox Width="100"
+                                             Text="{Binding Path=ROI, Converter={util:StringToRectangleConverter} }"
+                                             VerticalAlignment="Center"
+                                             TextAlignment="Center" />
+                                </StackPanel>
+                            </GroupBox>
                         </StackPanel>
                     </GroupBox>
 

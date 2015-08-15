@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
+using System.ComponentModel;
 using Point = System.Windows.Point;
 
 namespace Huddle.Engine.Processor.Sensors
@@ -42,6 +43,8 @@ namespace Huddle.Engine.Processor.Sensors
 
         private bool _mouseDown;
         private Point _mousePoint;
+
+        private System.Timers.Timer timer = null;
 
         #endregion
 
@@ -846,6 +849,50 @@ namespace Huddle.Engine.Processor.Sensors
 
         #endregion
 
+        #region EmitROI
+
+        /// <summary>
+        /// The <see cref="EmitROI" /> property's name.
+        /// </summary>
+        public const string EmitROIPropertyName = "EmitROI";
+
+        private bool _emitROI = false;
+
+        /// <summary>
+        /// Sets and gets the EmitROI property.
+        /// Changes to that property's value raise the PropertyChanged event. 
+        /// </summary>
+        public bool EmitROI
+        {
+            get
+            {
+                return _emitROI;
+            }
+
+            set
+            {
+                if (_emitROI == value)
+                {
+                    return;
+                }
+
+                RaisePropertyChanging(EmitROIPropertyName);
+                _emitROI = value;
+                RaisePropertyChanged(EmitROIPropertyName);
+
+                if (_isRunning == true && EmitROI == true)
+                {
+                    startEmitROITimer();
+                }
+                if (_isRunning == true && EmitROI == false)
+                {
+                    stopEmitROITimer();
+                }
+            }
+        }
+
+        #endregion
+
         #endregion
 
         #region ctor
@@ -859,6 +906,16 @@ namespace Huddle.Engine.Processor.Sensors
             // TODO load settings and push them to driver
             _depthFrameRate = DSW.m_depthFrameRate;
             _colorFrameRate = DSW.m_colorFrameRate;
+
+            // emitROI Timer
+            if (timer == null)
+            {
+                timer = new System.Timers.Timer(1000);
+                timer.BeginInit();
+                timer.AutoReset = true;
+                timer.Elapsed += new System.Timers.ElapsedEventHandler(emitROITimerElapsed);
+                timer.EndInit();
+            }
 
             // ROI
             MouseDownCommand = new RelayCommand<SenderAwareEventArgs>(args =>
@@ -927,14 +984,7 @@ namespace Huddle.Engine.Processor.Sensors
                 _mouseDown = false;
                 e.Handled = true;
 
-                var r = new ROI(this, "confidenceDepthROI");
-                r.RoiRectangle = ROI;
-                var dc = new Huddle.Engine.Data.DataContainer(++_frameId, DateTime.Now)
-                    {
-                        r
-                    };
-
-                Publish(dc);
+                emitROI();
             });
         }
 
@@ -946,6 +996,11 @@ namespace Huddle.Engine.Processor.Sensors
         {
             try
             {
+                if (timer != null)
+                {
+                    timer.Dispose();
+                    timer = null;
+                }
                 //TODO
                 //DSW.Dispose();
                 DSW = null;
@@ -976,10 +1031,19 @@ namespace Huddle.Engine.Processor.Sensors
             if (_depthSampleCallback == null)
                 _depthSampleCallback = new DepthSampleCallBack(DepthSampleCallBackFunc);
             DSW.regDepthSampleCallBack(_depthSampleCallback);
+
+            if (EmitROI == true)
+            {
+                startEmitROITimer();
+            }
+
+            _isRunning = true;
         }
 
         public override void Stop()
         {
+            stopEmitROITimer();
+
             DSW.unregColorSampleCallBack();
             DSW.unregDepthSampleCallBack();
 
@@ -1110,6 +1174,45 @@ namespace Huddle.Engine.Processor.Sensors
             Publish(dc);
 
             sample.Dispose();
+        }
+
+        //public delegate emitRoi(Object state, System.Timers.ElapsedEventArgs e) {
+        //    emitROI();
+        //}
+
+        // Publish ROI for depth and confidence
+        private void emitROI()
+        {
+            var roi = new ROI(this, "confidenceDepthROI");
+            roi.RoiRectangle = ROI;
+
+            var dc = new Huddle.Engine.Data.DataContainer(++_frameId, DateTime.Now)
+            {
+                roi
+            };
+
+            Publish(dc);
+        }
+
+        private void startEmitROITimer()
+        {
+            if (timer != null)
+            {
+                timer.Start();
+            }
+        }
+        
+        private void stopEmitROITimer()
+        {
+            if (timer != null)
+            {
+                timer.Stop();
+            }
+        }
+
+        private void emitROITimerElapsed(object sender, System.Timers.ElapsedEventArgs e)
+        {
+            emitROI();
         }
 
         #endregion
