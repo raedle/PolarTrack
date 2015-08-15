@@ -765,16 +765,31 @@ namespace Huddle.Engine.Processor.Complex
 
         private static Rectangle CalculateRoiFromNormalizedBounds(Rect inputRect, UMat inputImage, int marginX = 0, int marginY = 0)
         {
+            if (inputRect.X > 1.0 ||
+                inputRect.Y > 1.0 ||
+                inputRect.Width > 1.0 ||
+                inputRect.Height > 1.0)
+            {
+                // TODO avoid this -> I think this comes when resizing the ROI (15.08.2015) Inti Gabriel
+                return new Rectangle();
+            }
             var width = inputImage.Cols;
             var height = inputImage.Rows;
 
             var offsetX = (int)(inputRect.X * width);
             var offsetY = (int)(inputRect.Y * height);
 
-            var roiX = Math.Max(0, offsetX - marginX);
-            var roiY = Math.Max(0, offsetY - marginY);
+            // crop to bounds
+            var roiX = Math.Min(Math.Max(0, offsetX - marginX), width);
+            var roiY = Math.Min(Math.Max(0, offsetY - marginY), height);
+            
             var roiWidth = (int)Math.Min(width - roiX, inputRect.Width * width + 2 * marginX);
             var roiHeight = (int)Math.Min(height - roiY, inputRect.Height * height + 2 * marginY);
+
+            if (roiX < 0 || roiY < 0 || roiWidth < 0 || roiHeight < 0)
+            {
+                return new Rectangle();
+            }
 
             return new Rectangle(
                     roiX,

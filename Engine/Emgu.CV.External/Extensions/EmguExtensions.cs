@@ -160,7 +160,6 @@ namespace Emgu.CV.External.Extensions
 
             // <Rgb, byte>
             IImage img = null;
-            UMat ret;
             var _d = dst.ToImage();
             var _m = mask.ToImage();
             if (nc == 3 && depth == CvEnum.DepthType.Cv8U)
@@ -337,7 +336,16 @@ namespace Emgu.CV.External.Extensions
             return isRectangle;
         }
 
-        //TODO check if resize with small/negatiev values will work
+        // TODO check if resize with small/negatiev values will work
+        // TODO check if width + x / height + y can exceed maxRectange size
+        /// <summary>
+        /// Inflates the given rectangle by <see cref="increaseByFactor"/>. If the resulting rectangle is larger 
+        /// than <see cref="maxRectangle"/> it will be croped to the maximum size.
+        /// </summary>
+        /// <param name="rectangle"></param>
+        /// <param name="increaseByFactor"></param>
+        /// <param name="maxRectangle"></param>
+        /// <returns></returns>
         public static Rectangle GetInflatedBy(this Rectangle rectangle, float increaseByFactor, Rectangle maxRectangle)
         {
             var x = rectangle.X;
@@ -347,10 +355,10 @@ namespace Emgu.CV.External.Extensions
             var factoredMarginX = width * (increaseByFactor);
             var factoredMarginY = height * (increaseByFactor);
 
-            var roiX = Math.Max(0, x + width / 2 - factoredMarginX / 2);
-            var roiY = Math.Max(0, y + height / 2 - factoredMarginY / 2);
-            var roiWidth = Math.Min(maxRectangle.Width, factoredMarginX);
-            var roiHeight = Math.Min(maxRectangle.Height, factoredMarginY);
+            var roiX = Math.Min(Math.Max(0, x + width / 2 - factoredMarginX / 2), maxRectangle.Width);
+            var roiY = Math.Min(Math.Max(0, y + height / 2 - factoredMarginY / 2), maxRectangle.Height);
+            var roiWidth = Math.Min(maxRectangle.Width - roiX, factoredMarginX);
+            var roiHeight = Math.Min(maxRectangle.Height - roiY, factoredMarginY);
 
                 return new Rectangle(
                 (int)roiX,
