@@ -1,14 +1,14 @@
-﻿using System.Drawing;
-using System.Xml.Serialization;
-using Emgu.CV;
+﻿using Emgu.CV;
 using Emgu.CV.Structure;
-using Huddle.Engine.Properties;
+using Huddle.Engine.Data;
 using Huddle.Engine.Util;
+using System.Drawing;
+using System.Xml.Serialization;
 
 namespace Huddle.Engine.Processor.OpenCv
 {
     [ViewTemplate("Depth Processor", "DepthProcessor")]
-    public class DepthProcessor : RgbProcessor
+    public class DepthProcessor : UMatProcessor
     {
         #region properties
 
@@ -91,9 +91,9 @@ namespace Huddle.Engine.Processor.OpenCv
             MinReproducedDepth = 0;
         }
 
-        public override Image<Rgb, byte> ProcessAndView(Image<Rgb, byte> image)
+        public override UMatData ProcessAndView(UMatData data)
         {
-            var outputImage = new Image<Hsv, double>(image.Width, image.Height);
+            var outputImage = new Image<Hsv, double>(data.Width, data.Height);
 
             // draw gradient legend
             for (var cx = 0; cx < outputImage.Width; cx++)
@@ -131,7 +131,9 @@ namespace Huddle.Engine.Processor.OpenCv
                 EmguFont.Scale,
                 new MCvScalar(0, 0, 0));
 
-            return outputImage.Convert<Rgb, byte>();
+            CvInvoke.CvtColor(outputImage,data.Data,Emgu.CV.CvEnum.ColorConversion.Hsv2Rgb);
+
+            return data;
         }
     }
 }

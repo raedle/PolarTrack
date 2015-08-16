@@ -41,8 +41,6 @@ namespace Huddle.Engine.Processor.Complex
                 var color = Rgbs.White;
                 if (typeof(RectangleTracker) == blob.Source.GetType())
                     color = Rgbs.Red;
-                else if (typeof(RectangleTrackerColor) == blob.Source.GetType())
-                    color = Rgbs.Yellow;
 
                 var centerX = (int)(blob.Center.X * width);
                 var centerY = (int)(blob.Center.Y * height);

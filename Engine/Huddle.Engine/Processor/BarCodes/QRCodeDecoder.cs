@@ -1,20 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
-using Emgu.CV;
+﻿using Emgu.CV;
 using Emgu.CV.External.Structure;
 using Emgu.CV.Structure;
 using Huddle.Engine.Data;
 using Huddle.Engine.Processor.BarCodes.ZXingHelper;
 using Huddle.Engine.Util;
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Linq;
 using WPoint = System.Windows.Point;
-using DPoint = System.Drawing.Point;
 
 namespace Huddle.Engine.Processor.BarCodes
 {
     [ViewTemplate("QRCode Decoder", "QRCodeDecoder", "/Huddle.Engine;component/Resources/qrcode.png")]
-    public class QRCodeDecoder : RgbProcessor
+    public class QRCodeDecoder : UMatProcessor
     {
         #region private fields
 
@@ -86,20 +85,20 @@ namespace Huddle.Engine.Processor.BarCodes
 
         #endregion
 
-        public override Image<Rgb, byte> ProcessAndView(Image<Rgb, byte> image)
+        public override UMatData ProcessAndView(UMatData data)
         {
-            var outputImage = image.Copy();
+            UMat outputImage = data.Data.Clone();
 
             // get (hopefully) all visible QR codes
             ZXing.Result[] results;
             try
             {
-                results = _barcodeReader.DecodeMultiple(image);
+                results = _barcodeReader.DecodeMultiple(data.Data.ToImage<Rgb,byte>());
             }
             catch (Exception)
             {
                 // sometimes there are some less important exceptions about the version of the QR codes
-                return outputImage;
+                return data;
             }
 
             var numQRs = 0;
@@ -112,13 +111,13 @@ namespace Huddle.Engine.Processor.BarCodes
             {
                 LogFormat("Failed");
                 //base.DrawDebug(image);
-                return outputImage;
+                return data;
             }
 
             // Process found QR codes
 
             if (!results.Any())
-                return outputImage;
+                return data;
 
             for (var i = 0; i < numQRs; i++)
             {
@@ -144,12 +143,21 @@ namespace Huddle.Engine.Processor.BarCodes
                     }
 
 
-
-                    outputImage.Draw(new CircleF(new PointF(point.X, point.Y), 5), (Rgb)colorEnumerator.Current, 3);
+                    CvInvoke.Circle(outputImage,
+                        new Point((int)point.X, (int)point.Y),
+                        5,
+                        ((Rgb)colorEnumerator.Current).MCvScalar,
+                        3);
                 }
 
                 if (qrPoints.Length >= 2)
-                    outputImage.Draw(new LineSegment2DF(new PointF(qrPoints[0].X, qrPoints[0].Y), new PointF(qrPoints[1].X, qrPoints[1].Y)), Rgbs.Red, 5);
+                {
+                    CvInvoke.Line(outputImage,
+                        new Point((int)qrPoints[0].X, (int)qrPoints[0].Y),
+                        new Point((int)qrPoints[1].X, (int)qrPoints[1].Y),
+                        Rgbs.Red.MCvScalar,
+                        5);
+                }
 
                 var dx = qrPoints[1].X - qrPoints[0].X;
                 var dy = qrPoints[1].Y - qrPoints[0].Y;
@@ -163,13 +171,13 @@ namespace Huddle.Engine.Processor.BarCodes
                 var centerY = (minY + (maxY - minY) / 2);
 
                 // center point
-                outputImage.Draw(new CircleF(new PointF(centerX, centerY), 5), Rgbs.TangerineTango, 3);
+                CvInvoke.Circle(outputImage, new Point((int)centerX, (int)centerY), 5, Rgbs.TangerineTango.MCvScalar, 5);
 
                 // Stage data for later push
                 Stage(new Marker(this, string.Format("QrCode{0}", results[i].Text))
                 {
                     Id = results[i].Text,
-                    Center = new WPoint(centerX / image.Width, centerY / image.Height),
+                    Center = new WPoint(centerX / data.Width, centerY / data.Height),
                     Angle = qrOrientation
                 });
             }
@@ -178,7 +186,8 @@ namespace Huddle.Engine.Processor.BarCodes
             Push();
 
             //base.DrawDebug(image);
-            return outputImage;
+            data.Data = outputImage;
+            return data;
         }
     }
 }

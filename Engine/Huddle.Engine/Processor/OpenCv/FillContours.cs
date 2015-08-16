@@ -15,7 +15,7 @@ using Huddle.Engine.Util;
 namespace Huddle.Engine.Processor.OpenCv
 {
     [ViewTemplate("Fill Contours", "FillContours")]
-    public class FillContours : RgbProcessor
+    public class FillContours : UMatProcessor
     {
         #region properties
 
@@ -127,13 +127,15 @@ namespace Huddle.Engine.Processor.OpenCv
 
         #endregion
 
-        public override Image<Rgb, byte> ProcessAndView(Image<Rgb, byte> image)
+        public override UMatData ProcessAndView(UMatData data)
         {
-            var outputImage = new Image<Rgb, byte>(image.Size.Width, image.Size.Height, Rgbs.Black);
-            var debugImage = outputImage.Copy();
+            UMat outputImage = new UMat(data.Height, data.Width, DepthType.Cv8U, 3);
+            outputImage.SetTo(Rgbs.Black.MCvScalar);
+            UMat debugImage = outputImage.Clone();
 
             //Convert the image to grayscale and filter out the noise
-            var grayImage = image.Convert<Gray, Byte>();
+            UMat grayImage = new UMat();
+            CvInvoke.CvtColor(data.Data, grayImage, ColorConversion.Rgb2Gray);
 
             Emgu.CV.Util.VectorOfVectorOfPoint contours = new Emgu.CV.Util.VectorOfVectorOfPoint();
             CvInvoke.FindContours(grayImage,
@@ -162,7 +164,8 @@ namespace Huddle.Engine.Processor.OpenCv
 
                 //outputImage.Draw(currentContour.GetConvexHull(ORIENTATION.CV_CLOCKWISE), Rgbs.White, Rgbs.Yellow, 2, -1);
 
-                outputImage.Draw(currentContour.ToArray(), Rgbs.White, -1);
+                CvInvoke.Polylines(outputImage, currentContour, true, Rgbs.White.MCvScalar);
+                CvInvoke.FillConvexPoly(outputImage, currentContour, Rgbs.White.MCvScalar);
 
                 if (IsRenderContent)
                 {
@@ -235,7 +238,9 @@ namespace Huddle.Engine.Processor.OpenCv
 
             grayImage.Dispose();
 
-            return outputImage;
+            data.Data = outputImage;
+
+            return data;
         }
     }
 }

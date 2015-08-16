@@ -1,18 +1,19 @@
-﻿using System;
-using System.Runtime.Serialization;
-using System.Threading.Tasks;
-using System.Windows.Media.Imaging;
-using Emgu.CV;
+﻿using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.External.Extensions;
 using Emgu.CV.External.Structure;
 using Emgu.CV.Structure;
+using Huddle.Engine.Data;
 using Huddle.Engine.Util;
+using System;
+using System.Runtime.Serialization;
+using System.Threading.Tasks;
+using System.Windows.Media.Imaging;
 
 namespace Huddle.Engine.Processor.OpenCv
 {
     [ViewTemplate("Fill Convex Hulls", "FillConvexHulls")]
-    public class FillConvexHulls : RgbProcessor
+    public class FillConvexHulls : UMatProcessor
     {
         #region properties
 
@@ -124,13 +125,17 @@ namespace Huddle.Engine.Processor.OpenCv
 
         #endregion
 
-        public override Image<Rgb, byte> ProcessAndView(Image<Rgb, byte> image)
+        public override UMatData ProcessAndView(UMatData data)
         {
-            var outputImage = new Image<Rgb, byte>(image.Size.Width, image.Size.Height, Rgbs.Black);
-            var debugImage = outputImage.Copy();
+//            var outputImage = new Image<Rgb, byte>(data.Size.Width, data.Size.Height, Rgbs.Black);
+            UMat outputImage = new UMat(data.Height, data.Width, DepthType.Cv8U, 3);
+            outputImage.SetTo(Rgbs.Black.MCvScalar);
+            var debugImage = outputImage.Clone();
 
             //Convert the image to grayscale and filter out the noise
-            var grayImage = image.Convert<Gray, Byte>();
+            UMat grayImage = new UMat();
+            CvInvoke.CvtColor(data.Data,grayImage,ColorConversion.Rgb2Gray);
+
 
             Emgu.CV.Util.VectorOfVectorOfPoint contours = new Emgu.CV.Util.VectorOfVectorOfPoint();
             CvInvoke.FindContours(grayImage,
@@ -157,12 +162,13 @@ namespace Huddle.Engine.Processor.OpenCv
                     ret,
                     true,
                     true);
-
-                outputImage.FillConvexPoly(ret.ToArray(), Rgbs.White);
+                CvInvoke.FillConvexPoly(outputImage,
+                    ret,
+                    Rgbs.White.MCvScalar);
 
                 if (IsRenderContent)
                 {
-                    debugImage.FillConvexPoly(ret.ToArray(), Rgbs.White);
+                    CvInvoke.FillConvexPoly(debugImage, ret, Rgbs.White.MCvScalar);
                 }
                 //}
                 //else
@@ -179,9 +185,9 @@ namespace Huddle.Engine.Processor.OpenCv
                 return bitmapSource;
             }).ContinueWith(t => DebugImageSource = t.Result);
 
-            grayImage.Dispose();
+            data.Data = outputImage;
 
-            return outputImage;
+            return data;
         }
     }
 }

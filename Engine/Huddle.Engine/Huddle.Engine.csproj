@@ -337,7 +337,6 @@
     <Compile Include="Processor\Network\Huddle\ClientState.cs" />
     <Compile Include="Processor\OpenCv\FillContours.cs" />
     <Compile Include="Processor\OpenCv\BackgroundSubtraction.cs" />
-    <Compile Include="Processor\OpenCv\RectangleTrackerColor.cs" />
     <Compile Include="Processor\OpenCv\Struct\IdentificationState.cs" />
     <Compile Include="Processor\OpenCv\Struct\TrackingState.cs" />
     <Compile Include="Processor\Sensors\Senz3DIntel.cs" />
@@ -403,7 +402,6 @@
     <Compile Include="Processor\OpenCv\Basics.cs" />
     <Compile Include="Processor\OpenCv\DepthProcessor.cs" />
     <Compile Include="Processor\IProcessor.cs" />
-    <Compile Include="Processor\RgbProcessor.cs" />
     <Compile Include="Processor\OpenCv\RectangleTracker.cs" />
     <Compile Include="IO\WrappingStream.cs" />
     <Compile Include="Processor\ProximityProcessor.cs" />

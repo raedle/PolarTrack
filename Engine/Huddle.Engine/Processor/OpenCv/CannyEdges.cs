@@ -1,12 +1,12 @@
-﻿using System;
-using Emgu.CV;
+﻿using Emgu.CV;
 using Emgu.CV.Structure;
+using Huddle.Engine.Data;
 using Huddle.Engine.Util;
 
 namespace Huddle.Engine.Processor.OpenCv
 {
     [ViewTemplate("Canny Edges", "CannyEdges")]
-    public class CannyEdges : RgbProcessor
+    public class CannyEdges : UMatProcessor
     {
         #region properties
 
@@ -117,31 +117,27 @@ namespace Huddle.Engine.Processor.OpenCv
 
         #endregion
 
-        public override Image<Rgb, byte> ProcessAndView(Image<Rgb, byte> image)
+        public override UMatData ProcessAndView(UMatData data)
         {
             //Convert the image to grayscale and filter out the noise
-            var grayImage = image.Convert<Gray, byte>(); //TODO does not work with UMat atm
-            UMat u_grayImage = grayImage.ToUMat();
+            UMat grayImage = new UMat();
+            CvInvoke.CvtColor(data.Data,grayImage,Emgu.CV.CvEnum.ColorConversion.Rgb2Gray); // TODO for more input! this was RGB Processor bevore
+
             
             if (GaussianPyramidDownUpDecomposition)
             {
-                CvInvoke.PyrDown(u_grayImage,
-                    u_grayImage);
-                CvInvoke.PyrUp(u_grayImage,
-                    u_grayImage);
+                CvInvoke.PyrDown(grayImage,
+                    grayImage);
+                CvInvoke.PyrUp(grayImage,
+                    grayImage);
             }
 
-            UMat ret = new UMat();
-            CvInvoke.Canny(u_grayImage,
-                ret,
+            CvInvoke.Canny(grayImage,
+                data.Data,
                 Threshold,
                 ThresholdLinking);
 
-            // Dispose old images
-            image.Dispose();
-            grayImage.Dispose();
-
-            return ret.ToImage<Gray, byte>().Convert<Rgb, byte>(); //TODO does not work with UMat atm
+            return data;
         }
     }
 }

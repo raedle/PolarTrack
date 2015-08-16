@@ -21,7 +21,7 @@ using Microsoft.Win32;
 namespace Huddle.Engine.Processor
 {
     [ViewTemplate("Video Record / Play", "VideoRecordAndPlay", "/Huddle.Engine;component/Resources/film2.png")]
-    public class VideoRecordAndPlay : RgbProcessor
+    public class VideoRecordAndPlay : UMatProcessor
     {
         #region private fields
 
@@ -242,9 +242,9 @@ namespace Huddle.Engine.Processor
             return data;
         }
 
-        public override Image<Rgb, byte> ProcessAndView(Image<Rgb, byte> image)
+        public override UMatData ProcessAndView(UMatData data)
         {
-            return image;
+            return data;
         }
 
         public void Record(RgbImageData imageData)
