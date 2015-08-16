@@ -376,7 +376,6 @@
     <Compile Include="Processor\Complex\SyncFusion.cs" />
     <Compile Include="Processor\Complex\BinaryThresholding.cs" />
     <Compile Include="Processor\DataRenderer.cs" />
-    <Compile Include="Processor\GenericImageProcessor.cs" />
     <Compile Include="Processor\BaseProcessor.cs" />
     <Compile Include="Processor\Benchmark.cs" />
     <Compile Include="Processor\DataTypeFilter.cs" />
