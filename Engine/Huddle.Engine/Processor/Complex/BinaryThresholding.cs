@@ -122,40 +122,38 @@ namespace Huddle.Engine.Processor.Complex
 
         public override UMatData ProcessAndView(UMatData data)
         {
-            var binaryThreshold = new Gray(BinaryThreshold);
-            var binaryThresholdMax = new Gray(BinaryThresholdMax);
-            var isBinaryThresholdInv = IsBinaryThresholdInv;
-
-            //var imageCopy = data.Data.Clone();
-
-            //var grayImage = imageCopy.ToImage<Rgb,byte>().Convert<Gray, byte>().ToUMat();
+            // image to gray
             UMat grayImage = new UMat();
-            grayImage = data.Data.ToImage<Rgb, byte>().Convert<Gray, float>().ToUMat();
-            //CvInvoke.CvtColor(grayImage,
-            //    grayImage,
-            //    ColorConversion.Rgb2Gray,
-            //    1);
-            //grayImage = data.Data.Clone();//.ToImage<Rgb, byte>().Convert<Gray, byte>().ToUMat(); // TODO remove me when cvtcolor works
 
-            UMat ret = new UMat();
+            if (data.Data.NumberOfChannels == 3 && data.Data.Depth == Emgu.CV.CvEnum.DepthType.Cv8U)
+            {
+                CvInvoke.CvtColor(data.Data, grayImage, ColorConversion.Rgb2Gray);
+            }
+            else if (data.Data.NumberOfChannels == 1 && data.Data.Depth == Emgu.CV.CvEnum.DepthType.Cv32F)
+            {
+                data.Data.ConvertTo(grayImage, DepthType.Cv8U);
+            }
+            else
+            {
+                //throw new Exception("Unexpected input type");
+                return data;
+            }
 
-            if(isBinaryThresholdInv)
+
+            if (IsBinaryThresholdInv)
             {
                 CvInvoke.Threshold(grayImage,
-                    ret, 
+                    data.Data, 
                     BinaryThreshold, // TODO stimmt der wert? oder ist new Gray(BinaryThreshold) was anderes?
                     BinaryThresholdMax, // TODO stimmt der wert? oder ist new Gray(BinaryThreshold) was anderes?
                     Emgu.CV.CvEnum.ThresholdType.BinaryInv);
             } else {
                 CvInvoke.Threshold(grayImage,
-                    ret,
+                    data.Data,
                     BinaryThreshold, // TODO stimmt der wert? oder ist new Gray(BinaryThreshold) was anderes?
                     BinaryThresholdMax, // TODO stimmt der wert? oder ist new Gray(BinaryThreshold) was anderes?
                     Emgu.CV.CvEnum.ThresholdType.Binary);
             }
-
-            //TODO convert back??? thresholdImage.Convert<Rgb, byte>()
-            data.Data = ret;
 
             return data;
         }
