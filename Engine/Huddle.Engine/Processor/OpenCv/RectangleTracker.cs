@@ -27,7 +27,7 @@ using Vector = Huddle.Engine.Processor.Complex.PolygonIntersection.Vector;
 namespace Huddle.Engine.Processor.OpenCv
 {
     [ViewTemplate("Rectangle Tracker", "RectangleTracker")]
-    public class RectangleTracker : UMatProcessor
+    public class RectangleTracker : UMatProcessorFilter
     {
         #region private fields
 
@@ -1046,7 +1046,7 @@ namespace Huddle.Engine.Processor.OpenCv
                 o.State = TrackingState.NotTracked;
 
             // Needed to be wrapped in closure -> required by Parallel.ForEach below.
-            UMat[] outputImage = { new UMat(imageHeight, imageWidth,     DepthType.Cv8U, 3) };
+            UMat[] outputImage = { new UMat(imageHeight, imageWidth, DepthType.Cv8U, 3) };
             outputImage[0].SetTo(Rgbs.Black.MCvScalar);
 
             var threadSafeObjects = _objects.ToArray();
@@ -1223,14 +1223,11 @@ namespace Huddle.Engine.Processor.OpenCv
                     vertices,
                     true,
                     Rgbs.Black.MCvScalar,
-                    1);
+                    2);
                 CvInvoke.FillConvexPoly(blankedImage,
                     new Emgu.CV.Util.VectorOfPoint(vertices),
                     Rgbs.Black.MCvScalar);
-                //TODO
-                //(blankedImage.ToImage() as Image<Rgb, byte>).Draw(otherObject.Shape, Rgbs.Black, -1);
             }
-
 
             UMat u_blankedImageGray = new UMat();
             if (blankedImage.NumberOfChannels == 3 || blankedImage.NumberOfChannels == 4)
@@ -1515,7 +1512,7 @@ namespace Huddle.Engine.Processor.OpenCv
             CvInvoke.CvtColor(depthPatchesImage, debugImage3, ColorConversion.Gray2Rgb);
             //var debugImage3 = u_depthPatchesImage.ToImage<Gray, float>().Convert<Rgb, byte>(); // TODO UMat
 
-            UMat depthFixedImage = new UMat();
+            UMat depthFixedImage = new UMat(u_image.Rows,u_image.Cols,DepthType.Cv8U,3);
             CvInvoke.BitwiseOr(u_image,
                 debugImage3,
                 depthFixedImage);
