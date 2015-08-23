@@ -392,6 +392,14 @@ namespace Huddle.Engine.Processor.Complex
 
         #endregion
 
+        /// <summary>
+        /// Finds displays in the suggested area.
+        /// </summary>
+        /// <param name="dataContainer"></param>
+        /// <returns></returns>
+        // This mehtod uses Images as some opertations used from opencv are not 
+        // supported when using umat. Also no complex calculations are made on the iamges
+        // so most of the processing should be as fast as with umat.
         public override IDataContainer PreProcess(IDataContainer dataContainer)
         {
             var devices = dataContainer.OfType<Device>().ToArray();
@@ -410,30 +418,30 @@ namespace Huddle.Engine.Processor.Complex
             if (!rgbImages.Any())
                 return null;
 
-            UMat u_rgbImage = rgbImages.First().Data.Clone();
-            UMat debugImage = u_rgbImage.Clone();
+            Image<Rgb,byte> u_rgbImage = rgbImages.First().Data.Clone().ToImage<Rgb, byte>();
+            Image<Rgb, byte> debugImage = u_rgbImage.Copy(); 
             //UMat u_debugImage = debugImage.ToUMat();
 
             if (IsRenderContent)
             {
-                var u_lastRgbImageCopy = u_rgbImage.Clone();
+                var u_lastRgbImageCopy = u_rgbImage.Copy();
                 Task.Factory.StartNew(() =>
                 {
-                    var bitmapSource = u_lastRgbImageCopy.ToImage().ToBitmapSource(true);
+                    var bitmapSource = u_lastRgbImageCopy.ToBitmapSource(true);
                     u_lastRgbImageCopy.Dispose();
                     return bitmapSource;
                 }).ContinueWith(t => InputImageBitmapSource = t.Result);
             }
 
-            var u_colorImage = u_rgbImage.Clone();
+            Image<Rgb,byte> u_colorImage = u_rgbImage.Copy();
 
             // TODO: is the copy required or does convert already create a copy? _lastRgbImage.Copy()
             //var grayscaleImage = u_rgbImage.DeepClone().ToImage<Rgb, byte>().Convert<Gray, byte>();
-            UMat grayscaleImage = new UMat();
+            Image<Gray, byte> grayscaleImage = new Image<Gray, byte>(u_rgbImage.Width, u_rgbImage.Height);
             CvInvoke.CvtColor(u_rgbImage, grayscaleImage, ColorConversion.Rgb2Gray);
 
-            var width = u_rgbImage.Cols;
-            var height = u_rgbImage.Rows;
+            int width = u_rgbImage.Cols;
+            int height = u_rgbImage.Rows;
 
             foreach (var device in devicesToFind)
             {
@@ -451,10 +459,10 @@ namespace Huddle.Engine.Processor.Complex
             if (IsRenderContent)
             {
                 // draw debug output
-                var debugImageCopy = debugImage.Clone();
+                var debugImageCopy = debugImage.Copy();
                 Task.Factory.StartNew(() =>
                 {
-                    var bitmapSource = debugImageCopy.ToImage().ToBitmapSource(true);
+                    var bitmapSource = debugImageCopy.ToBitmapSource(true);
                     debugImageCopy.Dispose();
                     return bitmapSource;
                 }).ContinueWith(t => DebugImageBitmapSource = t.Result);
@@ -477,24 +485,18 @@ namespace Huddle.Engine.Processor.Complex
 
         #region private methods
 
-        private void ProcessDevice(Device device, /*Image<Rgb, byte>*/UMat colorImage, /*Image<Gray, byte>*/UMat grayscaleImage, int width, int height, ref /*Image<Rgb, byte>*/ UMat debugImage)
+        private void ProcessDevice(Device device,
+            Image<Rgb, byte> colorImage,
+            Image<Gray, byte> grayscaleImage,
+            int width,
+            int height,
+            ref Image<Rgb, byte> debugImage)
         {
-            var deviceRoi = CalculateRoiFromNormalizedBounds(device.Area, colorImage);
-            deviceRoi = deviceRoi.GetInflatedBy(RoiExpandFactor, new Rectangle(0,0, colorImage.Size.Width, colorImage.Size.Height) /*CvInvoke.cvGetImageROI(colorImage)*/);
-
             var imageRoi = CvInvoke.cvGetImageROI(colorImage);
+            var deviceRoi = CalculateRoiFromNormalizedBounds(device.Area, colorImage);
+            deviceRoi = deviceRoi.GetInflatedBy(RoiExpandFactor, imageRoi);
 
-            #region workaround
-            //var __i = colorImage.ToImage<Rgb, byte>();
-
-            deviceRoi.Width = 0;
-            deviceRoi.X = 0;
-
-            //CvInvoke.cvSetImageROI(colorImage, deviceRoi);
-            colorImage = new UMat(colorImage, deviceRoi);
-
-            //colorImage = __i.ToUMat();
-            #endregion
+            CvInvoke.cvSetImageROI(colorImage, deviceRoi);
 
             List<Point[]> quadrilaterals;
             var markers = GetMarkers(ref colorImage, deviceRoi, width, height, ref debugImage, out quadrilaterals);
@@ -563,7 +565,12 @@ namespace Huddle.Engine.Processor.Complex
             CvInvoke.cvSetImageROI(grayscaleImage, grayscaleImageRoi);
         }
 
-        private IEnumerable<Marker> GetMarkers(ref /*Image<Rgb, byte>*/UMat image, Rectangle roi, int width, int height, ref /*Image<Rgb, byte>*/UMat debugImage, out List<Point[]> quadrilaterals)
+        private IEnumerable<Marker> GetMarkers(ref Image<Rgb, byte> image,
+            Rectangle roi,
+            int width,
+            int height,
+            ref Image<Rgb, byte> debugImage,
+            out List<Point[]> quadrilaterals)
         {
             if (_glyphRecognizer == null)
             {
@@ -763,7 +770,10 @@ namespace Huddle.Engine.Processor.Complex
             return markers;
         }
 
-        private static Rectangle CalculateRoiFromNormalizedBounds(Rect inputRect, UMat inputImage, int marginX = 0, int marginY = 0)
+        private static Rectangle CalculateRoiFromNormalizedBounds(Rect inputRect,
+            IImage inputImage,
+            int marginX = 0,
+            int marginY = 0)
         {
             if (inputRect.X > 1.0 ||
                 inputRect.Y > 1.0 ||
@@ -773,8 +783,8 @@ namespace Huddle.Engine.Processor.Complex
                 // TODO avoid this -> I think this comes when resizing the ROI (15.08.2015) Inti Gabriel
                 return new Rectangle();
             }
-            var width = inputImage.Cols;
-            var height = inputImage.Rows;
+            int width = inputImage.Width();
+            int height = inputImage.Height();
 
             var offsetX = (int)(inputRect.X * width);
             var offsetY = (int)(inputRect.Y * height);
@@ -799,7 +809,12 @@ namespace Huddle.Engine.Processor.Complex
                     );
         }
 
-        private Marker FindDisplayInImage(ref /*Image<Gray, byte>*/UMat grayscaleImage, Rectangle roi, int width, int height, Marker marker, ref /*Image<Rgb, byte>*/UMat debugImage)
+        private Marker FindDisplayInImage(ref Image<Gray, byte> grayscaleImage,
+            Rectangle roi,
+            int width,
+            int height,
+            Marker marker,
+            ref Image<Rgb, byte> debugImage)
         {
             var imageWidth = grayscaleImage.Cols;
             var imageHeight = grayscaleImage.Rows;
@@ -810,7 +825,10 @@ namespace Huddle.Engine.Processor.Complex
             var grayscaleImageRoi = CvInvoke.cvGetImageROI(grayscaleImage);
             CvInvoke.cvSetImageROI(grayscaleImage, roi);
 
-            var enclosingRectangle = FindEnclosingRectangle(ref grayscaleImage, new Point(x, y), ref debugImage, roi);
+            var enclosingRectangle = FindEnclosingRectangle(ref grayscaleImage,
+                new Point(x, y),
+                ref debugImage,
+                roi);
 
             CvInvoke.cvSetImageROI(grayscaleImage, grayscaleImageRoi);
 
@@ -830,7 +848,10 @@ namespace Huddle.Engine.Processor.Complex
             };
         }
 
-        private EnclosingRectangle FindEnclosingRectangle(ref /*Image<Gray, byte>*/UMat grayscaleImage, Point center, ref /*Image<Rgb, byte>*/UMat debugImage, Rectangle roi)
+        private EnclosingRectangle FindEnclosingRectangle(ref Image<Gray, byte> grayscaleImage,
+            Point center,
+            ref Image<Rgb, byte> debugImage,
+            Rectangle roi)
         {
             var binaryThreshold = BinaryThreshold;
             UMat binaryThresholdImage = new UMat();
@@ -994,7 +1015,7 @@ namespace Huddle.Engine.Processor.Complex
             return new[] { longestEdge, nextEdgeToLongestEdge };
         }
 
-        private void DrawEdge(ref /*Image<Rgb, byte>*/UMat debugImage, LineSegment2D edge, Rgb color)
+        private void DrawEdge(ref Image<Rgb, byte> debugImage, LineSegment2D edge, Rgb color)
         {
             CvInvoke.Line(debugImage, edge.P1, edge.P2, color.MCvScalar, 10);
 
