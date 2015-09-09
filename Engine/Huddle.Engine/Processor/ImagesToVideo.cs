@@ -1,18 +1,11 @@
-﻿using System;
-using System.Drawing;
+﻿using Emgu.CV;
+using Emgu.CV.Structure;
+using Huddle.Engine.Data;
+using Huddle.Engine.Extensions;
+using Huddle.Engine.Util;
+using System;
 using System.IO;
 using System.Threading;
-using System.Windows;
-using System.Windows.Input;
-using System.Xml.Serialization;
-using Emgu.CV;
-using Emgu.CV.CvEnum;
-using Emgu.CV.External.Structure;
-using Emgu.CV.Structure;
-using GalaSoft.MvvmLight.Command;
-using Huddle.Engine.Data;
-using Huddle.Engine.Util;
-using Point = System.Windows.Point;
 
 namespace Huddle.Engine.Processor
 {
@@ -22,6 +15,8 @@ namespace Huddle.Engine.Processor
         #region private members
 
         private bool _isRunning = false;
+
+        private int _imgNumber = 1;
 
         #endregion
 
@@ -97,6 +92,41 @@ namespace Huddle.Engine.Processor
 
         #endregion
 
+        #region VideoToImages
+
+        /// <summary>
+        /// The <see cref="VideoToImages" /> property's name.
+        /// </summary>
+        public const string VideoToImagesPropertyName = "VideoToImages";
+
+        private bool _videosToImages = false;
+
+        /// <summary>
+        /// Sets and gets the VideoToImages property.
+        /// Changes to that property's value raise the PropertyChanged event. 
+        /// </summary>
+        public bool VideoToImages
+        {
+            get
+            {
+                return _videosToImages;
+            }
+
+            set
+            {
+                if (_videosToImages == value)
+                {
+                    return;
+                }
+
+                RaisePropertyChanging(VideoToImagesPropertyName);
+                _videosToImages = value;
+                RaisePropertyChanged(VideoToImagesPropertyName);
+            }
+        }
+
+        #endregion
+
         #endregion
 
         #region ctor
@@ -151,7 +181,37 @@ namespace Huddle.Engine.Processor
 
         public override IData Process(IData data)
         {
-            throw new NotImplementedException();
+            if (VideoToImages)
+            {
+                String type = "";
+                IImage img;
+
+                switch (data.Key)
+                {
+                    case "color":
+                        type = "color";
+                        img = (data as UMatData).Data.Clone().ToImage<Rgb,byte>();
+                        break;
+                    case "depth":
+                        img = ((data as UMatData).Data.Clone()).ToImage<Gray,byte>();
+                        type = "depth";
+                        break;
+                    case "confidence":
+                        img = (data as UMatData).Data.Clone().ToImage<Gray,float>();
+                        type = "confidence";
+                        break;
+                    default:
+                        return null; // return if data is no image 
+                }
+
+                using (var m = new MemoryStream())
+                {
+                    String path = Path.Combine(Path.Combine(ImagesPath, type), _imgNumber++ + ".png"); 
+                    img.Save(path);
+                }
+
+            }
+            return null;
         }
     }
 }

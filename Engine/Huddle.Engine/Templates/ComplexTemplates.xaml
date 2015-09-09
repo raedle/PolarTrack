@@ -130,6 +130,11 @@
                 <Slider Value="{Binding Path=Fps}" Width="340" Height="25" Minimum="1" Maximum="120" TickFrequency="1" IsSnapToTickEnabled="True" />
                 <TextBlock Text="{Binding Path=Fps, StringFormat={}{0}}"/>
             </StackPanel>
+            <GroupBox Header="VideoToImages">
+                <StackPanel Orientation="Vertical">
+                    <CheckBox Content="Save video as images" IsChecked="{Binding Path=VideoToImages}" />
+                </StackPanel>
+            </GroupBox>
         </StackPanel>
     </DataTemplate>
     
