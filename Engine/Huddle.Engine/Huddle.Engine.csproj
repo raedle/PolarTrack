@@ -328,6 +328,7 @@
     <Compile Include="Processor\Dummy.cs" />
     <Compile Include="Processor\OpenCv\Features.cs" />
     <Compile Include="Processor\OpenCv\Flip.cs" />
+    <Compile Include="Processor\UMatProcessorFilter.cs" />
     <Compile Include="Processor\UMatProcessor.cs" />
     <Compile Include="Processor\PolarTracker.cs" />
     <Compile Include="Processor\ImagesToVideo.cs" />
