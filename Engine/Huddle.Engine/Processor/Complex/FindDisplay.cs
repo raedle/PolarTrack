@@ -443,6 +443,7 @@ namespace Huddle.Engine.Processor.Complex
             int width = u_rgbImage.Cols;
             int height = u_rgbImage.Rows;
 
+
             foreach (var device in devicesToFind)
             {
                 ProcessDevice(device,
@@ -611,10 +612,10 @@ namespace Huddle.Engine.Processor.Complex
 
                 var quad = new[]
                 {
-                    new Point(tmpQuad[0].X, tmpQuad[0].Y),
-                    new Point(tmpQuad[1].X, tmpQuad[1].Y),
-                    new Point(tmpQuad[2].X, tmpQuad[2].Y),
-                    new Point(tmpQuad[3].X, tmpQuad[3].Y)
+                    new Point(tmpQuad[0].X + roi.X, tmpQuad[0].Y + roi.Y),
+                    new Point(tmpQuad[1].X + roi.X, tmpQuad[1].Y + roi.Y),
+                    new Point(tmpQuad[2].X + roi.X, tmpQuad[2].Y + roi.Y),
+                    new Point(tmpQuad[3].X + roi.X, tmpQuad[3].Y + roi.Y)
                 };
 
                 if (IsRenderContent)
@@ -641,7 +642,7 @@ namespace Huddle.Engine.Processor.Complex
                         CvInvoke.cvSetImageROI(debugImage, roi);
 
                         var labelPos = new Point(recQuad[2].X, recQuad[2].Y);
-                        debugImage.Draw(recGlyph.Name, EmguFontBig.Font, EmguFontBig.Scale, labelPos, Rgbs.Green);
+                        CvInvoke.PutText(debugImage, recGlyph.Name, labelPos, EmguFontBig.Font, EmguFontBig.Scale, Rgbs.TigerLily.MCvScalar);
 
                         CvInvoke.cvSetImageROI(debugImage, debugImageRoi);
                     }
@@ -713,8 +714,8 @@ namespace Huddle.Engine.Processor.Complex
                             maxY = Math.Max(maxY, p.Y);
                         }
 
-                        var centerX = roi.X + minX + (maxX - minX) / 2.0f;
-                        var centerY = roi.Y + minY + (maxY - minY) / 2.0f;
+                        var centerX = /*roi.X +*/ minX + (maxX - minX) / 2.0f;
+                        var centerY = /*roi.Y +*/ minY + (maxY - minY) / 2.0f;
 
                         markers.Add(new Marker(this, "Display")
                         {
@@ -754,7 +755,14 @@ namespace Huddle.Engine.Processor.Complex
                                 p2,
                                 Rgbs.Green.MCvScalar,
                                 2);
-                            debugImage.Draw(string.Format("{0} deg", Math.Round(degOrientation, 1)), EmguFont.Font, EmguFont.Scale, p3, Rgbs.Green);
+
+                            //rotation
+                            CvInvoke.PutText(debugImage,
+                                string.Format("{0} deg", Math.Round(degOrientation, 1)),
+                                p3,
+                                EmguFont.Font,
+                                EmguFont.Scale,
+                                Rgbs.Green.MCvScalar);
                         }
                     }
                     else
@@ -792,6 +800,8 @@ namespace Huddle.Engine.Processor.Complex
             // crop to bounds
             var roiX = Math.Min(Math.Max(0, offsetX - marginX), width);
             var roiY = Math.Min(Math.Max(0, offsetY - marginY), height);
+            //var roiX = Math.Max(0, offsetX - marginX);
+            //var roiY = Math.Max(0, offsetY - marginY);
             
             var roiWidth = (int)Math.Min(width - roiX, inputRect.Width * width + 2 * marginX);
             var roiHeight = (int)Math.Min(height - roiY, inputRect.Height * height + 2 * marginY);
@@ -853,143 +863,154 @@ namespace Huddle.Engine.Processor.Complex
             ref Image<Rgb, byte> debugImage,
             Rectangle roi)
         {
-            var binaryThreshold = BinaryThreshold;
-            UMat binaryThresholdImage = new UMat();
-            CvInvoke.Threshold(grayscaleImage,
-                binaryThresholdImage,
-                binaryThreshold,
-                255,
-                ThresholdType.BinaryInv);
+                var binaryThreshold = BinaryThreshold;
+                //var alignedCenter = new Point(center.X + roi.X, center.Y + roi.Y);
+                var alignedCenter = new Point(center.X, center.Y);
+                Image<Gray, byte> binaryThresholdImage = new Image<Gray, byte>(grayscaleImage.Width, grayscaleImage.Height);
+                CvInvoke.Threshold(grayscaleImage.Copy(), //get a copy.... if you don't nobody will do it...
+                    binaryThresholdImage,
+                    binaryThreshold,
+                    255,
+                    ThresholdType.BinaryInv);
 
-            #region Debug Binary Image
+                #region Debug Binary Image
 
-            // Binary Threshold Image
-            var binaryThresholdImageCopy = binaryThresholdImage.Copy();
-            Task.Factory.StartNew(() =>
-            {
-                var bitmapSource = binaryThresholdImageCopy.ToBitmapSource(true);
-                binaryThresholdImageCopy.Dispose();
-                return bitmapSource;
-            }).ContinueWith(t => BinaryThresholdImageBitmapSource = t.Result);
+                // Binary Threshold Image
+                var binaryThresholdImageCopy = binaryThresholdImage.Copy();
 
-            #endregion
-
-            var floodFillImage = binaryThresholdImage.Clone();
-            binaryThresholdImage.Dispose();
-
-            var imageWidth = floodFillImage.Cols;
-            var imageHeight = floodFillImage.Rows;
-
-            MCvConnectedComp comp;
-
-            // mask needs to be 2 pixels wider and 2 pixels taller
-            var mask = new Image<Gray, byte>(imageWidth + 2, imageHeight + 2);
-            CvInvoke.FloodFill(floodFillImage,
-                mask,
-                center,
-                new MCvScalar(255),
-                out comp.Rect,
-                new MCvScalar(FloodFillDifference),
-                new MCvScalar(FloodFillDifference),
-                Connectivity.FourConnected,
-                FloodFillType.Default);
-
-            #region Debug Flood Fill Image
-
-            //// Flood fill image
-            //var maskCopy = floodFillImage.Copy();
-            //Task.Factory.StartNew(() =>
-            //{
-            //    var bitmapSource = maskCopy.ToBitmapSource(true);
-            //    maskCopy.Dispose();
-            //    return bitmapSource;
-            //}).ContinueWith(t => BinaryThresholdImageBitmapSource = t.Result);
-
-            #endregion
-
-            // shrink mask back to original grayscale image size
-            mask.ROI = new Rectangle(1, 1, imageWidth, imageHeight);
-            var contourBinaryImage = mask.Mul(255);
-
-            #region Debug Output Binary Image
-
-            //var maskCopy = contourBinaryImage.Copy();
-            //Task.Factory.StartNew(() =>
-            //{
-            //    var bitmapSource = maskCopy.ToBitmapSource(true);
-            //    maskCopy.Dispose();
-            //    return bitmapSource;
-            //}).ContinueWith(t => BinaryThresholdImageBitmapSource = t.Result);
-
-            #endregion
-
-            mask.Dispose();
-            floodFillImage.Dispose();
-
-            EnclosingRectangle enclosingRectangle = null;
-            Emgu.CV.Util.VectorOfVectorOfPoint contours = new Emgu.CV.Util.VectorOfVectorOfPoint();
-            CvInvoke.FindContours(contourBinaryImage,
-                contours,
-                null,
-                RetrType.External,
-                ChainApproxMethod.ChainApproxSimple);
-
-            for (int i = 0; i < contours.Size; i++ )
-            {
-                Emgu.CV.Util.VectorOfPoint contour = new Emgu.CV.Util.VectorOfPoint();
-                CvInvoke.ApproxPolyDP(contours[i],
-                    contour,
-                    CvInvoke.ArcLength(contours[i], true) * 0.05,
-                    true);
-
-                var contourBounds = CvInvoke.BoundingRectangle(contour);
-                if (contourBounds.Width + 5 >= roi.Width || contourBounds.Height + 5 >= roi.Height)
-                    continue;
-
-                if (!EmguExtensions.IsRectangle(contour.ToArray(), 10.0)) continue;
-
-                var edges = GetRightAngleEdges(contour.ToArray());
-
-                if (IsRenderContent)
+                Task.Factory.StartNew(() =>
                 {
-                    var debugImageRoi = CvInvoke.cvGetImageROI(debugImage);
-                    CvInvoke.cvSetImageROI(debugImage, roi);
+                    var bitmapSource = binaryThresholdImageCopy.ToBitmapSource(true);
+                    binaryThresholdImageCopy.Dispose();
+                    return bitmapSource;
+                }).ContinueWith(t => BinaryThresholdImageBitmapSource = t.Result);
 
-                    Emgu.CV.Util.VectorOfPoint ret = null;
-                    CvInvoke.ConvexHull(contour,
-                        ret,
-                        true,
+                #endregion
+
+                Image<Gray, byte> floodFillImage = binaryThresholdImage.Copy();
+
+                var imageWidth = floodFillImage.Cols;
+                var imageHeight = floodFillImage.Rows;
+
+                MCvConnectedComp comp;
+             
+                // mask needs to be 2 pixels wider and 2 pixels taller
+                var mask = new Image<Gray, byte>(imageWidth + 2, imageHeight + 2);
+                CvInvoke.FloodFill(floodFillImage,
+                    mask,
+                    alignedCenter,
+                    Rgbs.White.MCvScalar,
+                    out comp.Rect,
+                    new MCvScalar(FloodFillDifference),
+                    new MCvScalar(FloodFillDifference),
+                    Connectivity.FourConnected,
+                    FloodFillType.Default);
+
+                #region Debug Flood Fill Image
+
+                //// Flood fill image
+                //var maskCopy = floodFillImage.Copy();
+                //Task.Factory.StartNew(() =>
+                //{
+                //    var bitmapSource = maskCopy.ToBitmapSource(true);
+                //    maskCopy.Dispose();
+                //    return bitmapSource;
+                //}).ContinueWith(t => BinaryThresholdImageBitmapSource = t.Result);
+
+                #endregion
+
+                // shrink mask back to original grayscale image size
+                mask.ROI = new Rectangle(1, 1, imageWidth, imageHeight);
+                var contourBinaryImage = mask.Mul(255);
+
+                #region Debug Output Binary Image
+
+                //var maskCopy = contourBinaryImage.Copy();
+                //Task.Factory.StartNew(() =>
+                //{
+                //    var bitmapSource = maskCopy.ToBitmapSource(true);
+                //    maskCopy.Dispose();
+                //    return bitmapSource;
+                //}).ContinueWith(t => BinaryThresholdImageBitmapSource = t.Result);
+
+                #endregion
+
+                mask.Dispose();
+                floodFillImage.Dispose();
+
+                EnclosingRectangle enclosingRectangle = null;
+                Emgu.CV.Util.VectorOfVectorOfPoint contours = new Emgu.CV.Util.VectorOfVectorOfPoint();
+                CvInvoke.FindContours(contourBinaryImage,
+                    contours,
+                    null,
+                    RetrType.External,
+                    ChainApproxMethod.ChainApproxSimple);
+
+                for (int i = 0; i < contours.Size; i++)
+                {
+                    Emgu.CV.Util.VectorOfPoint contour = new Emgu.CV.Util.VectorOfPoint();
+                    CvInvoke.ApproxPolyDP(contours[i],
+                        contour,
+                        CvInvoke.ArcLength(contours[i], true) * 0.05,
                         true);
-                    CvInvoke.Polylines(debugImage, ret, false, Rgbs.Cyan.MCvScalar, 2);
-                    var vert = CvInvoke.MinAreaRect(contour).GetVertices();
-                    Point[] vertices = { new Point((int)vert[0].X, (int)vert[0].Y),
+
+                    //align contour
+                    var _c = contour.ToArray();
+                    for (int r = 0; r < contour.Size; r++)
+                    {
+                        _c[r].X += roi.X;
+                        _c[r].Y += roi.Y;
+                    }
+                    contour = new Emgu.CV.Util.VectorOfPoint(_c);
+
+                    var contourBounds = CvInvoke.BoundingRectangle(contour);
+                    if (contourBounds.Width + 5 >= roi.Width || contourBounds.Height + 5 >= roi.Height)
+                        continue;
+
+                    if (!EmguExtensions.IsRectangle(contour.ToArray(), 10.0)) continue;
+
+                    var edges = GetRightAngleEdges(contour.ToArray());
+
+                    if (IsRenderContent)
+                    {
+                        var debugImageRoi = CvInvoke.cvGetImageROI(debugImage);
+                        CvInvoke.cvSetImageROI(debugImage, roi);
+
+                        Emgu.CV.Util.VectorOfPoint ret = new Emgu.CV.Util.VectorOfPoint(); // = null;
+                        CvInvoke.ConvexHull(contour,
+                            ret,
+                            true,
+                            true);
+                        CvInvoke.Polylines(debugImage, ret, false, Rgbs.Cyan.MCvScalar, 2);
+                        var vert = CvInvoke.MinAreaRect(contour).GetVertices();
+                        Point[] vertices = { new Point((int)vert[0].X, (int)vert[0].Y),
                                         new Point((int)vert[1].X, (int)vert[1].Y),
                                         new Point((int)vert[2].X, (int)vert[2].Y),
                                         new Point((int)vert[3].X, (int)vert[3].Y)};
 
-                    CvInvoke.Polylines(debugImage,
-                        new Emgu.CV.Util.VectorOfPoint(vertices),
-                        true,
-                        Rgbs.Cyan.MCvScalar,
-                        2);
+                        CvInvoke.Polylines(debugImage,
+                            new Emgu.CV.Util.VectorOfPoint(vertices),
+                            true,
+                            Rgbs.Cyan.MCvScalar,
+                            2);
 
-                    DrawEdge(ref debugImage, edges[0], Rgbs.Red);
-                    DrawEdge(ref debugImage, edges[1], Rgbs.Green);
+                        DrawEdge(ref debugImage, edges[0], Rgbs.Red);
+                        DrawEdge(ref debugImage, edges[1], Rgbs.Green);
 
-                    CvInvoke.cvSetImageROI(debugImage, debugImageRoi);
+                        CvInvoke.cvSetImageROI(debugImage, debugImageRoi);
+                    }
+
+                    enclosingRectangle = new EnclosingRectangle
+                    {
+                        Contour = contour.ToArray(),
+                        LongEdge = edges[0],
+                        ShortEdge = edges[1]
+                    };
                 }
 
-                enclosingRectangle = new EnclosingRectangle
-                {
-                    Contour = contour.ToArray(),
-                    LongEdge = edges[0],
-                    ShortEdge = edges[1]
-                };
-            }
+                contourBinaryImage.Dispose();
 
-            contourBinaryImage.Dispose();
-
-            return enclosingRectangle;
+                return enclosingRectangle;
         }
 
         private LineSegment2D[] GetRightAngleEdges(Point[] contour)
@@ -1030,8 +1051,13 @@ namespace Huddle.Engine.Processor.Complex
             var centerX = minX + (maxX - minX) / 2;
             var centerY = minY + (maxY - minY) / 2;
 
-            debugImage.Draw(string.Format("{0:F1}", edge.Length), EmguFontBig.Font, EmguFontBig.Scale, new Point(centerX, centerY), color);
-        }
+            CvInvoke.PutText(debugImage,
+                string.Format("{0:F1}", edge.Length),
+                new Point(centerX, centerY),
+                EmguFontBig.Font,
+                EmguFontBig.Scale,
+                color.MCvScalar);
+         }
 
         #endregion
 

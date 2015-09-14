@@ -135,8 +135,7 @@ namespace Huddle.Engine.Processor.Complex
             }
             else
             {
-                //throw new Exception("Unexpected input type");
-                return data;
+                grayImage = data.Data;
             }
 
 
