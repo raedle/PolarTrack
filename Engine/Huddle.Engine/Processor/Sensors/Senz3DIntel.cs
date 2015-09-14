@@ -1,4 +1,13 @@
-﻿using System;
+﻿using Emgu.CV;
+using Emgu.CV.CvEnum;
+using Emgu.CV.External.Extensions;
+using Emgu.CV.External.Structure;
+using Emgu.CV.Structure;
+using GalaSoft.MvvmLight.Command;
+using Huddle.Engine.Data;
+using Huddle.Engine.Processor.Sensors.Utils;
+using Huddle.Engine.Util;
+using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -9,15 +18,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Media.Imaging;
 using System.Xml.Serialization;
-using Emgu.CV;
-using Emgu.CV.CvEnum;
-using Emgu.CV.External.Extensions;
-using Emgu.CV.External.Structure;
-using Emgu.CV.Structure;
-using GalaSoft.MvvmLight.Command;
-using Huddle.Engine.Data;
-using Huddle.Engine.Processor.Sensors.Utils;
-using Huddle.Engine.Util;
 using PixelFormat = System.Drawing.Imaging.PixelFormat;
 using Point = System.Drawing.Point;
 
@@ -35,8 +35,6 @@ namespace Huddle.Engine.Processor.Sensors
         private bool _isRunning;
 
         private long _frameId = -1;
-
-        private Rectangle _rgbInDepthROI = Rectangle.Empty;
 
         #region Adaptive Sensing
 
@@ -61,6 +59,35 @@ namespace Huddle.Engine.Processor.Sensors
         #endregion
 
         #region properties
+
+        #region RgbInDepthROI
+
+        public const string RgbInDepthROIPropertyName = "RgbInDepthROI";
+
+        private Rectangle _rgbInDepthROI = Rectangle.Empty;
+
+        public Rectangle RgbInDepthROI
+        {
+            get
+            {
+                return _rgbInDepthROI;
+            }
+
+            set
+            {
+                if (_rgbInDepthROI == value)
+                {
+                    return;
+                }
+
+                RaisePropertyChanging(RgbInDepthROIPropertyName);
+                _rgbInDepthROI = value;
+                RaisePropertyChanged(RgbInDepthROIPropertyName);
+
+            }
+        }
+
+        #endregion
 
         #region IsAdaptiveSensing
 
@@ -593,7 +620,7 @@ namespace Huddle.Engine.Processor.Sensors
 
                     case ColorImageProfilePropertyName:
                         //Stop();
-                        _rgbInDepthROI = new Rectangle(0, 0, 0, 0);
+                        RgbInDepthROI = new Rectangle(0, 0, 0, 0);
                         //Thread.Sleep(2000);
                         //Start();
                         break;
@@ -634,7 +661,7 @@ namespace Huddle.Engine.Processor.Sensors
         {
             _isRunning = false;
             _alternate = false;
-            _rgbInDepthROI = Rectangle.Empty;
+            RgbInDepthROI = Rectangle.Empty;
         }
 
         #endregion
@@ -701,7 +728,7 @@ namespace Huddle.Engine.Processor.Sensors
                 Stopwatch sw = Stopwatch.StartNew();
                 var color = _pp.QueryImage(PXCMImage.ImageType.IMAGE_TYPE_COLOR);
                 var colorBitmap = Senz3DUtils.GetRgb32Pixels(color);
-                var colorImage = new Image<Rgb, byte>(colorBitmap);
+                UMat colorImage = new Image<Rgb, byte>(colorBitmap).ToUMat();
                 ColorImageFrameTime = sw.ElapsedMilliseconds;
 
                 /* Get depth image */
@@ -713,15 +740,15 @@ namespace Huddle.Engine.Processor.Sensors
                 if (IsAdaptiveSensing)
                     depthImageAndConfidence = PerformAdaptiveSensing(depthImageAndConfidence);
 
-                var depthImage = (Image<Gray, float>)depthImageAndConfidence[0];
-                var confidenceMapImage = (Image<Rgb, Byte>)depthImageAndConfidence[1];
+                UMat depthImage = ((Image<Gray, float>)depthImageAndConfidence[0]).ToUMat();
+                UMat confidenceMapImage = ((Image<Rgb, Byte>)depthImageAndConfidence[1]).ToUMat();
 
                 DepthImageFrameTime = sw.ElapsedMilliseconds;
                 ConfidenceMapImageFrameTime = 0;
 
                 // alignment of rgb and depth image (depth images field of view is larger
                 //than rgb image field of view and therefore needs to be 'cropped' properly.
-                if (_rgbInDepthROI == Rectangle.Empty)
+                if (RgbInDepthROI == Rectangle.Empty)
                     PushAlignedRgbAndDepthImageROI(depth, depthImage, colorImage);
 
                 _pp.ReleaseFrame();
@@ -744,15 +771,15 @@ namespace Huddle.Engine.Processor.Sensors
         /// <param name="depthImage"></param>
         /// <param name="confidenceMapImage"></param>
         private void PublishImages(
-            Image<Rgb, byte> colorImage,
-            Image<Gray, float> depthImage,
-            Image<Rgb, byte> confidenceMapImage)
+            UMat colorImage,
+            UMat depthImage,
+            UMat confidenceMapImage)
         {
             var dc = new DataContainer(++_frameId, DateTime.Now)
                     {
-                        new RgbImageData(this, "color", colorImage),
-                        new GrayFloatImage(this, "depth", depthImage),
-                        new RgbImageData(this, "confidence", confidenceMapImage),
+                        new UMatData(this, "color", colorImage),
+                        new UMatData(this, "depth", depthImage),
+                        new UMatData(this, "confidence", confidenceMapImage),
                     };
 
             Publish(dc);
@@ -865,12 +892,12 @@ namespace Huddle.Engine.Processor.Sensors
         }
 
         private void RenderImages(
-            Image<Rgb, byte> colorImage,
-            Image<Gray, float> depthImage,
-            Image<Rgb, byte> confindenceMapImage)
+            /*Image<Rgb, byte>*/UMat colorImage,
+            /*Image<Gray, float>*/UMat depthImage,
+            /*Image<Rgb, byte>*/UMat confindenceMapImage)
         {
             //Render color image.
-            var colorImageCopy = colorImage.Copy();
+            var colorImageCopy = colorImage.Clone();
             Task.Factory.StartNew(() =>
             {
                 var bitmap = colorImageCopy.ToBitmapSource(true);
@@ -879,16 +906,16 @@ namespace Huddle.Engine.Processor.Sensors
             }).ContinueWith(s => ColorImageSource = s.Result);
 
             // Render depth image.
-            var depthImageCopy = depthImage.Copy();
+            var depthImageCopy = depthImage.Clone();
             Task.Factory.StartNew(() =>
             {
-                var bitmap = depthImageCopy.ToGradientBitmapSource(true, EmguExtensions.LowConfidence, EmguExtensions.Saturation);
+                var bitmap = (depthImageCopy.ToImage() as Image<Gray, float>).ToGradientBitmapSource(true, EmguExtensions.LowConfidence, EmguExtensions.Saturation);
                 depthImageCopy.Dispose();
                 return bitmap;
             }).ContinueWith(s => DepthImageSource = s.Result);
 
             // Render confidence map image.
-            var confidenceMapImageCopy = confindenceMapImage.Copy();
+            var confidenceMapImageCopy = confindenceMapImage.Clone();
             Task.Factory.StartNew(() =>
             {
                 var bitmap = confidenceMapImageCopy.ToBitmapSource(true);
@@ -915,20 +942,28 @@ namespace Huddle.Engine.Processor.Sensors
         /// <param name="depth"></param>
         /// <param name="depthImage"></param>
         /// <param name="colorImage"></param>
-        private void PushAlignedRgbAndDepthImageROI(PXCMImage depth, Image<Gray, float> depthImage, Image<Rgb, byte> colorImage)
+        private void PushAlignedRgbAndDepthImageROI(PXCMImage depth,
+            /*Image<Gray, float>*/ UMat depthImage,
+            /*Image<Rgb, byte>*/ UMat colorImage)
         {
             /* Get UV map */
             var uvMapImage = Senz3DUtils.GetDepthUvMap(depth);
 
             /* Get RgbOfDepth */
-            Senz3DUtils.GetRgbOfDepthPixels(depthImage, colorImage, uvMapImage, true, ref _rgbInDepthROI);
+            var roi = new Rectangle();
+            Senz3DUtils.GetRgbOfDepthPixels(depthImage,
+                colorImage,
+                uvMapImage.ToUMat(), //TODO get umat directly
+                true,
+                ref roi);
+            RgbInDepthROI = roi;
             Stage(new ROI(this, "rgbInDepthROI")
             {
-                RoiRectangle = _rgbInDepthROI
+                RoiRectangle = RgbInDepthROI
             });
             Push();
 
-            LogFormat("Identified rgbInDepthROI as {0}", _rgbInDepthROI);
+            LogFormat("Identified rgbInDepthROI as {0}", RgbInDepthROI);
         }
 
         private PXCMCapture.VideoStream.ProfileInfo GetConfiguration(PXCMImage.ColorFormat format)

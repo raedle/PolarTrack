@@ -156,7 +156,7 @@
 
                     <GroupBox Header="color" Grid.Column="0" Grid.Row="0">
                         <StackPanel>
-                            <Image Source="{Binding Path=ColorImageSource}" Width="320" Height="240" VerticalAlignment="Top"/>
+                            <Image Source="{Binding Path=ColorImageSource}" Width="320" Height="240" VerticalAlignment="Top" x:Name="ColorImage"/>
                             <StackPanel Orientation="Horizontal">
                                 <Label Content="{Binding Path=ColorImageSource.PixelWidth}"/>
                                 <Label Content=" x "/>

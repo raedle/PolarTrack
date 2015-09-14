@@ -900,7 +900,11 @@ namespace Huddle.Engine.Processor.Sensors
                     sw.Restart();
                     if (getRgbInDepthROI)
                     {
-                        rgbOfDepthImage = Senz3DUtils.GetRgbOfDepthPixels(depthImage, colorImage, uvMapImage, true, ref _rgbInDepthROI);
+                        rgbOfDepthImage = Senz3DUtils.GetRgbOfDepthPixels(depthImage.ToUMat(),
+                            colorImage.ToUMat(),
+                            uvMapImage.ToUMat(),
+                            true,
+                            ref _rgbInDepthROI); //TODO may break here
                         Stage(new ROI(this, "rgbInDepthROI")
                         {
                             RoiRectangle = _rgbInDepthROI
@@ -911,7 +915,9 @@ namespace Huddle.Engine.Processor.Sensors
                     }
                     else
                     {
-                        rgbOfDepthImage = Senz3DUtils.GetRgbOfDepthPixels(depthImage, colorImage, uvMapImage);
+                        rgbOfDepthImage = Senz3DUtils.GetRgbOfDepthPixels(depthImage.ToUMat(),
+                            colorImage.ToUMat(),
+                            uvMapImage.ToUMat()); //TODO may break here
                     }
 
                     rgbOfDepthImageCopy = rgbOfDepthImage.Copy();

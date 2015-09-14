@@ -126,27 +126,31 @@ namespace Huddle.Engine.Processor.Sensors.Utils
 
             return uvMap;
         }
-        public static Image<Rgb, byte> GetRgbOfDepthPixels(Image<Gray, float> depth, Image<Rgb, byte> rgb,
-            Image<Rgb, float> uvmap)
+        public static Image<Rgb, byte> GetRgbOfDepthPixels(/*Image<Gray, float>*/UMat depth,
+            /*Image<Rgb, byte>*/UMat rgb,
+            /*Image<Rgb, float>*/UMat uvmap)
         {
             var dummyRect = new Rectangle();
             return GetRgbOfDepthPixels(depth, rgb, uvmap, false, ref dummyRect);
         }
 
-        public static Image<Rgb, byte> GetRgbOfDepthPixels(Image<Gray, float> depth, Image<Rgb, byte> rgb, Image<Rgb, float> uvmap,
-            bool getRgbContour, ref Rectangle rgbInDepthRect)
+        public static Image<Rgb, byte> GetRgbOfDepthPixels(/*Image<Gray, float>*/UMat depth,
+            /*Image<Rgb, byte>*/UMat rgb,
+            /*Image<Rgb, float>*/UMat uvmap,
+            bool getRgbContour,
+            ref Rectangle rgbInDepthRect)
         {
-            var resImg = new Image<Rgb, byte>(depth.Width, depth.Height);
+            var resImg = new Image<Rgb, byte>(depth.Cols, depth.Rows);
 
             // number of rgb pixels per depth pixel
-            var regWidth = rgb.Width / depth.Width;
-            var regHeight = rgb.Height / depth.Height;
-            var rgbWidth = rgb.Width;
-            var rgbHeight = rgb.Height;
+            var regWidth = rgb.Cols / depth.Cols;
+            var regHeight = rgb.Rows / depth.Rows;
+            var rgbWidth = rgb.Cols;
+            var rgbHeight = rgb.Rows;
             var xfactor = 1.0f / 255.0f * rgbWidth;
             var yfactor = 1.0f / 255.0f * rgbHeight;
-            var uvmapData = uvmap.Data;
-            var rgbData = rgb.Data;
+            var uvmapData = uvmap.ToImage<Rgb,float>().Data;
+            var rgbData = rgb.ToImage<Rgb,byte>().Data;
             var resImgData = resImg.Data;
 
             Image<Gray, byte> contourImg = null;
@@ -154,13 +158,13 @@ namespace Huddle.Engine.Processor.Sensors.Utils
             if (getRgbContour)
             {
                 // dummy image to extract contour of RGB image in depth image
-                contourImg = new Image<Gray, byte>(depth.Width, depth.Height);
+                contourImg = new Image<Gray, byte>(depth.Cols, depth.Rows);
                 contourImgData = contourImg.Data;
             }
 
-            Parallel.For(0, depth.Height, y =>
+            Parallel.For(0, depth.Rows, y =>
             {
-                for (int x = 0; x < depth.Width; x++)
+                for (int x = 0; x < depth.Cols; x++)
                 {
                     int xindex = (int)(uvmapData[y, x, 0] * xfactor + 0.5);
                     int yindex = (int)(uvmapData[y, x, 1] * yfactor + 0.5);
