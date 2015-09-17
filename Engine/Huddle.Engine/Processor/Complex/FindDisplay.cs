@@ -508,8 +508,8 @@ namespace Huddle.Engine.Processor.Complex
 
             CvInvoke.cvSetImageROI(colorImage, imageRoi);
 
-            var grayscaleImageRoi = CvInvoke.cvGetImageROI(grayscaleImage);
-            CvInvoke.cvSetImageROI(grayscaleImage, deviceRoi);
+            var grayscaleImageRoi = grayscaleImage.ROI;
+            grayscaleImage.ROI = deviceRoi;
 
             var i = 0;
             foreach (var marker in markers)
@@ -563,7 +563,7 @@ namespace Huddle.Engine.Processor.Complex
                 i++;
             }
 
-            CvInvoke.cvSetImageROI(grayscaleImage, grayscaleImageRoi);
+            grayscaleImage.ROI = grayscaleImageRoi;
         }
 
         private IEnumerable<Marker> GetMarkers(ref Image<Rgb, byte> image,
@@ -612,20 +612,20 @@ namespace Huddle.Engine.Processor.Complex
 
                 var quad = new[]
                 {
-                    new Point(tmpQuad[0].X + roi.X, tmpQuad[0].Y + roi.Y),
-                    new Point(tmpQuad[1].X + roi.X, tmpQuad[1].Y + roi.Y),
-                    new Point(tmpQuad[2].X + roi.X, tmpQuad[2].Y + roi.Y),
-                    new Point(tmpQuad[3].X + roi.X, tmpQuad[3].Y + roi.Y)
+                    new Point(tmpQuad[0].X/* + roi.X*/, tmpQuad[0].Y/* + roi.Y*/),
+                    new Point(tmpQuad[1].X/* + roi.X*/, tmpQuad[1].Y/* + roi.Y*/),
+                    new Point(tmpQuad[2].X/* + roi.X*/, tmpQuad[2].Y/* + roi.Y*/),
+                    new Point(tmpQuad[3].X/* + roi.X*/, tmpQuad[3].Y/* + roi.Y*/)
                 };
 
                 if (IsRenderContent)
                 {
-                    var debugImageRoi = CvInvoke.cvGetImageROI(debugImage);
-                    CvInvoke.cvSetImageROI(debugImage, roi);
+                    var debugImageRoi = debugImage.ROI;
+                    debugImage.ROI = roi;
 
                     CvInvoke.Polylines(debugImage, quad, true, Rgbs.Yellow.MCvScalar);
 
-                    CvInvoke.cvSetImageROI(debugImage, debugImageRoi);
+                    debugImage.ROI = debugImageRoi;
                 }
 
                 // if glyphs are recognized then store and draw name 
@@ -638,13 +638,13 @@ namespace Huddle.Engine.Processor.Complex
 
                     if (IsRenderContent)
                     {
-                        var debugImageRoi = CvInvoke.cvGetImageROI(debugImage);
-                        CvInvoke.cvSetImageROI(debugImage, roi);
+                        var debugImageRoi = debugImage.ROI;
+                        debugImage.ROI = roi;
 
                         var labelPos = new Point(recQuad[2].X, recQuad[2].Y);
                         CvInvoke.PutText(debugImage, recGlyph.Name, labelPos, EmguFontBig.Font, EmguFontBig.Scale, Rgbs.TigerLily.MCvScalar);
 
-                        CvInvoke.cvSetImageROI(debugImage, debugImageRoi);
+                        debugImage.ROI = debugImageRoi;
                     }
                 }
             }
@@ -728,6 +728,9 @@ namespace Huddle.Engine.Processor.Complex
                         // Render center and orientation of marker
                         if (IsRenderContent)
                         {
+                            var debugImageRoi = debugImage.ROI;
+                            debugImage.ROI = roi;
+
                             var markerCenter = new PointF(centerX, centerY);
                             var p2 = new Point(
                                 (int)(markerCenter.X + Math.Cos(orientation) * 100.0),
@@ -763,6 +766,8 @@ namespace Huddle.Engine.Processor.Complex
                                 EmguFont.Font,
                                 EmguFont.Scale,
                                 Rgbs.Green.MCvScalar);
+
+                            debugImage.ROI = debugImageRoi;
                         }
                     }
                     else
@@ -829,18 +834,18 @@ namespace Huddle.Engine.Processor.Complex
             var imageWidth = grayscaleImage.Cols;
             var imageHeight = grayscaleImage.Rows;
 
-            var x = (int)(marker.RelativeCenter.X * imageWidth) - roi.X;
-            var y = (int)(marker.RelativeCenter.Y * imageHeight) - roi.Y;
+            var x = (int)(marker.RelativeCenter.X * imageWidth) /*-roi.X*/;
+            var y = (int)(marker.RelativeCenter.Y * imageHeight) /*-roi.Y*/;
 
-            var grayscaleImageRoi = CvInvoke.cvGetImageROI(grayscaleImage);
-            CvInvoke.cvSetImageROI(grayscaleImage, roi);
+            var grayscaleImageRoi = grayscaleImage.ROI;
+            grayscaleImage.ROI = roi;
 
             var enclosingRectangle = FindEnclosingRectangle(ref grayscaleImage,
                 new Point(x, y),
                 ref debugImage,
                 roi);
 
-            CvInvoke.cvSetImageROI(grayscaleImage, grayscaleImageRoi);
+            grayscaleImage.ROI = grayscaleImageRoi;
 
             if (enclosingRectangle == null) return null;
 
@@ -865,7 +870,6 @@ namespace Huddle.Engine.Processor.Complex
         {
                 var binaryThreshold = BinaryThreshold;
                 //var alignedCenter = new Point(center.X + roi.X, center.Y + roi.Y);
-                var alignedCenter = new Point(center.X, center.Y);
                 Image<Gray, byte> binaryThresholdImage = new Image<Gray, byte>(grayscaleImage.Width, grayscaleImage.Height);
                 CvInvoke.Threshold(grayscaleImage.Copy(), //get a copy.... if you don't nobody will do it...
                     binaryThresholdImage,
@@ -893,12 +897,12 @@ namespace Huddle.Engine.Processor.Complex
                 var imageHeight = floodFillImage.Rows;
 
                 MCvConnectedComp comp;
-             
+
                 // mask needs to be 2 pixels wider and 2 pixels taller
                 var mask = new Image<Gray, byte>(imageWidth + 2, imageHeight + 2);
                 CvInvoke.FloodFill(floodFillImage,
                     mask,
-                    alignedCenter,
+                    center,
                     Rgbs.White.MCvScalar,
                     out comp.Rect,
                     new MCvScalar(FloodFillDifference),

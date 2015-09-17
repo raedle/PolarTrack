@@ -1344,19 +1344,30 @@ namespace Huddle.Engine.Processor.OpenCv
 
             UMat mask = new UMat(imageHeight, imageWidth, DepthType.Cv8U, 1);
             UMat depthPatchesImage = new UMat(imageHeight, imageWidth, DepthType.Cv32F, 1);
-            //var mask = new Image<Gray, byte>(imageWidth, imageHeight);
-            //var depthPatchesImage = new Image<Gray, float>(imageWidth, imageHeight);
-
+            
             // create mask for objects previousl location
-            // TODO
-            (mask.ToImage() as Image<Gray, byte>).Draw(obj.Shape, new Gray(1), -1);
-            //mask.Draw(obj.Shape, new Gray(1), -1);
+            PointF[] vert = obj.Shape.GetVertices();
+            DPoint[] vertices = { new DPoint((int)vert[0].X, (int)vert[0].Y),
+                                            new DPoint((int)vert[1].X, (int)vert[1].Y),
+                                            new DPoint((int)vert[2].X, (int)vert[2].Y),
+                                            new DPoint((int)vert[3].X, (int)vert[3].Y)};
+            CvInvoke.Polylines(mask,
+                vertices,
+                true,
+                new Gray(1).MCvScalar,
+                1);
+            CvInvoke.FillConvexPoly(mask,
+                new Emgu.CV.Util.VectorOfPoint(vertices),
+                new Gray(1).MCvScalar);
+
+            //CvInvoke.Imshow("mask", mask);
+            //CvInvoke.WaitKey();
 
             UMat depthMapBinary = new UMat(_depthImage.Rows,_depthImage.Cols,DepthType.Cv32F,1);
             CvInvoke.Threshold(_depthImage, depthMapBinary, 255, 255, ThresholdType.BinaryInv); // 255 == new Gray(255) ???
             var depthMap = depthMapBinary.Clone();
 
-            if (depthMapBinary.Cols != imageWidth || depthMapBinary.Rows != imageHeight)
+            if (depthMap.Cols != imageWidth || depthMap.Rows != imageHeight)
             {
                 CvInvoke.Resize(depthMap,
                     depthMap,
