@@ -1,12 +1,32 @@
 ﻿using GalaSoft.MvvmLight;
 using Huddle.Engine.Processor;
 using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
 
 namespace Huddle.Engine.Data
 {
     public abstract class BaseData : ObservableObject, IData
     {
         #region properties
+
+        #region Parent
+
+        private IDataContainer _parent = null;
+
+        public IDataContainer Parent
+        {
+            get
+            {
+                return _parent;
+            }
+            set
+            {
+                _parent = value;
+            }
+        }
+
+        #endregion
 
         #region Source
 
@@ -80,6 +100,18 @@ namespace Huddle.Engine.Data
 
         #endregion
 
+        #region CreationTime
+        public DateTime CreationTime
+        {
+            get;
+            set;
+        }
+        #endregion
+
+        #endregion
+
+        #region private fields
+
         #endregion
 
         #region ctor
@@ -88,6 +120,14 @@ namespace Huddle.Engine.Data
         {
             Source = source;
             Key = key;
+            CreationTime = DateTime.Now;
+        }
+
+        protected BaseData(IProcessor source, string key, DateTime time)
+        {
+            Source = source;
+            Key = key;
+            CreationTime = time;
         }
 
         #endregion

@@ -1521,6 +1521,7 @@ namespace Huddle.Engine.Processor.OpenCv
 
             UMat debugImage3 = new UMat();
             CvInvoke.CvtColor(depthPatchesImage, debugImage3, ColorConversion.Gray2Rgb);
+            debugImage3.ConvertTo(debugImage3, DepthType.Cv8U);
             //var debugImage3 = u_depthPatchesImage.ToImage<Gray, float>().Convert<Rgb, byte>(); // TODO UMat
 
             UMat depthFixedImage = new UMat(u_image.Rows,u_image.Cols,DepthType.Cv8U,3);

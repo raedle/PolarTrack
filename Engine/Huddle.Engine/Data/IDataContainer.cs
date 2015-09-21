@@ -4,9 +4,11 @@ using Huddle.Engine.Processor;
 
 namespace Huddle.Engine.Data
 {
-    public interface IDataContainer : IList<IData>, IDisposable
+    public interface IDataContainer : IList<IData>, IDisposable, ITrackable
     {
         long FrameId { get; }
+
+        long DataContainerNumber { get; }
         
         DateTime Timestamp { get; }
 

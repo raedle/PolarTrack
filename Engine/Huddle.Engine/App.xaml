@@ -17,7 +17,9 @@
                 <ResourceDictionary Source="Templates/SensorTemplates.xaml"/>
                 <ResourceDictionary Source="Templates/NetworkTemplates.xaml"/>
                 <ResourceDictionary Source="Templates/ComplexTemplates.xaml"/>
+                <ResourceDictionary Source="Templates/StatisticTemplates.xaml "/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>
 </Application>
+    

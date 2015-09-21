@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using Huddle.Engine.Processor;
+using Huddle.Engine.Util;
+
+using Huddle.Engine.Processor.Statistics;
 
 namespace Huddle.Engine.Data
 {
@@ -10,6 +13,9 @@ namespace Huddle.Engine.Data
 
         private object _lock = new object();
 
+        // TODO move to private
+        public List<KeyValuePair<Type, long>> _processingTime = new List<KeyValuePair<Type, long>>();
+
         #endregion
 
         #region properties
@@ -18,6 +24,19 @@ namespace Huddle.Engine.Data
 
         public long FrameId { get; set; }
 
+        #endregion
+
+        #region DataContainerNumber
+
+        private long _dataContainerNumber = -1L;
+
+        public long DataContainerNumber
+        {
+            get
+            {
+                return _dataContainerNumber;
+            }
+        }
         #endregion
 
         #region Timestamp
@@ -30,10 +49,18 @@ namespace Huddle.Engine.Data
 
         #region ctor
 
-        public DataContainer(long frameId, DateTime timestamp)
+        public DataContainer(long frameId, DateTime timestamp, long value = -1L)
         {
             FrameId = frameId;
             Timestamp = timestamp;
+            if(value == -1L)
+            {
+                _dataContainerNumber = DataFrameNumberGenerator.Instance.getNextDataFrameNumber();
+            }
+            else
+            {
+                _dataContainerNumber = value;
+            }
         }
 
         #endregion
@@ -44,10 +71,16 @@ namespace Huddle.Engine.Data
 
         public IDataContainer Copy()
         {
-            var copy = new DataContainer(FrameId, Timestamp)
+            var copy = new DataContainer(FrameId, Timestamp, _dataContainerNumber)
             {
-                Siblings = new List<IDataContainer>()
+                Siblings = new List<IDataContainer>(),
+                _processingTime = new List<KeyValuePair<Type, long>>(_processingTime)
             };
+
+            for (int i = 0; i < _processingTime.Count; i++)
+            {
+                copy._processingTime.Add(new KeyValuePair<Type, long>(_processingTime[i].Key, _processingTime[i].Value));
+            }
 
             if (Siblings == null)
                 Siblings = new List<IDataContainer>();
@@ -70,6 +103,12 @@ namespace Huddle.Engine.Data
             return copy;
         }
 
+        public void processedBy(Type node, long ticks)
+        {
+            _processingTime.Add(new KeyValuePair<Type, long>(node, ticks));
+        }
+        
+
         public void Dispose()
         {
             //lock (_lock)
@@ -87,9 +126,26 @@ namespace Huddle.Engine.Data
             //if (Trail != null && Trail.Any())
             //    Trail.Clear();
 
+            // TODO call tick node!
+            if (ProcessingTimeTicks.hopeImAlone != null)
+            {
+                ProcessingTimeTicks.hopeImAlone.PostProcess(this);
+            }
+
             if (Count > 0)
                 foreach (var data in this)
                     data.Dispose();
+        }
+
+        // override add function to inject parent data container to all
+        // elements
+        public new void Add(IData item)
+        {
+            //if (item.Parent == null)
+            //{
+            //    item.Parent = this;
+            //}
+            base.Add(item);
         }
     }
 }

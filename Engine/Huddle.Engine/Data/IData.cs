@@ -9,6 +9,10 @@ namespace Huddle.Engine.Data
 
         string Key { get; }
 
+        DateTime CreationTime { get; }
+
+        IDataContainer Parent { get; set; }
+
         IData Copy();
     }
 }

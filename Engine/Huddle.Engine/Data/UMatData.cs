@@ -77,7 +77,7 @@ namespace Huddle.Engine.Data
         public UMatData(IProcessor source, string key, UMat data)
             : base(source, key)
         {
-            //CvInvoke.UseOpenCL = false;
+            CvInvoke.UseOpenCL = true;
             Data = data;
             
             //Data = data;

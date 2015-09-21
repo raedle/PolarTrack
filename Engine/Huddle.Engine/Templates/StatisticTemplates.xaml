@@ -1,0 +1,95 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+                    xmlns:command="http://www.galasoft.ch/mvvmlight"
+                    xmlns:statistics="clr-namespace:Huddle.Engine.Processor.Statistics"
+                    xmlns:util="clr-namespace:Huddle.Engine.Util">
+
+    <DataTemplate x:Key="ProcessingTime" DataType="statistics:ProcessingTime">
+        <StackPanel Orientation="Vertical">
+            <GroupBox Header="General">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <Label Content="DataFrameNumber: " />
+                        <Label Content="{Binding Path=DataFrameNumber}" />
+                    </StackPanel>
+                </StackPanel>
+            </GroupBox>
+            
+            <GroupBox Header="Processing Time">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <Label Content="Color: " />
+                        <Label Content="{Binding Path=ColorTime}"/>
+                        <Label Content=" ms" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <Label Content="Depth: " />
+                        <Label Content="{Binding Path=DepthTime}" />
+                        <Label Content=" ms" />
+                    </StackPanel>
+                </StackPanel>
+            </GroupBox>
+            
+            <GroupBox Header="System Load">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <Label Content="CPU usage: " />
+                        <Label Content="{Binding Path=CPU}" />
+                        <Label Content=" %" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <Label Content="Memory usage: " />
+                        <Label Content="{Binding Path=Memory}" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <Label Content="Paged Memory usage: " />
+                        <Label Content="{Binding Path=PagedMemory}" />
+                    </StackPanel>
+                </StackPanel>
+            </GroupBox>
+           
+            <GroupBox Header="Log">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <CheckBox Content="DB" IsChecked="{Binding Path=Log2DB}" />
+                        <CheckBox Content="File" IsChecked="{Binding Path=Log2File}" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <Label Content="Log File Path: " />
+                        <TextBox IsReadOnly="True" Text="{Binding Path=LogFilePath}" />                        
+                    </StackPanel>
+                </StackPanel>
+            </GroupBox>
+            
+            <GroupBox Header="FPS">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <Label Content="Color: " />
+                        <Label Content="{Binding Path=FPSColor}" />
+                        <Label Content=" fps" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <Label Content="Depth: " />
+                        <Label Content="{Binding Path=FPSDepth}" />
+                        <Label Content=" fps" />
+                    </StackPanel>
+                </StackPanel>
+            </GroupBox>
+        </StackPanel>
+    </DataTemplate>
+   
+    <DataTemplate x:Key="ProcessingTimeTicks" DataType="statistics:ProcessingTimeTicks">
+        <GroupBox Header="Ticks Pper Node">
+            <ListView ItemsSource="{Binding Path=Nodes}">
+                <ListView.View>
+                    <GridView>
+                        <GridViewColumn Header="Node Name" DisplayMemberBinding="{Binding Path=Key}" />
+                        <GridViewColumn Header="Average Duration (in ticks)" DisplayMemberBinding="{Binding Path=Value}" />
+                    </GridView>
+                </ListView.View>
+            </ListView>
+        </GroupBox>
+    </DataTemplate>
+
+</ResourceDictionary>
