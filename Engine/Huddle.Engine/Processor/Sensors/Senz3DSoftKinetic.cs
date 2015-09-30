@@ -51,6 +51,8 @@ namespace Huddle.Engine.Processor.Sensors
 
         private System.Timers.Timer timer = null;
 
+        private static Senz3DSoftKinetic instance = null;
+
         #endregion
 
         #region properties
@@ -1175,6 +1177,8 @@ namespace Huddle.Engine.Processor.Sensors
 
                 emitROI();
             });
+
+            instance = this;
         }
 
         #endregion
@@ -1202,9 +1206,27 @@ namespace Huddle.Engine.Processor.Sensors
 
         #endregion
 
+        public static Senz3DSoftKinetic getInstance()
+        {
+            return instance;
+        }
+
         public override IData Process(IData data)
         {
             return null;
+        }
+
+        public bool TriggerColorNode(bool value)
+        {
+            if (DSW == null)
+                throw new Exception("Depth Sense Wrapper not initialized");
+
+            if (DSW.GetColorNodeEnabled() != value)
+            {
+                return DSW.EnableColorNode(value);
+            } else {
+                return DSW.GetColorNodeEnabled();
+            }
         }
 
         #region override methods
@@ -1228,6 +1250,8 @@ namespace Huddle.Engine.Processor.Sensors
             }
 
             _isRunning = true;
+            // disable grabbing of color iamges per default?
+            TriggerColorNode(false);
         }
 
         public override void Stop()

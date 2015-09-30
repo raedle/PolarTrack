@@ -17,6 +17,7 @@ using Emgu.CV.Structure;
 using Huddle.Engine.Data;
 using Huddle.Engine.Extensions;
 using Huddle.Engine.Util;
+using Huddle.Engine.Processor.Sensors;
 using Point = System.Drawing.Point;
 
 namespace Huddle.Engine.Processor.Complex
@@ -329,6 +330,41 @@ namespace Huddle.Engine.Processor.Complex
 
         #endregion
 
+        #region IsAdaptiveColorProcessing
+
+        /// <summary>
+        /// The <see cref="IsAdaptiveColorProcessing" /> property's name.
+        /// </summary>
+        public const string IsAdaptiveColorProcessingPropertyName = "IsAdaptiveColorProcessing";
+
+        private bool _isAdaptiveColorProcessing = true;
+
+        /// <summary>
+        /// Sets and gets the IsAdaptiveColorProcessing property.
+        /// Changes to that property's value raise the PropertyChanged event. 
+        /// </summary>
+        public bool IsAdaptiveColorProcessing
+        {
+            get
+            {
+                return _isAdaptiveColorProcessing;
+            }
+
+            set
+            {
+                if (_isAdaptiveColorProcessing == value)
+                {
+                    return;
+                }
+
+                RaisePropertyChanging(IsAdaptiveColorProcessingPropertyName);
+                _isAdaptiveColorProcessing = value;
+                RaisePropertyChanged(IsAdaptiveColorProcessingPropertyName);
+            }
+        }
+
+        #endregion
+
         #endregion
 
         #region ctor
@@ -410,13 +446,30 @@ namespace Huddle.Engine.Processor.Complex
             // For debugging the flag IsFindDisplayContinuously can be set 'true' -> 'false' is recommended however
             var devicesToFind = IsFindDisplayContiuously ? devices : unknownDevices;
 
-            if (!devicesToFind.Any()) return null;
+            if (!devicesToFind.Any())
+            {
+                if (IsAdaptiveColorProcessing)
+                {
+                    // Stop grabbing iamges
+                    Senz3DSoftKinetic.getInstance().TriggerColorNode(false);
+                }
+
+                return null;
+            }
 
             var rgbImages = dataContainer.OfType<UMatData>().ToArray();
 
             // Do only process if RGB image is set
             if (!rgbImages.Any())
+            {
+                if (IsAdaptiveColorProcessing)
+                {
+                    // Send enable color to DSW
+                    Senz3DSoftKinetic.getInstance().TriggerColorNode(true);
+                }
+
                 return null;
+            }
 
             Image<Rgb,byte> u_rgbImage = rgbImages.First().Data.Clone().ToImage<Rgb, byte>();
             Image<Rgb, byte> debugImage = u_rgbImage.Copy(); 
