@@ -1025,8 +1025,12 @@ namespace Huddle.Engine.Processor.Sensors
 
             // load the values from driver OR
             // TODO load settings and push them to driver
-            _depthFrameRate = DSW.m_depthFrameRate;
-            _colorFrameRate = DSW.m_colorFrameRate;
+            //_depthFrameRate = DSW.m_depthFrameRate;
+            //_colorFrameRate = DSW.m_colorFrameRate;
+            DSW.setDepthFrameRate(60);
+            DepthFrameRate = 60;
+            DSW.setColorFrameRate(30);
+            ColorFrameRate = 30;
 
             // emitROI Timer
             if (timer == null)
@@ -1251,7 +1255,7 @@ namespace Huddle.Engine.Processor.Sensors
 
             _isRunning = true;
             // disable grabbing of color iamges per default?
-            TriggerColorNode(false);
+            //TriggerColorNode(false);
         }
 
         public override void Stop()

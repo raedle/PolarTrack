@@ -337,7 +337,7 @@ namespace Huddle.Engine.Processor.Complex
         /// </summary>
         public const string IsAdaptiveColorProcessingPropertyName = "IsAdaptiveColorProcessing";
 
-        private bool _isAdaptiveColorProcessing = true;
+        private bool _isAdaptiveColorProcessing = false;
 
         /// <summary>
         /// Sets and gets the IsAdaptiveColorProcessing property.
