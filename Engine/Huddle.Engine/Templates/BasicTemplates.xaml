@@ -117,15 +117,20 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
-                <GroupBox Header="Pre Processed Image"
+                <GroupBox Header="Color Image"
                           Grid.Column="0">
-                    <Image Source="{Binding Path=PreProcessImage}" />
+                    <Image Source="{Binding Path=ColorImageSource}" Width="320" Height="240"/>
                 </GroupBox>
-                <GroupBox Header="Post Processed Image"
+                <GroupBox Header="Depth Image"
                           Grid.Column="1">
-                    <Image Source="{Binding Path=PostProcessImage}" />
+                    <Image Source="{Binding Path=DepthImageSource}" Width="320" Height="240"/>
+                </GroupBox>
+                <GroupBox Header="Confidence Image"
+                          Grid.Column="2">
+                    <Image Source="{Binding Path=ConfidenceImageSource}" Width="320" Height="240"/>
                 </GroupBox>
             </Grid>
 
@@ -151,12 +156,7 @@
                 <ComboBox ItemsSource="{Binding Path=Modes}"
                           SelectedValue="{Binding Path=Mode}" />
                 <Button Content="Apply" />
-            </StackPanel>
-
-            <StackPanel Grid.Row="3" Orientation="Horizontal">
-                <Label Content="Filename"/>
-                <TextBox Width="200" Text="{Binding Path=Filename}" />
-                <Button Content="Apply" />
+                <CheckBox Content="Loop" IsChecked="{Binding Path=IsEndlessLoop}" />
             </StackPanel>
 
             <Grid Grid.Row="4">

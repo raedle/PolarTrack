@@ -1027,8 +1027,8 @@ namespace Huddle.Engine.Processor.Sensors
             // TODO load settings and push them to driver
             //_depthFrameRate = DSW.m_depthFrameRate;
             //_colorFrameRate = DSW.m_colorFrameRate;
-            DSW.setDepthFrameRate(60);
-            DepthFrameRate = 60;
+            DSW.setDepthFrameRate(30);
+            DepthFrameRate = 30;
             DSW.setColorFrameRate(30);
             ColorFrameRate = 30;
 
@@ -1265,8 +1265,11 @@ namespace Huddle.Engine.Processor.Sensors
             DSW.unregColorSampleCallBack();
             DSW.unregDepthSampleCallBack();
 
-            _isRunning = false;
-            DSW.stop();
+            if (_isRunning)
+            {
+                _isRunning = false;
+                DSW.stop();
+            }
         }
 
         #endregion
@@ -1321,12 +1324,13 @@ namespace Huddle.Engine.Processor.Sensors
         {
             /* Get depth image */
             Stopwatch sw = Stopwatch.StartNew();
-            var depthImage = new Image<Gray, float>(sample.Width, sample.Height);
+            var depthImage = new Image<Gray, byte>(sample.Width, sample.Height);
             var confidenceImage = new Image<Rgb, byte>(sample.Width, sample.Height);
             var minValue = MinDepthValue;
             var maxValue = MaxDepthValue;
 
-            Parallel.For(0, sample.Height, (i) => {
+            /*Parallel.For(0, sample.Height, (i) => {*/
+            for (int i=0; i < sample.Height; i++) {
                 for (int j = 0; j < sample.Width; j++)
                 {
                     //var depth = sample.Ptr[i * sample.Width + j];
@@ -1343,11 +1347,11 @@ namespace Huddle.Engine.Processor.Sensors
 
                         test *= 255.0f;
 
-                        depthImage.Data[i, j, 0] = test;
+                        depthImage.Data[i, j, 0] = (byte)test;
                     }
                     else
                     {
-                        depthImage.Data[i, j, 0] = depth * 255.0f;
+                        depthImage.Data[i, j, 0] = (byte)(depth * 255.0f);
 
                         if (depth == EmguExtensions.LowConfidence)
                         {
@@ -1359,7 +1363,7 @@ namespace Huddle.Engine.Processor.Sensors
                         }
                     }
                 }
-            });
+            }/*);*/
             var depthImageCopy = depthImage.Copy();
             var confidenceImageCopy = confidenceImage.Copy();
 
@@ -1370,7 +1374,7 @@ namespace Huddle.Engine.Processor.Sensors
             {
                 Task.Factory.StartNew(() =>
                 {
-                    var bitmap = depthImageCopy.ToGradientBitmapSource(true);
+                    var bitmap = depthImageCopy.ToBitmapSource(true);
                     depthImageCopy.Dispose();
                     return bitmap;
                 }).ContinueWith(s => DepthImageSource = s.Result);

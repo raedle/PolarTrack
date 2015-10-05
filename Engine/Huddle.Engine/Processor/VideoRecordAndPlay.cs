@@ -1,4 +1,12 @@
-﻿using System;
+﻿using Emgu.CV;
+using Emgu.CV.External.Extensions;
+using Emgu.CV.Structure;
+using GalaSoft.MvvmLight.Command;
+using GalaSoft.MvvmLight.Threading;
+using Huddle.Engine.Data;
+using Huddle.Engine.Util;
+using Microsoft.Win32;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
@@ -7,16 +15,9 @@ using System.Runtime.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using System.Xml.Serialization;
-using Emgu.CV;
-using Emgu.CV.External.Extensions;
-using Emgu.CV.Structure;
-using GalaSoft.MvvmLight.Command;
-using GalaSoft.MvvmLight.Threading;
-using Huddle.Engine.Data;
-using Huddle.Engine.Util;
-using Microsoft.Win32;
 
 namespace Huddle.Engine.Processor
 {
@@ -25,7 +26,7 @@ namespace Huddle.Engine.Processor
     {
         #region private fields
 
-        private readonly Dictionary<VideoMetadata, VideoWriter> _recorders = new Dictionary<VideoMetadata, VideoWriter>();
+        private /*readonly*/ Dictionary<VideoMetadata, VideoWriter> _recorders = new Dictionary<VideoMetadata, VideoWriter>();
         private readonly Dictionary<VideoMetadata, Capture> _players = new Dictionary<VideoMetadata, Capture>();
 
         private string _tmpRecordPath;
@@ -47,41 +48,6 @@ namespace Huddle.Engine.Processor
         #endregion
 
         #region properties
-
-        #region Filename
-
-        /// <summary>
-        /// The <see cref="Filename" /> property's name.
-        /// </summary>
-        public const string FilenamePropertyName = "Filename";
-
-        private string _filename = "MyRecording";
-
-        /// <summary>
-        /// Sets and gets the Filename property.
-        /// Changes to that property's value raise the PropertyChanged event. 
-        /// </summary>
-        public string Filename
-        {
-            get
-            {
-                return _filename;
-            }
-
-            set
-            {
-                if (_filename == value)
-                {
-                    return;
-                }
-
-                RaisePropertyChanging(FilenamePropertyName);
-                _filename = value;
-                RaisePropertyChanged(FilenamePropertyName);
-            }
-        }
-
-        #endregion
 
         #region Fps
 
@@ -156,11 +122,155 @@ namespace Huddle.Engine.Processor
 
         #endregion
 
+        #region ColorImageSource
+
+        /// <summary>
+        /// The <see cref="ColorImageSource" /> property's name.
+        /// </summary>
+        public const string ColorImageSourcePropertyName = "ColorImageSource";
+
+        private BitmapSource _colorImageSource = null;
+
+        /// <summary>
+        /// Sets and gets the ColorImageSource property.
+        /// Changes to that property's value raise the PropertyChanged event. 
+        /// </summary>
+        [IgnoreDataMember]
+        public BitmapSource ColorImageSource
+        {
+            get
+            {
+                return _colorImageSource;
+            }
+
+            set
+            {
+                if (_colorImageSource == value)
+                {
+                    return;
+                }
+
+                RaisePropertyChanging(ColorImageSourcePropertyName);
+                _colorImageSource = value;
+                RaisePropertyChanged(ColorImageSourcePropertyName);
+            }
+        }
+
+        #endregion
+
+        #region DepthImageSource
+
+        /// <summary>
+        /// The <see cref="DepthImageSource" /> property's name.
+        /// </summary>
+        public const string DepthImageSourcePropertyName = "DepthImageSource";
+
+        private BitmapSource _depthImageSource = null;
+
+        /// <summary>
+        /// Sets and gets the DepthImageSource property.
+        /// Changes to that property's value raise the PropertyChanged event. 
+        /// </summary>
+        [IgnoreDataMember]
+        public BitmapSource DepthImageSource
+        {
+            get
+            {
+                return _depthImageSource;
+            }
+
+            set
+            {
+                if (_depthImageSource == value)
+                {
+                    return;
+                }
+
+                RaisePropertyChanging(DepthImageSourcePropertyName);
+                _depthImageSource = value;
+                RaisePropertyChanged(DepthImageSourcePropertyName);
+            }
+        }
+
+        #endregion
+
+        #region ConfidenceImageSource
+
+        /// <summary>
+        /// The <see cref="ConfidenceImageSource" /> property's name.
+        /// </summary>
+        public const string ConfidenceImageSourcePropertyName = "ConfidenceImageSource";
+
+        private BitmapSource _confidenceImageSource = null;
+
+        /// <summary>
+        /// Sets and gets the ConfidenceImageSource property.
+        /// Changes to that property's value raise the PropertyChanged event. 
+        /// </summary>
+        [IgnoreDataMember]
+        public BitmapSource ConfidenceImageSource
+        {
+            get
+            {
+                return _confidenceImageSource;
+            }
+
+            set
+            {
+                if (_confidenceImageSource == value)
+                {
+                    return;
+                }
+
+                RaisePropertyChanging(ConfidenceImageSourcePropertyName);
+                _confidenceImageSource = value;
+                RaisePropertyChanged(ConfidenceImageSourcePropertyName);
+            }
+        }
+
+        #endregion
+
+        #region IsEndlessLoop
+
+        /// <summary>
+        /// The <see cref="IsEndlessLoop" /> property's name.
+        /// </summary>
+        public const string IsEndlessLoopPropertyName = "IsEndlessLoop";
+
+        private bool _isEndlessLoop = true;
+
+        /// <summary>
+        /// Sets and gets the IsEndlessLoop property.
+        /// Changes to that property's value raise the PropertyChanged event. 
+        /// </summary>
+        public bool IsEndlessLoop
+        {
+            get
+            {
+                return _isEndlessLoop;
+            }
+
+            set
+            {
+                if (_isEndlessLoop == value)
+                {
+                    return;
+                }
+
+                RaisePropertyChanging(IsEndlessLoopPropertyName);
+                _isEndlessLoop = value;
+                RaisePropertyChanged(IsEndlessLoopPropertyName);
+            }
+        }
+
+        #endregion
+
         #endregion
 
         #region ctor
 
         public VideoRecordAndPlay()
+            :base(false)
         {
             #region commands
 
@@ -170,76 +280,74 @@ namespace Huddle.Engine.Processor
 
             #endregion
 
-            //PropertyChanged += (s, e) =>
-            //{
-            //    switch (e.PropertyName)
-            //    {
-            //        case FilenamePropertyName:
-            //            UpdateRecorderAndPlayer();
-            //            break;
-            //        case ModePropertyName:
-            //            UpdateRecorderAndPlayer();
-            //            break;
-            //    }
-            //};
-            //UpdateRecorderAndPlayer();
-
-            var fileInfo = new FileInfo(@"C:\Users\raedle\Downloads\test23\color.avi");
-            if (!fileInfo.Exists)
-                return;
-
-            var fileInfoCopy = fileInfo.CopyTo(Path.Combine(fileInfo.DirectoryName, "test3.avi"), true);
-
-            _capture = new Capture(fileInfoCopy.FullName);
+            PropertyChanged += (s, e) =>
+            {
+                switch (e.PropertyName)
+                {
+                    case ModePropertyName:
+                        UpdateRecorderAndPlayer();
+                        break;
+                }
+            };
+            UpdateRecorderAndPlayer();
         }
 
         #endregion
 
         private void UpdateRecorderAndPlayer()
         {
-            //if (Equals(Mode, "Recorder"))
-            //{
-            //    if (_player != null)
-            //        _player.Dispose();
-            //}
-            //else if (Equals(Mode, "Player"))
-            //{
-            //    DisposeRecorders();
+            if (Equals(Mode, "Player"))
+            {
+                var fileDialog = new OpenFileDialog { Filter = "Huddle Engine Recording|*.rec.huddle" };
 
-            //    _player = new Capture(Filename);
+                if ((bool)fileDialog.ShowDialog(Application.Current.MainWindow))
+                {
+                    _tmpPlayPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
 
-            //    new Thread(() =>
-            //    {
-            //        long frameId = 0;
+                    ZipFile.ExtractToDirectory(fileDialog.FileName, _tmpPlayPath); // TODO clean up
 
-            //        Start();
 
-            //        Image<Bgr, byte> image;
-            //        while ((image = _player.QueryFrame()) != null)
-            //        {
-            //            var imageCopy = image.Copy();
-            //            Publish(new DataContainer(++frameId, DateTime.Now)
-            //            {
-            //                new RgbImageData("depth", imageCopy.Convert<Rgb, byte>())
-            //            });
-            //            //image.Dispose();
+                    var task = Task.Factory.StartNew(() =>
+                    {
+                        Metadata metadata;
 
-            //            Thread.Sleep(1000 / Fps);
-            //        }
-            //    }).Start();
-            //}
+                        var serializer = new XmlSerializer(typeof(Metadata));
+                        using (var stream = new FileStream(GetTempFilePath(_tmpPlayPath, ".metadata"), FileMode.Open))
+                            metadata = serializer.Deserialize(stream) as Metadata;
+
+                        if (metadata == null)
+                            throw new Exception("Could not load recording metadata");
+
+                        foreach (var item in metadata.Items)
+                        {
+                            var player = new Capture(GetTempFilePath(_tmpPlayPath, item.FileName));
+                            _players.Add(item, player);
+                        }
+
+                    });
+
+                    MessageBox.Show("All files loaded.", "Player");
+                }
+                else
+                {
+                    return;
+                }
+            }
         }
 
         private bool _isRecorderStarted = false;
 
         public override IData Process(IData data)
         {
-            var imageData = data as RgbImageData;
+            var imageData = data as UMatData;
 
             if (_isRecording && imageData != null)
                 Record(imageData);
 
-            return data;
+            if (IsRenderContent)
+                render(imageData.Data, imageData.Key);
+
+            return null; //data;
         }
 
         public override UMatData ProcessAndView(UMatData data)
@@ -247,28 +355,23 @@ namespace Huddle.Engine.Processor
             return data;
         }
 
-        public void Record(RgbImageData imageData)
+        public void Record(UMatData imageData)
         {
             if (!_recorders.Any(kvp => Equals(kvp.Key.Key, imageData.Key)))
             {
-                //var width = imageData.Image.Width;
-                //var height = imageData.Image.Height;
-                //var filename = string.Format("{0}_{1}_{2}x{3}_{4}.avi", Filename, imageData.Key, width, height, Fps);
-
                 var videoMetadata = new VideoMetadata
                 {
                     Key = imageData.Key,
                     FileName = string.Format("{0}{1}", imageData.Key, ".avi"),
-                    Width = imageData.Image.Width,
-                    Height = imageData.Image.Height,
+                    Width = imageData.Data.Cols,
+                    Height = imageData.Data.Rows,
                     Fps = Fps
                 };
 
-                //VideoWriter captureOutput = new VideoWriter(@"test.avi", -1, 1, width, height, true);
-                //var captureOutput = new VideoWriter(@"test.avi", CvInvoke.CV_FOURCC('W', 'M', 'V', '3'), 1, width, height, true);
                 var videoWriter = new VideoWriter(
                     GetTempFilePath(_tmpRecordPath, videoMetadata.FileName),
-                    Emgu.CV.VideoWriter.Fourcc('D', 'I', 'V', 'X'),
+                    0, // probably raw https://wiki.videolan.org/YUV/
+                    /*Emgu.CV.VideoWriter.Fourcc('D', 'I', 'V', 'X'),*/
                     Fps,
                     new System.Drawing.Size(videoMetadata.Width, videoMetadata.Height),
                     true);
@@ -281,38 +384,44 @@ namespace Huddle.Engine.Processor
             if (!_isRecorderStarted) return;
 
             // TODO: The _recorders.Single may raise an exception if sequence is empty or multiple items in sequence match
-            var recorder = _recorders.Single(kvp => Equals(kvp.Key.Key, imageData.Key)).Value;
-
-            //_recorder = new VideoWriter(Filename, 10, 320, 240, true);
+            VideoWriter recorder = null;
+            try {
+                recorder = _recorders.Single(kvp => Equals(kvp.Key.Key, imageData.Key)).Value;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.StackTrace);
+            }
+            
             if (recorder != null)
             {
-                Image<Rgb, byte> imageCopy = null;
-                try
+                Mat _image = new Mat();
+                imageData.Data.CopyTo(_image);
+
+                // convert depth images to an rgb format so i can write the frame
+                if (_image.NumberOfChannels == 1)
                 {
-                    Console.WriteLine("Write image frame");
-                    imageCopy = imageData.Image;
-                    recorder.Write(imageCopy.Convert<Bgr, byte>().ToUMat().ToMat(Emgu.CV.CvEnum.AccessType.Read));
+                    Mat _tmp = new Mat(_image.Rows, _image.Cols, Emgu.CV.CvEnum.DepthType.Cv8U, 3);
+                    CvInvoke.CvtColor(_image, _tmp, Emgu.CV.CvEnum.ColorConversion.Gray2Rgb);
+                    _image = _tmp;
+
                 }
-                finally
-                {
-                    if (imageCopy != null)
-                        imageCopy.Dispose();
-                }
+
+                recorder.Write(_image);
             }
         }
 
         public override void Start()
         {
-            //base.Start();
+            base.Start();
         }
 
         public override void Stop()
         {
+            OnStop(); // Stop players and recorders
+
             DisposeRecorders();
             DisposePlayers();
-
-            //if (_player != null)
-            //    _player.Dispose();
 
             base.Stop();
         }
@@ -330,11 +439,12 @@ namespace Huddle.Engine.Processor
 
             _isRecording = true;
 
-            base.Start();
+            // Start pipeline if not running yet
+            if (!base.IsProcessing)
+            {
+                base.Start();
+            }
         }
-
-        private Capture _capture;
-        private Image<Bgr, byte> _frame; 
 
         private void OnPlay()
         {
@@ -342,128 +452,63 @@ namespace Huddle.Engine.Processor
 
             _isPlaying = true;
 
-            new Thread(() =>
+            var task = Task.Factory.StartNew(() =>
             {
+                Dictionary<String, int> fckvp = new Dictionary<String, int>();
+                foreach (var kvp in _players)
+                {
+                    fckvp[kvp.Key.Key] = 0;
+                }
+
+
                 while (_isPlaying)
                 {
-                    try
+                    foreach (var kvp in _players)
                     {
-                        CvInvoke.cvCopy(_capture.QueryFrame().Ptr, _frame, IntPtr.Zero);
-                        Console.WriteLine("Queried");
+                        var videoMetadata = kvp.Key;
+                        var player = kvp.Value;
+
+                        try
+                        {
+                            if (IsEndlessLoop)
+                            {
+                                if (fckvp[videoMetadata.Key] == player.GetCaptureProperty(Emgu.CV.CvEnum.CapProp.FrameCount))
+                                {
+                                    player.SetCaptureProperty(Emgu.CV.CvEnum.CapProp.PosFrames, 0);
+                                    fckvp[videoMetadata.Key] = 0;
+                                }
+                            }
+
+                            Mat image = player.QueryFrame();
+                            if (IsEndlessLoop)
+                            {
+                                fckvp[videoMetadata.Key]++;
+                            }
+
+                            if (image == null) continue;
+
+                            var imageCopy = image.Clone();
+                            image.Dispose();
+
+                            UMat img = imageCopy.ToUMat(Emgu.CV.CvEnum.AccessType.ReadWrite);
+
+                            Stage(new UMatData(this, videoMetadata.Key, img));
+
+                            if (IsRenderContent)
+                            {
+                                render(img, videoMetadata.Key);
+                            }
+                        }
+                        catch (Exception)
+                        {
+                            // ignore
+                        }
                     }
-                    catch (AccessViolationException e)
-                    {
-                        Console.WriteLine(e.Message);
-                    }
-                    Thread.Sleep(5000);
+                    Push();
+
+                    Thread.Sleep(1000 / Fps);
                 }
-            }).Start();
-
-            //var fileDialog = new OpenFileDialog { Filter = "Huddle Engine Recording|*.rec.huddle" };
-
-            //var result = fileDialog.ShowDialog(Application.Current.MainWindow);
-
-            //if (!result.Value) return;
-
-            //var task = Task.Factory.StartNew(() =>
-            //{
-            //    _tmpPlayPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
-
-            //    ZipFile.ExtractToDirectory(fileDialog.FileName, _tmpPlayPath);
-
-
-            //    //Start();
-
-            ////    while (_isPlaying)
-            ////    {
-            ////        foreach (var kvp in _players)
-            ////        {
-            ////            var videoMetadata = kvp.Key;
-            ////            var player = kvp.Value;
-
-            ////            try
-            ////            {
-            ////                Image<Bgr, byte> image;
-            ////                if ((image = player.QueryFrame()) == null) continue;
-            ////                var imageCopy = image.Clone();
-            ////                image.Dispose();
-
-            ////                Console.WriteLine("run");
-
-            ////                var imageCopy2 = imageCopy.Copy();
-            ////                DispatcherHelper.RunAsync(() =>
-            ////                {
-            ////                    PostProcessImage = imageCopy2.ToBitmapSource();
-            ////                    imageCopy2.Dispose();
-            ////                });
-
-            ////                //Stage(new RgbImageData(videoMetadata.Key, imageCopy.Convert<Rgb, byte>()));
-            ////            }
-            ////            catch (Exception)
-            ////            {
-            ////                // ignore
-            ////            }
-            ////        }
-            ////        Push();
-
-            ////        //Thread.Sleep(1000 / Fps);
-            ////    }
-            //});
-
-            //task.ContinueWith(t =>
-            //{
-            //    Metadata metadata;
-
-            //    var serializer = new XmlSerializer(typeof(Metadata));
-            //    using (var stream = new FileStream(GetTempFilePath(_tmpPlayPath, ".metadata"), FileMode.Open))
-            //        metadata = serializer.Deserialize(stream) as Metadata;
-
-            //    if (metadata == null)
-            //        throw new Exception("Could not load recording metadata");
-
-            //    foreach (var item in metadata.Items)
-            //    {
-            //        var player = new Capture(GetTempFilePath(_tmpPlayPath, item.FileName));
-            //        _players.Add(item, player);
-
-            //        player.ImageGrabbed += player_ImageGrabbed;
-            //        player.Start();
-            //    }
-            //    //DisposePlayers();
-            //    //StopPlaying();
-            //}, TaskScheduler.Current);
-        }
-
-        private int i = 0;
-
-        void player_ImageGrabbed(object sender, EventArgs e)
-        {
-            Console.WriteLine("echo {0}", i++);
-
-            Emgu.CV.UMat frame = new UMat();
-            _capture.Retrieve(frame);
-
-            //Image<Gray, Byte> grayFrame = image.Convert<Gray, Byte>();
-            //Image<Gray, Byte> smallGrayFrame = grayFrame.PyrDown();
-            //Image<Gray, Byte> smoothedGrayFrame = smallGrayFrame.PyrUp();
-            //Image<Gray, Byte> cannyFrame = smoothedGrayFrame.Canny(100, 60);
-
-            //Image<Bgr, byte> image;
-            //if ((image = player.RetrieveBgrFrame()) == null) return;
-            //var imageCopy = image.Clone();
-            //image.Dispose();
-
-            Console.WriteLine("run");
-
-            //var imageCopy2 = image.Copy();
-            //DispatcherHelper.RunAsync(() =>
-            //{
-            //    PostProcessImage = imageCopy2.ToBitmapSource();
-            //    imageCopy2.Dispose();
-            //});
-
-            //Stage(new RgbImageData("mykey", image.Convert<Rgb, byte>()));
-            //Push();
+            });
         }
 
         private void OnStop()
@@ -488,12 +533,16 @@ namespace Huddle.Engine.Processor
 
             if (!result.Value) return;
 
+            // stop recorders, otherwise the video data cannot be stored in zip archive
+            var a = _recorders.Keys.ToList();
+            foreach (var b in a)
+            {
+                _recorders[b].Dispose();
+                _recorders[b] = null;
+            }
+
             var task = Task.Factory.StartNew(() =>
             {
-                // stop recorders, otherwise the video data cannot be stored in zip archive
-                foreach (var recorder in _recorders.Values)
-                    recorder.Dispose();
-
                 var metadata = new Metadata { Items = _recorders.Keys.ToList() };
 
                 var serializer = new XmlSerializer(typeof(Metadata));
@@ -516,6 +565,43 @@ namespace Huddle.Engine.Processor
             });
         }
 
+        void render(UMat image, String key) {
+            if (IsRenderContent)
+            {
+                var _image = image.Clone();
+                switch (key)
+                {
+                    case "color":
+                        Task.Factory.StartNew(() =>
+                        {
+                            var bitmap = _image.ToBitmapSource(true);
+                            _image.Dispose();
+                            return bitmap;
+                        }).ContinueWith(s => ColorImageSource = s.Result);
+                        break;
+                    case "depth":
+                        Task.Factory.StartNew(() =>
+                        {
+                            var bitmap = _image.ToBitmapSource(true);
+                            _image.Dispose();
+                            return bitmap;
+                        }).ContinueWith(s => DepthImageSource = s.Result);
+                        break;
+                    case "confidence":
+                        Task.Factory.StartNew(() =>
+                        {
+                            var bitmap = _image.ToBitmapSource(true);
+                            _image.Dispose();
+                            return bitmap;
+                        }).ContinueWith(s => ConfidenceImageSource = s.Result);
+                        break;
+                    default:
+                        _image.Dispose();
+                        break;
+                }
+            }
+        }
+
         private void StopPlaying()
         {
             // cleanup resources
@@ -530,7 +616,12 @@ namespace Huddle.Engine.Processor
         private void DisposeRecorders()
         {
             foreach (var recorder in _recorders.Values)
-                recorder.Dispose();
+            {
+                if (recorder != null)
+                {
+                    recorder.Dispose();
+                }
+            }
 
             _recorders.Clear();
         }

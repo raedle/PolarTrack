@@ -478,6 +478,18 @@ namespace Huddle.Engine.Processor
 
         #endregion
 
+        #region IsProcessing
+
+        public bool IsProcessing
+        {
+            get
+            {
+                return _processing;
+            }
+        }
+
+        #endregion
+
         #endregion
 
         #region ctor

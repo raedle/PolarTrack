@@ -77,7 +77,7 @@ namespace Huddle.Engine.Data
         public UMatData(IProcessor source, string key, UMat data)
             : base(source, key)
         {
-            CvInvoke.UseOpenCL = true;
+            CvInvoke.UseOpenCL = false;
             Data = data;
             
             //Data = data;
@@ -96,7 +96,11 @@ namespace Huddle.Engine.Data
      
         public override void Dispose()
         {
-            Data.Dispose();
+            if (_data != null)
+            {
+                _data.Dispose();
+                _data = null;
+            }
         }
 
     }
