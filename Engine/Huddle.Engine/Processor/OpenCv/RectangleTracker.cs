@@ -1089,9 +1089,11 @@ namespace Huddle.Engine.Processor.OpenCv
                 if (IsRenderContent)
                 {
                     if (IsFillContours)
+                    {
                         CvInvoke.FillConvexPoly(outputImage[0],
                             new Emgu.CV.Util.VectorOfPoint(obj.Points),
                             Rgbs.Yellow.MCvScalar);
+                    }
 
                     if (IsDrawContours)
                     {
@@ -1343,7 +1345,7 @@ namespace Huddle.Engine.Processor.OpenCv
             var imageHeight = u_image.Rows;
 
             UMat mask = new UMat(imageHeight, imageWidth, DepthType.Cv8U, 1);
-            UMat depthPatchesImage = new UMat(imageHeight, imageWidth, DepthType.Cv32F, 1);
+            UMat depthPatchesImage = new UMat(imageHeight, imageWidth, DepthType.Cv8U, 1);
             
             // create mask for objects previousl location
             PointF[] vert = obj.Shape.GetVertices();
@@ -1379,14 +1381,15 @@ namespace Huddle.Engine.Processor.OpenCv
 
             if (IsFirstErodeThenDilateFixMask)
             {
+                UMat _ret = new UMat();
                 CvInvoke.Erode(mask,
-                    mask,
+                    _ret,
                     new UMat(),
                     new System.Drawing.Point(-1, -1),
                     FixMaskErode,
                     Emgu.CV.CvEnum.BorderType.Default,
                     new MCvScalar());
-                CvInvoke.Dilate(mask,
+                CvInvoke.Dilate(_ret,
                     mask,
                     new UMat(),
                     new System.Drawing.Point(-1, -1),
@@ -1396,14 +1399,15 @@ namespace Huddle.Engine.Processor.OpenCv
             }
             else
             {
+                UMat _ret = new UMat();
                 CvInvoke.Dilate(mask,
-                    mask,
+                    _ret,
                     new UMat(),
                     new System.Drawing.Point(-1, -1),
                     FixMaskDilate,
                     BorderType.Default,
                     new MCvScalar());
-                CvInvoke.Erode(mask,
+                CvInvoke.Erode(_ret,
                    mask,
                    new UMat(),
                    new System.Drawing.Point(-1, -1),
@@ -1468,14 +1472,15 @@ namespace Huddle.Engine.Processor.OpenCv
             // Erode and dilate depth patches image to remove small pixels around device borders.
             if (IsFirstErodeThenDilateDepthPatches)
             {
+                UMat _ret = new UMat();
                 CvInvoke.Erode(depthPatchesImage,
-                    depthPatchesImage,
+                    _ret,
                     null, // or new Mat() or IntPtr.Zero
                     new System.Drawing.Point(-1, -1),
                     DepthPatchesErode,
                     Emgu.CV.CvEnum.BorderType.Default, // TODO gut oder andere methode?
                     new Emgu.CV.Structure.MCvScalar());
-                CvInvoke.Dilate(depthPatchesImage,
+                CvInvoke.Dilate(_ret,
                     depthPatchesImage,
                     null,
                     new System.Drawing.Point(-1, -1),
@@ -1485,14 +1490,15 @@ namespace Huddle.Engine.Processor.OpenCv
             }
             else
             {
+                UMat _ret = new UMat();
                 CvInvoke.Dilate(depthPatchesImage,
-                    depthPatchesImage,
+                    _ret,
                     null,
                     new System.Drawing.Point(-1, -1),
                     DepthPatchesDilate,
                     Emgu.CV.CvEnum.BorderType.Default, // TODO gut oder andere methode?
                     new Emgu.CV.Structure.MCvScalar());
-                CvInvoke.Erode(depthPatchesImage,
+                CvInvoke.Erode(_ret,
                     depthPatchesImage,
                     null,
                     new System.Drawing.Point(-1, -1),
@@ -1570,6 +1576,13 @@ namespace Huddle.Engine.Processor.OpenCv
 
             Emgu.CV.Util.VectorOfVectorOfPoint contours = new Emgu.CV.Util.VectorOfVectorOfPoint();
 
+            // http://opencv-code.com/tutorials/detecting-simple-shapes-in-an-image/
+            CvInvoke.Canny(grayImage,
+                grayImage,
+                0,
+                50,
+                5);
+
             CvInvoke.FindContours(grayImage,
                 contours,
                 null, // TODO can we use hierarchy
@@ -1608,7 +1621,9 @@ namespace Huddle.Engine.Processor.OpenCv
                         CvInvoke.ArcLength(contours[i], true) * 0.05,
                         true);
                     if (IsRenderContent && IsDrawAllContours)
+                    {
                         CvInvoke.Polylines(outputImage, highApproxContour.ToArray(), true, Rgbs.Yellow.MCvScalar);
+                    }
 
 
 
