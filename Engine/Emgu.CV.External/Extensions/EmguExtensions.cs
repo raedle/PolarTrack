@@ -159,31 +159,19 @@ namespace Emgu.CV.External.Extensions
             CvEnum.DepthType depth = src.Depth;
 
             // <Rgb, byte>
-            IImage img = null;
-            var _d = dst.ToImage();
-            var _m = mask.ToImage();
             if (nc == 3 && depth == CvEnum.DepthType.Cv8U)
             {
-                img = src.ToImage<Rgb, byte>();
-                (img as Image<Rgb,byte>).Copy(_d as Image<Rgb, byte>, _m as Image<Gray, byte>);
-                dst = (_d as Image<Rgb, byte>).ToUMat();
-                mask = (_m as Image<Gray, byte>).ToUMat();
+                (src.ToImage<Rgb, byte>()).Copy(dst.ToImage<Rgb,Byte>(), mask.ToImage<Gray,byte>());
             }
             // <Gray, float>
             else if(nc == 1 && depth == CvEnum.DepthType.Cv32F)
             {
-                img = src.ToImage<Gray, float>();
-                (img as Image<Gray, float>).Copy(_d as Image<Gray, float>, _m as Image<Gray, byte>);
-                dst = (_d as Image<Gray, float>).ToUMat();
-                mask = (_m as Image<Gray, byte>).ToUMat();
+                (src.ToImage<Gray, float>()).Copy(dst.ToImage<Gray,float>(), mask.ToImage<Gray,byte>());
             }
             // <Gray, byte>
             else if (nc == 1 && depth == CvEnum.DepthType.Cv8U)
             {
-                img = src.ToImage<Gray, byte>();
-                (img as Image<Gray, byte>).Copy(_d as Image<Gray, byte>, _m as Image<Gray, byte>);
-                dst = (_d as Image<Gray, byte>).ToUMat();
-                mask = (_m as Image<Gray, byte>).ToUMat();
+                (src.ToImage<Gray, byte>()).Copy(dst.ToImage<Gray,byte>(), mask.ToImage<Gray,byte>());
             }
         }
 
