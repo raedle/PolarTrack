@@ -1244,7 +1244,7 @@ namespace Huddle.Engine.Processor.OpenCv
             //UMat u_blankedImageGray = blankedImageGray2.ToUMat();
 
             //blankedImageGray = blankedImageGray.Erode(3);
-
+            
             var roi = CvInvoke.cvGetImageROI(blankedImage);
             if (useROI)
             {
@@ -1261,6 +1261,8 @@ namespace Huddle.Engine.Processor.OpenCv
                 }
 
                 UMat maskImage = new UMat(imageHeight, imageWidth,DepthType.Cv8U,1);
+                maskImage.SetTo(Rgbs.Black.MCvScalar);
+
                 CvInvoke.Rectangle(maskImage, roi, new Gray(255).MCvScalar, -1);
 
                 CvInvoke.BitwiseAnd(u_blankedImageGray,
@@ -1328,7 +1330,11 @@ namespace Huddle.Engine.Processor.OpenCv
                 return;
 
             var enclosedOutputImage = outputImage.Clone();
-            Parallel.ForEach(occludedObjects, obj => UpdateOccludedObject(u_image, ref enclosedOutputImage, updateTime, objects, obj));
+            for (int i = 0; i < occludedObjects.Length; i++ )
+            {
+                UpdateOccludedObject(u_image, ref enclosedOutputImage, updateTime, objects, occludedObjects[i]);
+            }
+            //Parallel.ForEach(occludedObjects, obj => UpdateOccludedObject(u_image, ref enclosedOutputImage, updateTime, objects, obj));
         }
 
         /// <summary>
@@ -1345,7 +1351,9 @@ namespace Huddle.Engine.Processor.OpenCv
             var imageHeight = u_image.Rows;
 
             UMat mask = new UMat(imageHeight, imageWidth, DepthType.Cv8U, 1);
+            mask.SetTo(Rgbs.Black.MCvScalar);
             UMat depthPatchesImage = new UMat(imageHeight, imageWidth, DepthType.Cv8U, 1);
+            depthPatchesImage.SetTo(Rgbs.Black.MCvScalar);
             
             // create mask for objects previousl location
             PointF[] vert = obj.Shape.GetVertices();
@@ -1356,17 +1364,15 @@ namespace Huddle.Engine.Processor.OpenCv
             CvInvoke.Polylines(mask,
                 vertices,
                 true,
-                new Gray(1).MCvScalar,
+                Rgbs.White.MCvScalar,
                 1);
             CvInvoke.FillConvexPoly(mask,
                 new Emgu.CV.Util.VectorOfPoint(vertices),
-                new Gray(1).MCvScalar);
-
-            //CvInvoke.Imshow("mask", mask);
-            //CvInvoke.WaitKey();
+                Rgbs.White.MCvScalar);
 
             UMat depthMapBinary = new UMat(_depthImage.Rows,_depthImage.Cols,DepthType.Cv32F,1);
-            CvInvoke.Threshold(_depthImage, depthMapBinary, 255, 255, ThresholdType.BinaryInv); // 255 == new Gray(255) ???
+            CvInvoke.Threshold(_depthImage, depthMapBinary, 127, 255, ThresholdType.BinaryInv); // 255 == new Gray(255) ???
+
             var depthMap = depthMapBinary.Clone();
 
             if (depthMap.Cols != imageWidth || depthMap.Rows != imageHeight)
@@ -1441,6 +1447,7 @@ namespace Huddle.Engine.Processor.OpenCv
 
             //var _originPixels = new Image<Rgb, byte>(imageWidth, imageHeight);
             UMat originPixels = new UMat(imageHeight,imageWidth,DepthType.Cv8U,3);
+            originPixels.SetTo(Rgbs.Black.MCvScalar);
             //u_image.CopyTo(originPixels, mask); // not impl atm
             u_image.CopyToMask(ref originPixels, mask);
             //UMat u_imageCopy = u_image.DeepClone();

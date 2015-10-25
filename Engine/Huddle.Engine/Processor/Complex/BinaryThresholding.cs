@@ -135,7 +135,8 @@ namespace Huddle.Engine.Processor.Complex
             }
             else
             {
-                grayImage = data.Data;
+                grayImage.Dispose();
+                grayImage = data.Data.Clone();
             }
 
 

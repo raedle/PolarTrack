@@ -546,11 +546,11 @@ namespace Huddle.Engine.Processor.Complex
             int height,
             ref Image<Rgb, byte> debugImage)
         {
-            var imageRoi = CvInvoke.cvGetImageROI(colorImage);
             var deviceRoi = CalculateRoiFromNormalizedBounds(device.Area, colorImage);
-            deviceRoi = deviceRoi.GetInflatedBy(RoiExpandFactor, imageRoi);
+            deviceRoi = deviceRoi.GetInflatedBy(RoiExpandFactor, colorImage.ROI);
 
-            CvInvoke.cvSetImageROI(colorImage, deviceRoi);
+            var imageRoi = colorImage.ROI;
+            colorImage.ROI = deviceRoi;
 
             List<Point[]> quadrilaterals;
             var markers = GetMarkers(ref colorImage, deviceRoi, width, height, ref debugImage, out quadrilaterals);
@@ -559,7 +559,7 @@ namespace Huddle.Engine.Processor.Complex
                 return;
             }
 
-            CvInvoke.cvSetImageROI(colorImage, imageRoi);
+            colorImage.ROI = imageRoi;
 
             var grayscaleImageRoi = grayscaleImage.ROI;
             grayscaleImage.ROI = deviceRoi;
@@ -577,14 +577,14 @@ namespace Huddle.Engine.Processor.Complex
                 {
                     if (IsRenderContent && IsFindDisplayContiuously)
                     {
-                        var debugImageRoi = CvInvoke.cvGetImageROI(debugImage);
-                        CvInvoke.cvSetImageROI(debugImage, deviceRoi);
+                        var debugImageRoi = debugImage.ROI;
+                        debugImage.ROI = deviceRoi;
 
                         var enclosingRectangle = display.EnclosingRectangle;
                         DrawEdge(ref debugImage, enclosingRectangle.LongEdge, Rgbs.Red);
                         DrawEdge(ref debugImage, enclosingRectangle.ShortEdge, Rgbs.Green);
 
-                        CvInvoke.cvSetImageROI(debugImage, debugImageRoi);
+                        debugImage.ROI = debugImageRoi;
                     }
 
                     DisplaySample displaySample;
@@ -767,8 +767,8 @@ namespace Huddle.Engine.Processor.Complex
                             maxY = Math.Max(maxY, p.Y);
                         }
 
-                        var centerX = /*roi.X +*/ minX + (maxX - minX) / 2.0f;
-                        var centerY = /*roi.Y +*/ minY + (maxY - minY) / 2.0f;
+                        var centerX = roi.X + minX + (maxX - minX) / 2.0f;
+                        var centerY = roi.Y + minY + (maxY - minY) / 2.0f;
 
                         markers.Add(new Marker(this, "Display")
                         {
@@ -781,9 +781,6 @@ namespace Huddle.Engine.Processor.Complex
                         // Render center and orientation of marker
                         if (IsRenderContent)
                         {
-                            var debugImageRoi = debugImage.ROI;
-                            debugImage.ROI = roi;
-
                             var markerCenter = new PointF(centerX, centerY);
                             var p2 = new Point(
                                 (int)(markerCenter.X + Math.Cos(orientation) * 100.0),
@@ -819,8 +816,6 @@ namespace Huddle.Engine.Processor.Complex
                                 EmguFont.Font,
                                 EmguFont.Scale,
                                 Rgbs.Green.MCvScalar);
-
-                            debugImage.ROI = debugImageRoi;
                         }
                     }
                     else
@@ -831,7 +826,7 @@ namespace Huddle.Engine.Processor.Complex
                 }
             }
 
-            CvInvoke.cvSetImageROI(image, imageRoi);
+            image.ROI = imageRoi;
 
             return markers;
         }
@@ -887,8 +882,8 @@ namespace Huddle.Engine.Processor.Complex
             var imageWidth = grayscaleImage.Cols;
             var imageHeight = grayscaleImage.Rows;
 
-            var x = (int)(marker.RelativeCenter.X * imageWidth) /*-roi.X*/;
-            var y = (int)(marker.RelativeCenter.Y * imageHeight) /*-roi.Y*/;
+            var x = (int)(marker.RelativeCenter.X * imageWidth) - roi.X;
+            var y = (int)(marker.RelativeCenter.Y * imageHeight) - roi.Y;
 
             var grayscaleImageRoi = grayscaleImage.ROI;
             grayscaleImage.ROI = roi;
@@ -928,7 +923,7 @@ namespace Huddle.Engine.Processor.Complex
                     binaryThresholdImage,
                     binaryThreshold,
                     255,
-                    ThresholdType.BinaryInv);
+                    ThresholdType.Binary);
 
                 #region Debug Binary Image
 
@@ -1011,15 +1006,6 @@ namespace Huddle.Engine.Processor.Complex
                         CvInvoke.ArcLength(contours[i], true) * 0.05,
                         true);
 
-                    //align contour
-                    var _c = contour.ToArray();
-                    for (int r = 0; r < contour.Size; r++)
-                    {
-                        _c[r].X += roi.X;
-                        _c[r].Y += roi.Y;
-                    }
-                    contour = new Emgu.CV.Util.VectorOfPoint(_c);
-
                     var contourBounds = CvInvoke.BoundingRectangle(contour);
                     if (contourBounds.Width + 5 >= roi.Width || contourBounds.Height + 5 >= roi.Height)
                         continue;
@@ -1030,8 +1016,8 @@ namespace Huddle.Engine.Processor.Complex
 
                     if (IsRenderContent)
                     {
-                        var debugImageRoi = CvInvoke.cvGetImageROI(debugImage);
-                        CvInvoke.cvSetImageROI(debugImage, roi);
+                        var debugImageRoi = debugImage.ROI;
+                        debugImage.ROI = roi;
 
                         Emgu.CV.Util.VectorOfPoint ret = new Emgu.CV.Util.VectorOfPoint(); // = null;
                         CvInvoke.ConvexHull(contour,
@@ -1054,7 +1040,7 @@ namespace Huddle.Engine.Processor.Complex
                         DrawEdge(ref debugImage, edges[0], Rgbs.Red);
                         DrawEdge(ref debugImage, edges[1], Rgbs.Green);
 
-                        CvInvoke.cvSetImageROI(debugImage, debugImageRoi);
+                        debugImage.ROI = debugImageRoi;
                     }
 
                     enclosingRectangle = new EnclosingRectangle
