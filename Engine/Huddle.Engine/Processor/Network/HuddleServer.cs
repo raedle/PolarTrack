@@ -10,6 +10,11 @@ using Huddle.Engine.Properties;
 using Huddle.Engine.Util;
 using Newtonsoft.Json;
 using Fleck;
+using ZXing;
+using ZXing.Common;
+using System.Drawing.Imaging;
+using System.Web;
+using System.Windows.Media.Imaging;
 
 namespace Huddle.Engine.Processor.Network
 {
@@ -39,6 +44,8 @@ namespace Huddle.Engine.Processor.Network
         private readonly Dictionary<string, string> _deviceIdToGlyph = new Dictionary<string, string>();
 
         private readonly ConcurrentDictionary<Guid, Client> _connectedClients = new ConcurrentDictionary<Guid, Client>();
+
+        private BarcodeWriter _barcodeWriter = null;
 
         #endregion
 
@@ -149,6 +156,69 @@ namespace Huddle.Engine.Processor.Network
 
         #endregion
 
+        #region QRImageSource
+
+        /// <summary>
+        /// The <see cref="QRImageSource" /> property's name.
+        /// </summary>
+        public const string QRImageSourcePropertyName = "QRImageSource";
+
+        private BitmapSource _QRImageSource = null;
+
+        /// <summary>
+        /// Sets and gets the DepthImageSource property.
+        /// Changes to that property's value raise the PropertyChanged event. 
+        /// </summary>
+        public BitmapSource QRImageSource
+        {
+            get
+            {
+                return _QRImageSource;
+            }
+
+            set
+            {
+                if (_QRImageSource == value)
+                {
+                    return;
+                }
+
+                RaisePropertyChanging(QRImageSourcePropertyName);
+                _QRImageSource = value;
+                RaisePropertyChanged(QRImageSourcePropertyName);
+            }
+        }
+
+        #endregion
+
+        #region QRCodeText
+
+        public const string QRCodeTextPropertyName = "QRImageSource";
+
+        private String _QRCodeText = "http://134.34.209.131:3000/?host=134.34.231.173&port=1984";
+
+        public String QRCodeText
+        {
+            get
+            {
+                return _QRCodeText;
+            }
+
+            set
+            {
+                if (_QRCodeText == value)
+                {
+                    return;
+                }
+
+                RaisePropertyChanging(QRCodeTextPropertyName);
+                _QRCodeText = value;
+                RaisePropertyChanged(QRCodeTextPropertyName);
+            }
+        }
+
+        #endregion
+
         #endregion
 
         #region ctor
@@ -172,6 +242,19 @@ namespace Huddle.Engine.Processor.Network
                     }
                 } while (line != null);
             }
+
+            _barcodeWriter = new BarcodeWriter
+            {
+                Format = BarcodeFormat.QR_CODE,
+                Options = new EncodingOptions
+                {
+                    Height = 300,
+                    Width = 300,
+                    Margin = 5
+                }
+            };
+
+            createQRCode();
         }
 
         #endregion
@@ -185,11 +268,19 @@ namespace Huddle.Engine.Processor.Network
                     case PortPropertyName:
                         RestartWebSocketServer();
                         break;
+                    case QRCodeTextPropertyName:
+                        createQRCode();
+                        break;
                 }
             };
 
             // start web socket server.
             StartWebSocketServer();
+
+            if (QRImageSource == null)
+            {
+                createQRCode();
+            }
 
             base.Start();
         }
@@ -251,6 +342,27 @@ namespace Huddle.Engine.Processor.Network
         public override IData Process(IData data)
         {
             return data;
+        }
+
+        private void createQRCode()
+        {
+            System.Threading.Tasks.Task.Factory.StartNew(() =>
+            {
+                var bitmap = _barcodeWriter.Write(QRCodeText);
+                using (var ms = new MemoryStream())
+                {
+                    bitmap.Save(ms, ImageFormat.Bmp);
+
+                    var bitmapImage = new BitmapImage();
+                    bitmapImage.BeginInit();
+                    bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+                    bitmapImage.StreamSource = ms;
+                    bitmapImage.EndInit();
+                    bitmapImage.Freeze();
+
+                        return bitmapImage;
+                }
+            }).ContinueWith(s => QRImageSource = s.Result);
         }
 
         public override IDataContainer PreProcess(IDataContainer dataContainer)

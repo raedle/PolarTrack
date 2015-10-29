@@ -5,6 +5,13 @@
     <DataTemplate x:Key="HuddleServerTemplate" DataType="network:HuddleServer">
         <Grid>
             <StackPanel Orientation="Vertical">
+                <GroupBox Header="QR Code">
+                    <StackPanel Orientation="Vertical">
+                        <Image Source="{Binding Path=QRImageSource}" Width="300" Height="300"/>
+                        <TextBox Width="300" Text="{Binding Path=QRCodeText, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" TextAlignment="Center"/>
+                    </StackPanel>
+                </GroupBox>
+                
                 <TextBlock Text="{Binding Path=ClientCount, Mode=OneWay, StringFormat={}{0} Clients connected}" />
 
                 <StackPanel Orientation="Horizontal">
