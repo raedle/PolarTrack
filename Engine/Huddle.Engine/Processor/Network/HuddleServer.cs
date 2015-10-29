@@ -15,6 +15,7 @@ using ZXing.Common;
 using System.Drawing.Imaging;
 using System.Web;
 using System.Windows.Media.Imaging;
+using System.Runtime.Serialization;
 
 namespace Huddle.Engine.Processor.Network
 {
@@ -166,9 +167,10 @@ namespace Huddle.Engine.Processor.Network
         private BitmapSource _QRImageSource = null;
 
         /// <summary>
-        /// Sets and gets the DepthImageSource property.
+        /// Sets and gets the QRImageSource property.
         /// Changes to that property's value raise the PropertyChanged event. 
         /// </summary>
+        [IgnoreDataMember]
         public BitmapSource QRImageSource
         {
             get
@@ -195,7 +197,7 @@ namespace Huddle.Engine.Processor.Network
 
         public const string QRCodeTextPropertyName = "QRImageSource";
 
-        private String _QRCodeText = "http://134.34.209.131:3000/?host=134.34.231.173&port=1984";
+        private String _QRCodeText = "http://134.34.210.181:3000/?host=134.34.231.173&port=1984";
 
         public String QRCodeText
         {
