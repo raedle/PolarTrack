@@ -481,14 +481,15 @@ namespace Huddle.Engine.Processor.Statistics
                     key + LOG_SEPARATOR +
                     fpsColor + LOG_SEPARATOR +
                     fpsDepth + LOG_SEPARATOR +
-                    processingTime.ToString());
+                    processingTime.ToString() + LOG_SEPARATOR +
+                    Pipeline.Fps.ToString());
                 _file.WriteLine(msg);
             }
 
             if (connection != null && Log2DB)
             {
                 // TODO check input values!
-                command.CommandText = "INSERT INTO log (time, frameNumber, cpu, memory, key, fpsColor, fpsDepth, processingTime) VALUES (@ts, @frameNumber, @cpu, @memory, @key, @fpsColor, @fpsDepth, @processingTime)";
+                command.CommandText = "INSERT INTO log (time, frameNumber, cpu, memory, key, fpsColor, fpsDepth, processingTime, pipelineFps) VALUES (@ts, @frameNumber, @cpu, @memory, @key, @fpsColor, @fpsDepth, @processingTime, @pipelineFps)";
                 command.Parameters.Add(new SQLiteParameter("@ts", ts));
                 command.Parameters.Add(new SQLiteParameter("@frameNumber", frameNumber));
                 command.Parameters.Add(new SQLiteParameter("@cpu", cpu));
@@ -497,6 +498,7 @@ namespace Huddle.Engine.Processor.Statistics
                 command.Parameters.Add(new SQLiteParameter("@fpsColor", System.Data.DbType.Int32, fpsColor));
                 command.Parameters.Add(new SQLiteParameter("@fpsDepth", System.Data.DbType.Int32, fpsDepth));
                 command.Parameters.Add(new SQLiteParameter("@processingTime", System.Data.DbType.String, processingTime));
+                command.Parameters.Add(new SQLiteParameter("@pipelineFps", Pipeline.Fps));
                 command.Prepare();
                 command.ExecuteNonQuery();
             }
@@ -516,7 +518,8 @@ namespace Huddle.Engine.Processor.Statistics
                 "key" + LOG_SEPARATOR +
                 "FPS Color" + LOG_SEPARATOR +
                 "FPS Depth" + LOG_SEPARATOR +
-                "Processing Time");
+                "Processing Time" + LOG_SEPARATOR +
+                "Pipeline FPS");
         }
 
         /*
@@ -540,7 +543,8 @@ namespace Huddle.Engine.Processor.Statistics
                 "key TEXT, "+
                 "fpsColor INTEGER, "+
                 "fpsDepth INTEGER,"+
-                "processingTime TEXT );";
+                "processingTime TEXT,"+
+                "pipelineFps REAL);";
             command.ExecuteNonQuery();
         }
 
