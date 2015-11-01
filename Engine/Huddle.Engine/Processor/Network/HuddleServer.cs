@@ -193,29 +193,162 @@ namespace Huddle.Engine.Processor.Network
 
         #endregion
 
-        #region QRCodeText
+        #region Host
 
-        public const string QRCodeTextPropertyName = "QRImageSource";
+        public const string HostPropertyName = "Host";
 
-        private String _QRCodeText = "http://134.34.210.181:3000/?host=134.34.231.173&port=1984";
+        private String _host = "134.34.210.181";
 
-        public String QRCodeText
+        public String Host
         {
             get
             {
-                return _QRCodeText;
+                return _host;
             }
 
             set
             {
-                if (_QRCodeText == value)
+                if (_host == value)
                 {
                     return;
                 }
 
-                RaisePropertyChanging(QRCodeTextPropertyName);
-                _QRCodeText = value;
-                RaisePropertyChanged(QRCodeTextPropertyName);
+                RaisePropertyChanging(HostPropertyName);
+                _host = value;
+                RaisePropertyChanged(HostPropertyName);
+            }
+        }
+
+        #endregion
+
+        #region AppPort
+
+        /// <summary>
+        /// The <see cref="AppPort" /> property's name.
+        /// </summary>
+        public const string AppPortPropertyName = "AppPort";
+
+        private int _appPort = 3000;
+
+        /// <summary>
+        /// Sets and gets the AppPort property.
+        /// Changes to that property's value raise the PropertyChanged event. 
+        /// </summary>
+        public int AppPort
+        {
+            get
+            {
+                return _appPort;
+            }
+
+            set
+            {
+                if (_appPort == value)
+                {
+                    return;
+                }
+
+                RaisePropertyChanging(AppPortPropertyName);
+                _appPort = value;
+                RaisePropertyChanged(AppPortPropertyName);
+            }
+        }
+
+        #endregion
+        
+        #region AppHost
+
+        public const string AppHostPropertyName = "AppHost";
+
+        private String _appHost = "134.34.231.173";
+
+        public String AppHost
+        {
+            get
+            {
+                return _appHost;
+            }
+
+            set
+            {
+                if (_appHost == value)
+                {
+                    return;
+                }
+
+                RaisePropertyChanging(AppHostPropertyName);
+                _appHost = value;
+                RaisePropertyChanged(AppHostPropertyName);
+            }
+        }
+
+        #endregion
+
+        #region IsUseLocalhost
+
+        /// <summary>
+        /// The <see cref="IsUseLocalhost" /> property's name.
+        /// </summary>
+        public const string IsUseLocalhostPropertyName = "IsUseLocalhost";
+
+        private bool _isUseLocalhost = true;
+
+        /// <summary>
+        /// Sets and gets the IsUseLocalhost property.
+        /// Changes to that property's value raise the PropertyChanged event. 
+        /// </summary>
+        public bool IsUseLocalhost
+        {
+            get
+            {
+                return _isUseLocalhost;
+            }
+
+            set
+            {
+                if (_isUseLocalhost == value)
+                {
+                    return;
+                }
+
+                RaisePropertyChanging(IsUseLocalhostPropertyName);
+                _isUseLocalhost = value;
+                RaisePropertyChanged(IsUseLocalhostPropertyName);
+            }
+        }
+
+        #endregion
+
+        #region IsUseAppLocalhost
+
+        /// <summary>
+        /// The <see cref="IsUseAppLocalhost" /> property's name.
+        /// </summary>
+        public const string IsUseAppLocalhostPropertyName = "IsUseAppLocalhost";
+
+        private bool _isUseAppLocalhost = false;
+
+        /// <summary>
+        /// Sets and gets the IsUseAppLocalhost property.
+        /// Changes to that property's value raise the PropertyChanged event. 
+        /// </summary>
+        public bool IsUseAppLocalhost
+        {
+            get
+            {
+                return _isUseAppLocalhost;
+            }
+
+            set
+            {
+                if (_isUseAppLocalhost == value)
+                {
+                    return;
+                }
+
+                RaisePropertyChanging(IsUseAppLocalhostPropertyName);
+                _isUseAppLocalhost = value;
+                RaisePropertyChanged(IsUseAppLocalhostPropertyName);
             }
         }
 
@@ -269,8 +402,13 @@ namespace Huddle.Engine.Processor.Network
                 {
                     case PortPropertyName:
                         RestartWebSocketServer();
+                        createQRCode();
                         break;
-                    case QRCodeTextPropertyName:
+                    case HostPropertyName:
+                    case AppHostPropertyName:
+                    case AppPortPropertyName:
+                    case IsUseLocalhostPropertyName:
+                    case IsUseAppLocalhostPropertyName:
                         createQRCode();
                         break;
                 }
@@ -348,9 +486,15 @@ namespace Huddle.Engine.Processor.Network
 
         private void createQRCode()
         {
+            String value = "http://";
+            value += IsUseAppLocalhost ? GetLocalIPAddress() : AppHost;
+            value += ":" + AppPort;
+            value += "/?host=" + (IsUseLocalhost ? GetLocalIPAddress() : Host);
+            value += "&port=" + Port;
+
             System.Threading.Tasks.Task.Factory.StartNew(() =>
             {
-                var bitmap = _barcodeWriter.Write(QRCodeText);
+                var bitmap = _barcodeWriter.Write(value);
                 using (var ms = new MemoryStream())
                 {
                     bitmap.Save(ms, ImageFormat.Bmp);
@@ -365,6 +509,19 @@ namespace Huddle.Engine.Processor.Network
                         return bitmapImage;
                 }
             }).ContinueWith(s => QRImageSource = s.Result);
+        }
+
+        private string GetLocalIPAddress()
+        {
+            var host = System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName());
+            foreach (var ip in host.AddressList)
+            {
+                if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                {
+                    return ip.ToString();
+                }
+            }
+            throw new Exception("Local IP Address Not Found!");
         }
 
         public override IDataContainer PreProcess(IDataContainer dataContainer)
