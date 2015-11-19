@@ -140,20 +140,23 @@ namespace Huddle.Engine.Processor.Complex
             }
 
 
+            UMat ret = new UMat();
             if (IsBinaryThresholdInv)
             {
                 CvInvoke.Threshold(grayImage,
-                    data.Data, 
+                    ret, 
                     BinaryThreshold, // TODO stimmt der wert? oder ist new Gray(BinaryThreshold) was anderes?
                     BinaryThresholdMax, // TODO stimmt der wert? oder ist new Gray(BinaryThreshold) was anderes?
                     Emgu.CV.CvEnum.ThresholdType.BinaryInv);
             } else {
                 CvInvoke.Threshold(grayImage,
-                    data.Data,
+                    ret,
                     BinaryThreshold, // TODO stimmt der wert? oder ist new Gray(BinaryThreshold) was anderes?
                     BinaryThresholdMax, // TODO stimmt der wert? oder ist new Gray(BinaryThreshold) was anderes?
                     Emgu.CV.CvEnum.ThresholdType.Binary);
             }
+
+            data.Data = ret;
 
             return data;
         }

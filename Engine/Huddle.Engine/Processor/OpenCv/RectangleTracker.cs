@@ -1586,12 +1586,15 @@ namespace Huddle.Engine.Processor.OpenCv
 
             Emgu.CV.Util.VectorOfVectorOfPoint contours = new Emgu.CV.Util.VectorOfVectorOfPoint();
 
-            // http://opencv-code.com/tutorials/detecting-simple-shapes-in-an-image/
-            CvInvoke.Canny(grayImage,
-                grayImage,
-                0,
-                50,
-                5);
+            //// http://opencv-code.com/tutorials/detecting-simple-shapes-in-an-image/
+            //CvInvoke.Canny(grayImage,
+            //    grayImage,
+            //    0,
+            //    50,
+            //    5);
+
+            //CvInvoke.Imshow("abc",grayImage);
+            //CvInvoke.WaitKey();
 
             CvInvoke.FindContours(grayImage,
                 contours,
