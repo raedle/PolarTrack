@@ -268,9 +268,23 @@ namespace Huddle.Engine.Processor.Sensors
 
         //OnEncoderPositionUpdate(int EncoderIndex, int PositionChange) [event]
         //An event containing position change information for an encoder, which is issued at a set interval of 8ms, regardless of whether the position has changed. This is generally used for PID velocity and/or position control.
+        System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+        private int cnt = 0;
+        private int cma = 0;
+
         private void motorControl_EncoderPositionUpdate(object sender, EncoderPositionUpdateEventArgs e)
         {
+            if (!sw.IsRunning)
+            {
+                sw.Start();
+            }
+            sw.Stop();
+            long diff = sw.ElapsedMilliseconds;
+            cma += (e.PositionChange-cma)/((cnt++)+1);
+            System.Console.WriteLine("{0}, {1}, {2}", e.PositionChange, diff, cma);
             PID();
+            sw.Reset();
+            sw.Start();
         }
 
         private const double MAXOUTPUT = 100.0;
