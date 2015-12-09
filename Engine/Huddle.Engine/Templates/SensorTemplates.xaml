@@ -512,4 +512,15 @@
             </ScrollViewer>
         </StackPanel>
     </DataTemplate>
+
+    <DataTemplate x:Key="PhidgetsMotorControl" DataType="sensors:PhidgetsMotorControl">
+        <StackPanel>
+            <Label Content="Device Name: " />
+            <Label Content="{Binding Path=DeviceName}" />
+            <Label Content="FPS: " />
+            <TextBox Text="{Binding Path=Velocity}" />
+            <Label Content="Current Velocity: " />
+            <Label Content="{Binding Path=CurrentVelocity}" />
+        </StackPanel>
+    </DataTemplate>
 </ResourceDictionary>
