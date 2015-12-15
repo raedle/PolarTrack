@@ -521,6 +521,8 @@
             <TextBox Text="{Binding Path=Velocity}" />
             <Label Content="Current Velocity: " />
             <Label Content="{Binding Path=CurrentVelocity}" />
+            <Label Content="RPM: " />
+            <Label Content="{Binding Path=RPM}" ContentStringFormat="{}{0:0.#}" />
         </StackPanel>
     </DataTemplate>
 </ResourceDictionary>

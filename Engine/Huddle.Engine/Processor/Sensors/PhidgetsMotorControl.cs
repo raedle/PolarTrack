@@ -97,6 +97,39 @@ namespace Huddle.Engine.Processor.Sensors
         }
         #endregion
 
+        #region RPM
+        /// <summary>
+        /// The <see cref="RPM" /> property's name.
+        /// </summary>
+        public const string RPMPropertyName = "RPM";
+
+        private static double _rpm = 62.0; // good first test
+
+        /// <summary>
+        /// Sets and gets the RPM property.
+        /// Changes to that property's value raise the PropertyChanged event. 
+        /// </summary>
+        public double RPM
+        {
+            get
+            {
+                return _rpm;
+            }
+
+            set
+            {
+                if (_rpm == value)
+                {
+                    return;
+                }
+
+                RaisePropertyChanging(RPMPropertyName);
+                _rpm = value;
+                RaisePropertyChanged(RPMPropertyName);
+            }
+        }
+        #endregion
+
         #region CurrentVelocity
         /// <summary>
         /// The <see cref="CurrentVelocity" /> property's name.
@@ -134,6 +167,14 @@ namespace Huddle.Engine.Processor.Sensors
         }
         #endregion
 
+        #region RPM_ON_OUTER_AXIS
+        /*
+         * 3.7 * 360 
+         * Übersetzung * Ticks vom encoder/Umdrehung
+         */
+        public const int TICKS_PER_TURN_ON_OUTER_AXIS = 1332;
+        #endregion
+
         #endregion
 
         #region ctor/dtor
@@ -158,6 +199,10 @@ namespace Huddle.Engine.Processor.Sensors
 
         #region override methods
 
+        private System.Timers.Timer aTimer = new System.Timers.Timer();
+        private System.Timers.Timer pidTimer = new System.Timers.Timer();
+        private int pidInterval = 333;
+
         public override void Start()
         {
             motorControl = new MotorControl();
@@ -170,7 +215,25 @@ namespace Huddle.Engine.Processor.Sensors
 
             _isRunning = true;
 
+            aTimer.Elapsed += new System.Timers.ElapsedEventHandler(OnTimedEvent);
+            aTimer.Interval = 1000;
+            aTimer.Enabled = true;
+
+            pidTimer.Elapsed += new System.Timers.ElapsedEventHandler(pidEvent);
+            pidTimer.Interval = pidInterval;
+            pidTimer.Enabled = false;//true;
             //base.Start();
+
+            //listen to properties
+            PropertyChanged += (sender, args) =>
+            {
+                switch (args.PropertyName)
+                {
+                    case VelocityPropertyName:
+                        motorControl.motors[0].Velocity = Velocity;
+                        break;
+                }
+            };
         }
 
         public override void Stop()
@@ -190,6 +253,9 @@ namespace Huddle.Engine.Processor.Sensors
                 motorControl = null;
 
                 _isRunning = false;
+
+                aTimer.Enabled = false;
+                pidTimer.Enabled = false;
             }
 
 
@@ -272,6 +338,13 @@ namespace Huddle.Engine.Processor.Sensors
         private int cnt = 0;
         private int cma = 0;
 
+        /*
+         * http://www.phidgets.com/docs/1065_User_Guide
+         * OnEncoderPositionUpdate(int EncoderIndex, int PositionChange) [event]
+         * An event containing position change information for an encoder, which is issued at a set interval of 8ms, regardless of whether the position has changed. This is generally used for PID velocity and/or position control.
+         */
+        private int totalTicks = 0;
+        private int pidTicks = 0;
         private void motorControl_EncoderPositionUpdate(object sender, EncoderPositionUpdateEventArgs e)
         {
             if (!sw.IsRunning)
@@ -280,11 +353,14 @@ namespace Huddle.Engine.Processor.Sensors
             }
             sw.Stop();
             long diff = sw.ElapsedMilliseconds;
-            cma += (e.PositionChange-cma)/((cnt++)+1);
-            System.Console.WriteLine("{0}, {1}, {2}", e.PositionChange, diff, cma);
-            PID();
+            cma += (e.PositionChange - cma) / ((cnt++) + 1);
+            //System.Console.WriteLine("{0}, {1}, {2}", e.PositionChange, diff, cma);
+            //PID(e.PositionChange);
             sw.Reset();
             sw.Start();
+
+            totalTicks += e.PositionChange;
+            pidTicks += e.PositionChange;
         }
 
         private const double MAXOUTPUT = 100.0;
@@ -298,14 +374,14 @@ namespace Huddle.Engine.Processor.Sensors
         private double derivative = 0.0;
         private double errorLast = 0.0;
 
-        private void PID()
+        private void PID(double steps = 0.0, double _dt = dt)
         {
             double output = 0.0;
             double feedback = motorControl.motors[0].Velocity;
             CurrentVelocity = feedback;
-            double error = Velocity - feedback;
+            double error = (80.0 * 41.625) - steps; // 11 == 1/sec 80==7,5/sec
 
-            integral = integral + (error * dt);
+            integral = integral + (error * _dt);
             //derivative = (error - errorLast) / dt;
             derivative = 1.0;
 
@@ -321,7 +397,8 @@ namespace Huddle.Engine.Processor.Sensors
             {
                 output = (Kp * error) + (Ki * integral) + (Kd * derivative);
             }
-
+            output = (output / (240.0 * 41.625)) * 100.0; // normirung zwischen 0 und 1 TODO besser machen
+            Console.WriteLine("v_out: {0}", output);
             //Prevent output value from exceeding maximum output
             if (output >= MAXOUTPUT)
             {
@@ -334,6 +411,20 @@ namespace Huddle.Engine.Processor.Sensors
             errorLast = error;
 
             motorControl.motors[0].Velocity = output;
+        }
+
+        DateTime last = DateTime.Now;
+        private void OnTimedEvent(object source, System.Timers.ElapsedEventArgs e)
+        {
+            RPM = (totalTicks * 1.0) / (TICKS_PER_TURN_ON_OUTER_AXIS * 1.0);
+            totalTicks = 0;
+            last = DateTime.Now;
+        }
+
+        private void pidEvent(object source, System.Timers.ElapsedEventArgs e)
+        {
+            PID(pidTicks, pidInterval / 1000.0);
+            pidTicks = 0;
         }
 
         ////error handler...display the error description in a messagebox
