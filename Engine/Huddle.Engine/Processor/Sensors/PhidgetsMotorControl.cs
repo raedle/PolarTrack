@@ -397,49 +397,28 @@ namespace Huddle.Engine.Processor.Sensors
 
         private const double MAXOUTPUT = 100.0;
         private const double DEADBAND = 0.0;
-        private const double Kp = 1.0; //proportional control
-        private const double Ki = 1.0; //integral control
-        private const double Kd = 1.0; //overall gain
+        private const double Kp = 0.1; //proportional control
+        private const double Ki = 0.1; //integral control
+        private const double Kd = 0.001; //overall gain
         private const double dt = 8.0;//feedbackPeriod;
 
         private double integral = 0.0;
-        private double derivative = 0.0;
+        private double derivate = 0.0;
         private double errorLast = 0.0;
+
 
         private void PID(double steps = 0.0, double _dt = dt)
         {
             double output = 0.0;
-            double feedback = motorControl.motors[0].Velocity;
-            CurrentVelocity = feedback;
-            // 1332(ticks/turn)*7.5(turn/sec) / 10000/dt
-            double t = (TICKS_PER_TURN_ON_OUTER_AXIS * Target) / (1000.0 / _dt);
-            //double t = (80.0 * (125.0 / (1000.0 / 333.0))); // max  // 11 == 1/sec 80==7,5/sec
-            double error = t - steps;
+            CurrentVelocity = motorControl.motors[0].Velocity;
+            double target = (TICKS_PER_TURN_ON_OUTER_AXIS * Target) / (1000.0 / _dt);
+            double error = target - steps;
 
-            double e_norm = error / t;
+            integral += error;
+            derivate = error - errorLast;
+            errorLast = error;
 
-            integral = integral + (e_norm * (_dt/1000.0));
-            //derivative = (e_norm - errorLast) / (_dt / 1000.0);
-            derivative = 1.0;
-
-            //Create a dual-sided deadband around the desired value to prevent noisey feedback from producing control jitters
-            //This is disabled by setting the deadband values both to zero 
-            if (Math.Abs(e_norm) <= DEADBAND)
-            {
-                e_norm = 0;
-                if (Velocity == 0)
-                    output = 0;
-            }
-            else
-            {
-                output = (Kp * e_norm) + (Ki * integral) + (Kd * derivative);
-            }
-
-            double f_norm = feedback / 100.0;
-            output = f_norm + output;
-            output = output * 100.0;
-
-            System.Console.WriteLine("abcd: {0}", output);
+            output = (Kp * error) + (Ki * integral) + (Kd * derivate);
 
             //Prevent output value from exceeding maximum output
             if (output >= MAXOUTPUT)
@@ -450,7 +429,6 @@ namespace Huddle.Engine.Processor.Sensors
             {
                 output = -MAXOUTPUT;
             }
-            errorLast = e_norm;
 
             motorControl.motors[0].Velocity = output;
         }
