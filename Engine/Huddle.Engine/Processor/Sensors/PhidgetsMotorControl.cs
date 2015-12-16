@@ -130,6 +130,39 @@ namespace Huddle.Engine.Processor.Sensors
         }
         #endregion
 
+        #region Target
+        /// <summary>
+        /// The <see cref="Target" /> property's name.
+        /// </summary>
+        public const string TargetPropertyName = "Target";
+
+        private static double _target = 7.5; // good first test
+
+        /// <summary>
+        /// Sets and gets the Target property.
+        /// Changes to that property's value raise the PropertyChanged event. 
+        /// </summary>
+        public double Target
+        {
+            get
+            {
+                return _target;
+            }
+
+            set
+            {
+                if (_target == value)
+                {
+                    return;
+                }
+
+                RaisePropertyChanging(TargetPropertyName);
+                _target = value;
+                RaisePropertyChanged(TargetPropertyName);
+            }
+        }
+        #endregion
+
         #region CurrentVelocity
         /// <summary>
         /// The <see cref="CurrentVelocity" /> property's name.
@@ -201,7 +234,7 @@ namespace Huddle.Engine.Processor.Sensors
 
         private System.Timers.Timer aTimer = new System.Timers.Timer();
         private System.Timers.Timer pidTimer = new System.Timers.Timer();
-        private int pidInterval = 333;
+        private double pidInterval = 200;
 
         public override void Start()
         {
@@ -221,7 +254,7 @@ namespace Huddle.Engine.Processor.Sensors
 
             pidTimer.Elapsed += new System.Timers.ElapsedEventHandler(pidEvent);
             pidTimer.Interval = pidInterval;
-            pidTimer.Enabled = false;//true;
+            pidTimer.Enabled = false;
             //base.Start();
 
             //listen to properties
@@ -230,7 +263,7 @@ namespace Huddle.Engine.Processor.Sensors
                 switch (args.PropertyName)
                 {
                     case VelocityPropertyName:
-                        motorControl.motors[0].Velocity = Velocity;
+                        // motorControl.motors[0].Velocity = Velocity;
                         break;
                 }
             };
@@ -240,6 +273,8 @@ namespace Huddle.Engine.Processor.Sensors
         {
             if (_isRunning)
             {
+                aTimer.Enabled = false;
+                pidTimer.Enabled = false;
                 //run any events in the message queue - otherwise close will hang if there are any outstanding events
                 //TODO
                 // Application.DoEvents();
@@ -253,9 +288,6 @@ namespace Huddle.Engine.Processor.Sensors
                 motorControl = null;
 
                 _isRunning = false;
-
-                aTimer.Enabled = false;
-                pidTimer.Enabled = false;
             }
 
 
@@ -355,7 +387,7 @@ namespace Huddle.Engine.Processor.Sensors
             long diff = sw.ElapsedMilliseconds;
             cma += (e.PositionChange - cma) / ((cnt++) + 1);
             //System.Console.WriteLine("{0}, {1}, {2}", e.PositionChange, diff, cma);
-            //PID(e.PositionChange);
+            PID(e.PositionChange);
             sw.Reset();
             sw.Start();
 
@@ -368,7 +400,7 @@ namespace Huddle.Engine.Processor.Sensors
         private const double Kp = 1.0; //proportional control
         private const double Ki = 1.0; //integral control
         private const double Kd = 1.0; //overall gain
-        private const double dt = 8.0 / 1000.0;//feedbackPeriod;
+        private const double dt = 8.0;//feedbackPeriod;
 
         private double integral = 0.0;
         private double derivative = 0.0;
@@ -379,26 +411,36 @@ namespace Huddle.Engine.Processor.Sensors
             double output = 0.0;
             double feedback = motorControl.motors[0].Velocity;
             CurrentVelocity = feedback;
-            double error = (80.0 * 41.625) - steps; // 11 == 1/sec 80==7,5/sec
+            // 1332(ticks/turn)*7.5(turn/sec) / 10000/dt
+            double t = (TICKS_PER_TURN_ON_OUTER_AXIS * Target) / (1000.0 / _dt);
+            //double t = (80.0 * (125.0 / (1000.0 / 333.0))); // max  // 11 == 1/sec 80==7,5/sec
+            double error = t - steps;
 
-            integral = integral + (error * _dt);
-            //derivative = (error - errorLast) / dt;
+            double e_norm = error / t;
+
+            integral = integral + (e_norm * (_dt/1000.0));
+            //derivative = (e_norm - errorLast) / (_dt / 1000.0);
             derivative = 1.0;
 
             //Create a dual-sided deadband around the desired value to prevent noisey feedback from producing control jitters
             //This is disabled by setting the deadband values both to zero 
-            if (Math.Abs(error) <= DEADBAND)
+            if (Math.Abs(e_norm) <= DEADBAND)
             {
-                error = 0;
+                e_norm = 0;
                 if (Velocity == 0)
                     output = 0;
             }
             else
             {
-                output = (Kp * error) + (Ki * integral) + (Kd * derivative);
+                output = (Kp * e_norm) + (Ki * integral) + (Kd * derivative);
             }
-            output = (output / (240.0 * 41.625)) * 100.0; // normirung zwischen 0 und 1 TODO besser machen
-            Console.WriteLine("v_out: {0}", output);
+
+            double f_norm = feedback / 100.0;
+            output = f_norm + output;
+            output = output * 100.0;
+
+            System.Console.WriteLine("abcd: {0}", output);
+
             //Prevent output value from exceeding maximum output
             if (output >= MAXOUTPUT)
             {
@@ -408,7 +450,7 @@ namespace Huddle.Engine.Processor.Sensors
             {
                 output = -MAXOUTPUT;
             }
-            errorLast = error;
+            errorLast = e_norm;
 
             motorControl.motors[0].Velocity = output;
         }
@@ -423,7 +465,7 @@ namespace Huddle.Engine.Processor.Sensors
 
         private void pidEvent(object source, System.Timers.ElapsedEventArgs e)
         {
-            PID(pidTicks, pidInterval / 1000.0);
+            PID(pidTicks, pidInterval);
             pidTicks = 0;
         }
 
