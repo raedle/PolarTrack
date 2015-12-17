@@ -217,6 +217,10 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\packages\Newtonsoft.Json.6.0.4\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
+    <Reference Include="Phidget21.NET, Version=2.1.8.222, Culture=neutral, PublicKeyToken=c2b1f2a3594bce52, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\lib\Phidgets\Phidget21.NET.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Data.SQLite">
@@ -332,6 +336,7 @@
     <Compile Include="Processor\Dummy.cs" />
     <Compile Include="Processor\OpenCv\Features.cs" />
     <Compile Include="Processor\OpenCv\Flip.cs" />
+    <Compile Include="Processor\Sensors\PhidgetsMotorControl.cs" />
     <Compile Include="Processor\Statistics\ProcessingTime.cs" />
     <Compile Include="Processor\Statistics\ProcessingTimeTicks.cs" />
     <Compile Include="Processor\UMatProcessorFilter.cs" />
@@ -356,6 +361,7 @@
     <Compile Include="Util\Log2File.cs" />
     <Compile Include="Util\MultiConverterMarkupExtension.cs" />
     <Compile Include="Util\PresenceTemplateSelector.cs" />
+    <Compile Include="Util\BooleanToIntConverter.cs" />
     <Compile Include="Util\RatioConverter.cs" />
     <Compile Include="Util\ScaleConverter.cs" />
     <Compile Include="Windows\BasicWindow.xaml.cs">

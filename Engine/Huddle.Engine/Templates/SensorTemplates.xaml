@@ -512,4 +512,70 @@
             </ScrollViewer>
         </StackPanel>
     </DataTemplate>
+
+    <DataTemplate x:Key="PhidgetsMotorControl" DataType="sensors:PhidgetsMotorControl">
+        <StackPanel>
+            <Label Content="Device Name: " />
+            <Label Content="{Binding Path=DeviceName}" />
+            <Label Content="FPS: " />
+            <TextBox Text="{Binding Path=Velocity}" />
+            <Label Content="Current Velocity: " />
+            <Label Content="{Binding Path=CurrentVelocity}" />
+            <GroupBox Header="RPS">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition />
+                        <RowDefinition />
+                        <RowDefinition />
+                        <RowDefinition />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition />
+                        <ColumnDefinition />
+                    </Grid.ColumnDefinitions>
+                    <Label Content="target" Grid.Row="0" Grid.Column="0" />
+                    <TextBox Text="{Binding Path=Target}" Grid.Row="0" Grid.Column="1"/>
+                    <Label Content="current" Grid.Row="1" Grid.Column="0" />
+                    <Label Content="{Binding Path=RPM}" ContentStringFormat="{}{0:0.0##}" Grid.Row="1" Grid.Column="1" />
+                    <Slider Grid.Row="2" Grid.ColumnSpan="2" Minimum="-3.0" TickFrequency="0.01" Maximum="3.0" Value="{Binding Path=delta, Mode=TwoWay}"/>
+                    <GroupBox Header="Gear Ratio" Grid.Row="3" Grid.ColumnSpan="2">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition />
+                                <ColumnDefinition />
+                                <ColumnDefinition />
+                            </Grid.ColumnDefinitions>
+                            <RadioButton GroupName="Os" Content="1:1" Grid.Column="0" IsChecked="{Binding Path=GearRatio, ConverterParameter=1,Converter={util:BooleanToIntConverter}, Mode=TwoWay}"/>
+                            <RadioButton GroupName="Os" Content="1:3" Grid.Column="1" IsChecked="{Binding Path=GearRatio, ConverterParameter=3,Converter={util:BooleanToIntConverter}, Mode=TwoWay}"/>
+                            <RadioButton GroupName="Os" Content="1:4" Grid.Column="2" IsChecked="{Binding Path=GearRatio, ConverterParameter=4,Converter={util:BooleanToIntConverter}, Mode=TwoWay}"/>
+                        </Grid>
+                    </GroupBox>
+                </Grid>
+            </GroupBox>
+            <GroupBox Header="PID">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition />
+                        <ColumnDefinition />
+                        <ColumnDefinition />
+                        <ColumnDefinition />
+                        <ColumnDefinition />
+                        <ColumnDefinition />
+                    </Grid.ColumnDefinitions>
+                    <Label Content="Kp" Grid.Column="0" />
+                    <TextBox Text="{Binding Path=Kp}" Grid.Column="1"/>
+                    <Label Content="Ki" Grid.Column="2" />
+                    <TextBox Text="{Binding Path=Ki}" Grid.Column="3"/>
+                    <Label Content="Kd" Grid.Column="4" />
+                    <TextBox Text="{Binding Path=Kd}" Grid.Column="5"/>
+                </Grid>
+            </GroupBox>
+        </StackPanel>
+    </DataTemplate>
 </ResourceDictionary>
