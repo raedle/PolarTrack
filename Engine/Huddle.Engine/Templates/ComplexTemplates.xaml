@@ -167,7 +167,8 @@
                     <Label Content="FPS" />
                     <Label Content="{Binding Path=FPS}" ContentStringFormat="{}{0:0.0}" />
                 </StackPanel>
-            </GroupBox>            
+            </GroupBox>
+            <CheckBox Content="Depth Images" VerticalAlignment="Center" IsChecked="{Binding Path=IsUseDepthImages}" />
         </StackPanel>
     </DataTemplate>
 </ResourceDictionary>

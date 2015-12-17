@@ -21,6 +21,7 @@ using ZXing;
 using Point = System.Windows.Point;
 using System.Threading.Tasks;
 using System.Runtime.Serialization;
+using Huddle.Engine.Processor.Sensors;
 
 namespace Huddle.Engine.Processor
 {
@@ -108,6 +109,41 @@ namespace Huddle.Engine.Processor
 
         #endregion
 
+        #region IsUseDepthImages
+
+        /// <summary>
+        /// The <see cref="IsUseDepthImages" /> property's name.
+        /// </summary>
+        public const string IsUseDepthImagesPropertyName = "IsUseDepthImages";
+
+        private bool _isUseDepthImages = false;
+
+        /// <summary>
+        /// Sets and gets the IsUseDepthImages property.
+        /// Changes to that property's value raise the PropertyChanged event. 
+        /// </summary>
+        public bool IsUseDepthImages
+        {
+            get
+            {
+                return _isUseDepthImages;
+            }
+
+            set
+            {
+                if (_isUseDepthImages == value)
+                {
+                    return;
+                }
+
+                RaisePropertyChanging(IsUseDepthImagesPropertyName);
+                _isUseDepthImages = value;
+                RaisePropertyChanged(IsUseDepthImagesPropertyName);
+            }
+        }
+
+        #endregion
+
         #endregion
 
         #region ctor
@@ -149,6 +185,18 @@ namespace Huddle.Engine.Processor
 
                 i++;
             }
+
+            //listen to properties
+            PropertyChanged += (sender, args) =>
+            {
+                switch (args.PropertyName)
+                {
+                    case IsUseDepthImagesPropertyName:
+                        //Dispable Depth for now
+                        Senz3DSoftKinetic.getInstance().TriggerDepthNode(IsUseDepthImages);
+                        break;
+                }
+            };
         }
 
         #endregion
@@ -171,6 +219,7 @@ namespace Huddle.Engine.Processor
             fpsTimer.Elapsed += new System.Timers.ElapsedEventHandler(updatFPS);
             fpsTimer.Interval = 1000;
             fpsTimer.Enabled = true;
+
         }
 
         public override void Stop()
@@ -178,8 +227,19 @@ namespace Huddle.Engine.Processor
             fpsTimer.Enabled = false;
         }
 
+        int skipc = 0;
         public override UMatData ProcessAndView(UMatData data)
         {
+            if (skipc == 6)
+            {
+                skipc = 0;
+            }
+            else
+            {
+                skipc++;
+                return null;
+            }
+
             _imageCount++;
             var imageCopy = data.Data.Clone();
             if (_prevImage == null)
@@ -187,11 +247,11 @@ namespace Huddle.Engine.Processor
                 _prevImage = imageCopy;
             }
 
-            UMat ret = new UMat(data.Height, data.Width,DepthType.Cv8U,3);
+            UMat ret = new UMat(data.Height, data.Width, DepthType.Cv8U, 3);
 
             CvInvoke.AbsDiff(_prevImage, data.Data, ret);
             CvInvoke.CvtColor(ret, ret, ColorConversion.Rgb2Gray);
-            CvInvoke.Threshold(ret,ret,Threshold,255,ThresholdType.Binary);
+            CvInvoke.Threshold(ret, ret, Threshold, 255, ThresholdType.Binary);
 
             // save image for nxt turn
             _prevImage = imageCopy;

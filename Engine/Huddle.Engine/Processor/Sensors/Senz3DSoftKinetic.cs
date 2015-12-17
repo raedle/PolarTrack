@@ -1029,8 +1029,8 @@ namespace Huddle.Engine.Processor.Sensors
             //_colorFrameRate = DSW.m_colorFrameRate;
             DSW.setDepthFrameRate(30);
             DepthFrameRate = 30;
-            DSW.setColorFrameRate(30);
-            ColorFrameRate = 30;
+            DSW.setColorFrameRate(25);
+            ColorFrameRate = 25;
 
             // emitROI Timer
             if (timer == null)
@@ -1230,6 +1230,21 @@ namespace Huddle.Engine.Processor.Sensors
                 return DSW.EnableColorNode(value);
             } else {
                 return DSW.GetColorNodeEnabled();
+            }
+        }
+
+        public bool TriggerDepthNode(bool value)
+        {
+            if (DSW == null)
+                throw new Exception("Depth Sense Wrapper not initialized");
+
+            if (DSW.GetDepthNodeEnabled() != value)
+            {
+                return DSW.EnableDepthNode(value);
+            }
+            else
+            {
+                return DSW.GetDepthNodeEnabled();
             }
         }
 
