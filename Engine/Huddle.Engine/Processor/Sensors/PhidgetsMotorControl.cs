@@ -130,6 +130,140 @@ namespace Huddle.Engine.Processor.Sensors
         }
         #endregion
 
+        #region Kp
+        /// <summary>
+        /// The <see cref="Kp" /> property's name.
+        /// </summary>
+        public const string KpPropertyName = "Kp";
+
+        private double _Kp = 0.1; //proportional control
+
+        /// <summary>
+        /// Sets and gets the Kp property.
+        /// Changes to that property's value raise the PropertyChanged event. 
+        /// </summary>
+        public double Kp
+        {
+            get
+            {
+                return _Kp;
+            }
+
+            set
+            {
+                if (_Kp == value)
+                {
+                    return;
+                }
+
+                RaisePropertyChanging(KpPropertyName);
+                _Kp = value;
+                RaisePropertyChanged(KpPropertyName);
+            }
+        }
+        #endregion
+
+        #region Ki
+        /// <summary>
+        /// The <see cref="Ki" /> property's name.
+        /// </summary>
+        public const string KiPropertyName = "Ki";
+
+        private double _Ki = 0.1; //integral control
+
+        /// <summary>
+        /// Sets and gets the Ki property.
+        /// Changes to that property's value raise the PropertyChanged event. 
+        /// </summary>
+        public double Ki
+        {
+            get
+            {
+                return _Ki;
+            }
+
+            set
+            {
+                if (_Ki == value)
+                {
+                    return;
+                }
+
+                RaisePropertyChanging(KiPropertyName);
+                _Ki = value;
+                RaisePropertyChanged(KiPropertyName);
+            }
+        }
+        #endregion
+
+        #region Kd
+        /// <summary>
+        /// The <see cref="Kd" /> property's name.
+        /// </summary>
+        public const string KdPropertyName = "Kd";
+
+        private double _Kd = 0.001; //overall gain
+
+        /// <summary>
+        /// Sets and gets the Kd property.
+        /// Changes to that property's value raise the PropertyChanged event. 
+        /// </summary>
+        public double Kd
+        {
+            get
+            {
+                return _Kd;
+            }
+
+            set
+            {
+                if (_Kd == value)
+                {
+                    return;
+                }
+
+                RaisePropertyChanging(KdPropertyName);
+                _Kd = value;
+                RaisePropertyChanged(KdPropertyName);
+            }
+        }
+        #endregion
+
+        #region delta
+        /// <summary>
+        /// The <see cref="delta" /> property's name.
+        /// </summary>
+        public const string deltaPropertyName = "delta";
+
+        private static double _delta = 0.0; 
+
+        /// <summary>
+        /// Sets and gets the delta property.
+        /// Changes to that property's value raise the PropertyChanged event. 
+        /// </summary>
+        public double delta
+        {
+            get
+            {
+                return _delta;
+            }
+
+            set
+            {
+                if (_delta == value)
+                {
+                    return;
+                }
+
+                RaisePropertyChanging(deltaPropertyName);
+                _delta = value;
+                RaisePropertyChanged(deltaPropertyName);
+
+                RaisePropertyChanged(TargetPropertyName);
+            }
+        }
+        #endregion
+
         #region Target
         /// <summary>
         /// The <see cref="Target" /> property's name.
@@ -146,7 +280,7 @@ namespace Huddle.Engine.Processor.Sensors
         {
             get
             {
-                return _target;
+                return _target + _delta;
             }
 
             set
@@ -158,6 +292,7 @@ namespace Huddle.Engine.Processor.Sensors
 
                 RaisePropertyChanging(TargetPropertyName);
                 _target = value;
+                delta = 0.0;
                 RaisePropertyChanged(TargetPropertyName);
             }
         }
@@ -214,7 +349,6 @@ namespace Huddle.Engine.Processor.Sensors
 
         public PhidgetsMotorControl()
         {
-
         }
 
         ~PhidgetsMotorControl()
@@ -397,9 +531,6 @@ namespace Huddle.Engine.Processor.Sensors
 
         private const double MAXOUTPUT = 100.0;
         private const double DEADBAND = 0.0;
-        private const double Kp = 0.1; //proportional control
-        private const double Ki = 0.1; //integral control
-        private const double Kd = 0.001; //overall gain
         private const double dt = 8.0;//feedbackPeriod;
 
         private double integral = 0.0;
@@ -418,7 +549,7 @@ namespace Huddle.Engine.Processor.Sensors
             derivate = error - errorLast;
             errorLast = error;
 
-            output = (Kp * error) + (Ki * integral) + (Kd * derivate);
+            output = (_Kp * error) + (_Ki * integral) + (_Kd * derivate);
 
             //Prevent output value from exceeding maximum output
             if (output >= MAXOUTPUT)
