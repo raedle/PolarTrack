@@ -20,6 +20,7 @@ using Huddle.Engine.Util;
 using ZXing;
 using Point = System.Windows.Point;
 using System.Threading.Tasks;
+using System.Runtime.Serialization;
 
 namespace Huddle.Engine.Processor
 {
@@ -65,6 +66,43 @@ namespace Huddle.Engine.Processor
                 RaisePropertyChanging(ThresholdPropertyName);
                 _threshold = value;
                 RaisePropertyChanged(ThresholdPropertyName);
+            }
+        }
+
+        #endregion
+
+        #region FPS
+
+        /// <summary>
+        /// The <see cref="FPS" /> property's name.
+        /// </summary>
+        public const string FPSPropertyName = "FPS";
+
+        private double _FPS = 0.0;
+        private int _imageCount = 0;
+
+        /// <summary>
+        /// Sets and gets the FPS property.
+        /// Changes to that property's value raise the PropertyChanged event. 
+        /// </summary>
+        [IgnoreDataMember]
+        public double FPS
+        {
+            get
+            {
+                return _FPS;
+            }
+
+            set
+            {
+                if (_FPS == value)
+                {
+                    return;
+                }
+
+                RaisePropertyChanging(FPSPropertyName);
+                _FPS = value;
+                RaisePropertyChanged(FPSPropertyName);
             }
         }
 
@@ -117,6 +155,8 @@ namespace Huddle.Engine.Processor
 
         private GPGPU _gpu;
 
+        private System.Timers.Timer fpsTimer = new System.Timers.Timer();
+
         public override void Start()
         {
             base.Start();
@@ -127,10 +167,20 @@ namespace Huddle.Engine.Processor
 
             _gpu = CudafyHost.GetDevice(eGPUType.OpenCL, CudafyModes.DeviceId);
             _gpu.LoadModule(km);
+
+            fpsTimer.Elapsed += new System.Timers.ElapsedEventHandler(updatFPS);
+            fpsTimer.Interval = 1000;
+            fpsTimer.Enabled = true;
+        }
+
+        public override void Stop()
+        {
+            fpsTimer.Enabled = false;
         }
 
         public override UMatData ProcessAndView(UMatData data)
         {
+            _imageCount++;
             var imageCopy = data.Data.Clone();
             if (_prevImage == null)
             {
@@ -150,6 +200,12 @@ namespace Huddle.Engine.Processor
             return data;
 
 
+        }
+
+        private void updatFPS(object sender, System.Timers.ElapsedEventArgs e)
+        {
+            FPS = _imageCount;
+            _imageCount = 0;
         }
 
         [Cudafy]
