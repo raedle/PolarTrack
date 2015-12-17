@@ -527,6 +527,7 @@
                         <RowDefinition />
                         <RowDefinition />
                         <RowDefinition />
+                        <RowDefinition />
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition />
@@ -537,6 +538,21 @@
                     <Label Content="current" Grid.Row="1" Grid.Column="0" />
                     <Label Content="{Binding Path=RPM}" ContentStringFormat="{}{0:0.0##}" Grid.Row="1" Grid.Column="1" />
                     <Slider Grid.Row="2" Grid.ColumnSpan="2" Minimum="-3.0" TickFrequency="0.01" Maximum="3.0" Value="{Binding Path=delta, Mode=TwoWay}"/>
+                    <GroupBox Header="Gear Ratio" Grid.Row="3" Grid.ColumnSpan="2">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition />
+                                <ColumnDefinition />
+                                <ColumnDefinition />
+                            </Grid.ColumnDefinitions>
+                            <RadioButton GroupName="Os" Content="1:1" Grid.Column="0" IsChecked="{Binding Path=GearRatio, ConverterParameter=1,Converter={util:BooleanToIntConverter}, Mode=TwoWay}"/>
+                            <RadioButton GroupName="Os" Content="1:3" Grid.Column="1" IsChecked="{Binding Path=GearRatio, ConverterParameter=3,Converter={util:BooleanToIntConverter}, Mode=TwoWay}"/>
+                            <RadioButton GroupName="Os" Content="1:4" Grid.Column="2" IsChecked="{Binding Path=GearRatio, ConverterParameter=4,Converter={util:BooleanToIntConverter}, Mode=TwoWay}"/>
+                        </Grid>
+                    </GroupBox>
                 </Grid>
             </GroupBox>
             <GroupBox Header="PID">

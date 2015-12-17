@@ -18,6 +18,7 @@ using Phidgets;
 
 namespace Huddle.Engine.Processor.Sensors
 {
+
     [ViewTemplate("Phidget Motor Control", "PhidgetsMotorControl")]
     public class PhidgetsMotorControl : BaseProcessor
     {
@@ -343,6 +344,39 @@ namespace Huddle.Engine.Processor.Sensors
         public const int TICKS_PER_TURN_ON_OUTER_AXIS = 1332;
         #endregion
 
+        #region GearRatio
+        /// <summary>
+        /// The <see cref="GearRatio" /> property's name.
+        /// </summary>
+        public const string GearRatioPropertyName = "GearRatio";
+
+        private int _gearRatio = 1;
+
+        /// <summary>
+        /// Sets and gets the GearRatio property.
+        /// Changes to that property's value raise the PropertyChanged event. 
+        /// </summary>
+        public int GearRatio
+        {
+            get
+            {
+                return _gearRatio;
+            }
+
+            set
+            {
+                if (_gearRatio == value)
+                {
+                    return;
+                }
+
+                RaisePropertyChanging(GearRatioPropertyName);
+                _gearRatio = value;
+                RaisePropertyChanged(GearRatioPropertyName);
+            }
+        }
+        #endregion
+
         #endregion
 
         #region ctor/dtor
@@ -542,7 +576,7 @@ namespace Huddle.Engine.Processor.Sensors
         {
             double output = 0.0;
             CurrentVelocity = motorControl.motors[0].Velocity;
-            double target = (TICKS_PER_TURN_ON_OUTER_AXIS * Target) / (1000.0 / _dt);
+            double target = (TICKS_PER_TURN_ON_OUTER_AXIS * Target * GearRatio) / (1000.0 / _dt);
             double error = target - steps;
 
             integral += error;
@@ -567,7 +601,7 @@ namespace Huddle.Engine.Processor.Sensors
         DateTime last = DateTime.Now;
         private void OnTimedEvent(object source, System.Timers.ElapsedEventArgs e)
         {
-            RPM = (totalTicks * 1.0) / (TICKS_PER_TURN_ON_OUTER_AXIS * 1.0);
+            RPM = (totalTicks * 1.0) / (TICKS_PER_TURN_ON_OUTER_AXIS * GearRatio);
             totalTicks = 0;
             last = DateTime.Now;
         }

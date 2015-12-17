@@ -361,6 +361,7 @@
     <Compile Include="Util\Log2File.cs" />
     <Compile Include="Util\MultiConverterMarkupExtension.cs" />
     <Compile Include="Util\PresenceTemplateSelector.cs" />
+    <Compile Include="Util\BooleanToIntConverter.cs" />
     <Compile Include="Util\RatioConverter.cs" />
     <Compile Include="Util\ScaleConverter.cs" />
     <Compile Include="Windows\BasicWindow.xaml.cs">
