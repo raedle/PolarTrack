@@ -491,6 +491,7 @@ namespace Huddle.Engine.Processor.Network
             value += ":" + AppPort;
             value += "/?host=" + (IsUseLocalhost ? GetLocalIPAddress() : Host);
             value += "&port=" + Port;
+            value += "&appMode=humanitarian";
 
             System.Threading.Tasks.Task.Factory.StartNew(() =>
             {
