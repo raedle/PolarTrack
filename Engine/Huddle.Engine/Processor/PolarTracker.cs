@@ -204,6 +204,7 @@ namespace Huddle.Engine.Processor
         private GPGPU _gpu;
 
         private System.Timers.Timer fpsTimer = new System.Timers.Timer();
+        private System.Timers.Timer imageTimer = new System.Timers.Timer();
 
         public override void Start()
         {
@@ -220,26 +221,22 @@ namespace Huddle.Engine.Processor
             fpsTimer.Interval = 1000;
             fpsTimer.Enabled = true;
 
+            imageTimer.Elapsed += new System.Timers.ElapsedEventHandler(getImage);
+            imageTimer.Interval = 250;
+            imageTimer.Enabled = true;
         }
 
         public override void Stop()
         {
             fpsTimer.Enabled = false;
+            imageTimer.Enabled = false;
         }
 
-        int skipc = 0;
         public override UMatData ProcessAndView(UMatData data)
         {
-            if (skipc == 6)
-            {
-                skipc = 0;
-            }
-            else
-            {
-                skipc++;
-                return null;
-            }
-
+            Senz3DSoftKinetic.getInstance().TriggerColorNode(false);
+            s.Stop();
+            //System.Console.WriteLine(s.ElapsedMilliseconds) ;
             _imageCount++;
             var imageCopy = data.Data.Clone();
             if (_prevImage == null)
@@ -266,6 +263,15 @@ namespace Huddle.Engine.Processor
         {
             FPS = _imageCount;
             _imageCount = 0;
+        }
+
+        System.Diagnostics.Stopwatch s = new System.Diagnostics.Stopwatch();
+        private void getImage(object sender, System.Timers.ElapsedEventArgs e)
+        {
+            Senz3DSoftKinetic.getInstance().TriggerColorNode(true);
+            s.Reset();
+            s.Start();
+            Senz3DSoftKinetic.getInstance().TriggerDepthNode(IsUseDepthImages);
         }
 
         [Cudafy]
