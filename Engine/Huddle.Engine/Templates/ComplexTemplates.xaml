@@ -169,6 +169,7 @@
                 </StackPanel>
             </GroupBox>
             <CheckBox Content="Depth Images" VerticalAlignment="Center" IsChecked="{Binding Path=IsUseDepthImages}" />
+            <CheckBox Content="Shutter" VerticalAlignment="Center" IsChecked="{Binding Path=Shutter}" />
         </StackPanel>
     </DataTemplate>
 </ResourceDictionary>

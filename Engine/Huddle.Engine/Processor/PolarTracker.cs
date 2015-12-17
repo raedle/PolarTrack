@@ -144,6 +144,41 @@ namespace Huddle.Engine.Processor
 
         #endregion
 
+        #region Shutter
+
+        /// <summary>
+        /// The <see cref="Shutter" /> property's name.
+        /// </summary>
+        public const string ShutterPropertyName = "Shutter";
+
+        private bool _Shutter = false;
+
+        /// <summary>
+        /// Sets and gets the Shutter property.
+        /// Changes to that property's value raise the PropertyChanged event. 
+        /// </summary>
+        public bool Shutter
+        {
+            get
+            {
+                return _Shutter;
+            }
+
+            set
+            {
+                if (_Shutter == value)
+                {
+                    return;
+                }
+
+                RaisePropertyChanging(ShutterPropertyName);
+                _Shutter = value;
+                RaisePropertyChanged(ShutterPropertyName);
+            }
+        }
+
+        #endregion
+
         #endregion
 
         #region ctor
@@ -195,6 +230,9 @@ namespace Huddle.Engine.Processor
                         //Dispable Depth for now
                         Senz3DSoftKinetic.getInstance().TriggerDepthNode(IsUseDepthImages);
                         break;
+                    case ShutterPropertyName:
+                        imageTimer.Enabled = Shutter;
+                        break;
                 }
             };
         }
@@ -223,7 +261,9 @@ namespace Huddle.Engine.Processor
 
             imageTimer.Elapsed += new System.Timers.ElapsedEventHandler(getImage);
             imageTimer.Interval = 250;
-            imageTimer.Enabled = true;
+
+            if(Shutter)
+                imageTimer.Enabled = true;
         }
 
         public override void Stop()
@@ -234,9 +274,12 @@ namespace Huddle.Engine.Processor
 
         public override UMatData ProcessAndView(UMatData data)
         {
-            Senz3DSoftKinetic.getInstance().TriggerColorNode(false);
-            s.Stop();
-            //System.Console.WriteLine(s.ElapsedMilliseconds) ;
+            if (Shutter)
+            {
+                Senz3DSoftKinetic.getInstance().TriggerColorNode(false);
+                s.Stop();
+            }
+
             _imageCount++;
             var imageCopy = data.Data.Clone();
             if (_prevImage == null)
@@ -268,10 +311,13 @@ namespace Huddle.Engine.Processor
         System.Diagnostics.Stopwatch s = new System.Diagnostics.Stopwatch();
         private void getImage(object sender, System.Timers.ElapsedEventArgs e)
         {
-            Senz3DSoftKinetic.getInstance().TriggerColorNode(true);
-            s.Reset();
-            s.Start();
-            Senz3DSoftKinetic.getInstance().TriggerDepthNode(IsUseDepthImages);
+            if (Shutter)
+            {
+                Senz3DSoftKinetic.getInstance().TriggerColorNode(true);
+                s.Reset();
+                s.Start();
+                Senz3DSoftKinetic.getInstance().TriggerDepthNode(IsUseDepthImages);
+            }
         }
 
         [Cudafy]
