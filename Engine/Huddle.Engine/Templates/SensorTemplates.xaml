@@ -537,7 +537,7 @@
                     <TextBox Text="{Binding Path=Target}" Grid.Row="0" Grid.Column="1"/>
                     <Label Content="current" Grid.Row="1" Grid.Column="0" />
                     <Label Content="{Binding Path=RPM}" ContentStringFormat="{}{0:0.0##}" Grid.Row="1" Grid.Column="1" />
-                    <Slider Grid.Row="2" Grid.ColumnSpan="2" Minimum="-3.0" TickFrequency="0.01" Maximum="3.0" Value="{Binding Path=delta, Mode=TwoWay}"/>
+                    <Slider Grid.Row="2" Grid.ColumnSpan="2" Minimum="-0.5" TickFrequency="0.01" Maximum="0.5" Value="{Binding Path=delta, Mode=TwoWay}"/>
                     <GroupBox Header="Gear Ratio" Grid.Row="3" Grid.ColumnSpan="2">
                         <Grid>
                             <Grid.RowDefinitions>
