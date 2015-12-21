@@ -337,6 +337,16 @@ namespace Huddle.Engine.Processor
             // save image for nxt turn
             _prevImage = imageCopy;
 
+            // check white ratio
+            double w = CvInvoke.CountNonZero(data.Data);
+            double size = data.Data.Rows * data.Data.Cols;
+            double b = size - w;
+            //System.Console.WriteLine("b:{0},w:{1},r:{2}", b, w, (w / b) * 1000.0);
+            if ((w / b) < 0.05)
+            {
+                return null;
+            }
+
             return data;
 
 
