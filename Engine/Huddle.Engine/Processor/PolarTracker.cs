@@ -21,6 +21,7 @@ using ZXing;
 using Point = System.Windows.Point;
 using System.Threading.Tasks;
 using System.Runtime.Serialization;
+using System.Collections.Generic;
 using Huddle.Engine.Processor.Sensors;
 
 namespace Huddle.Engine.Processor
@@ -104,6 +105,44 @@ namespace Huddle.Engine.Processor
                 RaisePropertyChanging(FPSPropertyName);
                 _FPS = value;
                 RaisePropertyChanged(FPSPropertyName);
+            }
+        }
+
+        #endregion
+
+        #region AverageFPS
+
+        /// <summary>
+        /// The <see cref="AverageFPS" /> property's name.
+        /// </summary>
+        public const string AverageFPSPropertyName = "AverageFPS";
+
+        private int MAX_AFPS_SIZE = 30;
+        private List<double> _afps = new List<double>(30);
+        private double _AverageFPS = 0.0;
+
+        /// <summary>
+        /// Sets and gets the AverageFPS property.
+        /// Changes to that property's value raise the PropertyChanged event. 
+        /// </summary>
+        [IgnoreDataMember]
+        public double AverageFPS
+        {
+            get
+            {
+                return _AverageFPS;
+            }
+
+            set
+            {
+                if (_AverageFPS == value)
+                {
+                    return;
+                }
+
+                RaisePropertyChanging(AverageFPSPropertyName);
+                _AverageFPS = value;
+                RaisePropertyChanged(AverageFPSPropertyName);
             }
         }
 
@@ -305,6 +344,14 @@ namespace Huddle.Engine.Processor
         private void updatFPS(object sender, System.Timers.ElapsedEventArgs e)
         {
             FPS = _imageCount;
+            _afps.Add(FPS);
+            if (_afps.Count >= MAX_AFPS_SIZE)
+            {
+                _afps.RemoveAt(0);
+            }
+            double tmpSum = 0;
+            _afps.ForEach(d => { tmpSum += d; });
+            AverageFPS = tmpSum / _afps.Count;
             _imageCount = 0;
         }
 

@@ -137,7 +137,7 @@
             </GroupBox>
         </StackPanel>
     </DataTemplate>
-    
+
     <DataTemplate x:Key="PolarTracker" DataType="processor:PolarTracker">
         <StackPanel>
             <Grid>
@@ -161,11 +161,18 @@
                 <Slider Value="{Binding Path=Threshold}" Width="340" Height="25" Minimum="0" Maximum="255" TickFrequency="1" IsSnapToTickEnabled="True" />
                 <TextBlock Text="{Binding Path=Threshold, StringFormat={}{0}}"/>
             </StackPanel>
-            
+
             <GroupBox Header="FPS">
-                <StackPanel Orientation="Horizontal">
-                    <Label Content="FPS" />
-                    <Label Content="{Binding Path=FPS}" ContentStringFormat="{}{0:0.0}" />
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <Label Content="FPS" />
+                        <Label Content="{Binding Path=FPS}" ContentStringFormat="{}{0:0.0}" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <Label Content="Average FPS" />
+                        <Label Content="{Binding Path=AverageFPS}" ContentStringFormat="{}{0:0.0}" />
+                    </StackPanel>
                 </StackPanel>
             </GroupBox>
             <CheckBox Content="Depth Images" VerticalAlignment="Center" IsChecked="{Binding Path=IsUseDepthImages}" />
