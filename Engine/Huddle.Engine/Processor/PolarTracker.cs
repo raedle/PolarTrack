@@ -267,7 +267,7 @@ namespace Huddle.Engine.Processor
                 {
                     case IsUseDepthImagesPropertyName:
                         //Dispable Depth for now
-                        Senz3DSoftKinetic.getInstance().IsUseDepthNode = IsUseDepthImages;
+                        //Senz3DSoftKinetic.getInstance().IsUseDepthNode = IsUseDepthImages;
                         break;
                     case ShutterPropertyName:
                         imageTimer.Enabled = Shutter;
@@ -301,8 +301,7 @@ namespace Huddle.Engine.Processor
             imageTimer.Elapsed += new System.Timers.ElapsedEventHandler(getImage);
             imageTimer.Interval = 250;
 
-            if(Shutter)
-                imageTimer.Enabled = true;
+            imageTimer.Enabled = Shutter;
         }
 
         public override void Stop()
@@ -315,7 +314,7 @@ namespace Huddle.Engine.Processor
         {
             if (Shutter)
             {
-                Senz3DSoftKinetic.getInstance().IsUseColorNode = false;
+                //Senz3DSoftKinetic.getInstance().IsUseColorNode = false;
                 s.Stop();
             }
 
@@ -362,7 +361,13 @@ namespace Huddle.Engine.Processor
         {
             if (Shutter)
             {
-                Senz3DSoftKinetic.getInstance().IsUseColorNode = true;
+                var cam = Senz3DIntel.getInstance();
+                if (cam != null)
+                {
+                    cam.GrabFrame();
+                }
+
+                //Senz3DSoftKinetic.getInstance().IsUseColorNode = true;
                 s.Reset();
                 s.Start();
             }

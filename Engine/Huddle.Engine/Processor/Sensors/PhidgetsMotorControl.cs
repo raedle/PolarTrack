@@ -426,7 +426,7 @@ namespace Huddle.Engine.Processor.Sensors
             //base.Start();
 
             //disable Depth images
-            Senz3DSoftKinetic.getInstance().IsUseDepthNode = false;
+            //Senz3DSoftKinetic.getInstance().IsUseDepthNode = false;
 
             //listen to properties
             PropertyChanged += (sender, args) =>
