@@ -272,6 +272,18 @@
 
     <DataTemplate x:Key="Senz3DSoftKinetic" DataType="sensors:Senz3DSoftKinetic">
         <StackPanel>
+            <GroupBox Header="Nodes">
+                <StackPanel Orientation="Horizontal">
+                    <CheckBox Content="Use Color Node"
+                              VerticalAlignment="Center"
+                              IsChecked="{Binding Path=IsUseColorNode}"
+                              Margin="5"/>
+                    <CheckBox Content="Use Depth Node"
+                              VerticalAlignment="Center"
+                              IsChecked="{Binding Path=IsUseDepthNode}"
+                              Margin="5"/>
+                </StackPanel>
+            </GroupBox>
             <ScrollViewer Width="1200" Height="650" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
 
                 <Grid>

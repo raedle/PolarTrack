@@ -451,7 +451,7 @@ namespace Huddle.Engine.Processor.Complex
                 if (IsAdaptiveColorProcessing)
                 {
                     // Stop grabbing iamges
-                    Senz3DSoftKinetic.getInstance().TriggerColorNode(false);
+                    Senz3DSoftKinetic.getInstance().IsUseColorNode = false;
                 }
 
                 return null;
@@ -465,7 +465,7 @@ namespace Huddle.Engine.Processor.Complex
                 if (IsAdaptiveColorProcessing)
                 {
                     // Send enable color to DSW
-                    Senz3DSoftKinetic.getInstance().TriggerColorNode(true);
+                    Senz3DSoftKinetic.getInstance().IsUseColorNode = true;
                 }
 
                 return null;

@@ -425,6 +425,8 @@ namespace Huddle.Engine.Processor.Sensors
             pidTimer.Enabled = false;
             //base.Start();
 
+            Senz3DSoftKinetic.getInstance().IsUseDepthNode = false;
+
             //listen to properties
             PropertyChanged += (sender, args) =>
             {
@@ -471,65 +473,6 @@ namespace Huddle.Engine.Processor.Sensors
             DeviceName = attached.Name; ;
 
             motorControl.motors[0].Velocity = Velocity;
-
-            //attachedTxt.Text = attached.Attached.ToString();
-            //nameTxt.Text = attached.Name;
-            //serialTxt.Text = attached.SerialNumber.ToString();
-            //versiontxt.Text = attached.Version.ToString();
-            //numMotorsTxt.Text = attached.motors.Count.ToString();
-            //numInputsTxt.Text = attached.inputs.Count.ToString();
-            //numEncodersTxt.Text = attached.encoders.Count.ToString();
-            //numSensorsTxt.Text = attached.sensors.Count.ToString();
-
-            ////Re-size according to capabilities
-            //if (attached.inputs.Count > 0)
-            //{
-            //    this.Bounds = new Rectangle(this.Location, new Size(this.Width, 585));
-            //    digitalInputsGroup.Visible = true;
-            //    for (int i = 0; i < attached.inputs.Count; i++)
-            //    {
-            //        ((CheckBox)digitalInputsGroup.Controls["input" + i + "Chk"]).Visible = true;
-            //    }
-            //}
-            //if (attached.encoders.Count > 0)
-            //{
-            //    this.Bounds = new Rectangle(this.Location, new Size(this.Width, 641));
-            //    encodersGroup.Visible = true;
-
-            //    encoderPosition.Text = motoControl.encoders[0].Position.ToString();
-            //}
-            //if (attached.sensors.Count > 0)
-            //{
-            //    this.Bounds = new Rectangle(this.Location, new Size(this.Width, 695));
-            //    sensorsGroup.Visible = true;
-
-            //    ratiometricCheck.Checked = motoControl.Ratiometric;
-            //}
-
-            ////Set accel range (varies according to controller)
-            //accelTrk.SetRange((int)Math.Round(attached.motors[0].AccelerationMin), (int)attached.motors[0].AccelerationMax);
-            //accelTrk.TickFrequency = ((int)attached.motors[0].AccelerationMax - (int)Math.Round(attached.motors[0].AccelerationMin)) / 10;
-            //accelTrk.Value = accelTrk.Minimum;
-
-            ////Enable everything
-            //motorCmb.Enabled = true;
-            //velocityTrk.Enabled = true;
-            //accelTrk.Enabled = true;
-
-            //if (attached.ID == Phidget.PhidgetID.MOTORCONTROL_1MOTOR)
-            //{
-            //    backEmfSensingCheck.Enabled = true;
-            //    brakingTrk.Enabled = true;
-            //}
-
-            //supplyVoltageTimer.Start();
-
-            //for (int i = 0; i < attached.motors.Count; i++)
-            //{
-            //    motorCmb.Items.Add(i);
-            //}
-
-            //motorCmb.SelectedIndex = 0;
         }
 
         //OnEncoderPositionUpdate(int EncoderIndex, int PositionChange) [event]
@@ -612,33 +555,6 @@ namespace Huddle.Engine.Processor.Sensors
             pidTicks = 0;
         }
 
-        ////error handler...display the error description in a messagebox
-        //void motoControl_Error(object sender, ErrorEventArgs e)
-        //{
-        //    Phidget phid = (Phidget)sender;
-        //    DialogResult result;
-        //    switch (e.Type)
-        //    {
-        //        case PhidgetException.ErrorType.PHIDGET_ERREVENT_BADPASSWORD:
-        //            phid.close();
-        //            TextInputBox dialog = new TextInputBox("Error Event",
-        //                "Authentication error: This server requires a password.", "Please enter the password, or cancel.");
-        //            result = dialog.ShowDialog();
-        //            if (result == DialogResult.OK)
-        //                openCmdLine(phid, dialog.password);
-        //            else
-        //                Environment.Exit(0);
-        //            break;
-        //        case PhidgetException.ErrorType.PHIDGET_ERREVENT_PACKETLOST:
-        //            //Ignore this error - it's not useful in this context.
-        //            return;
-        //        default:
-        //            if (!errorBox.Visible)
-        //                errorBox.Show();
-        //            break;
-        //    }
-        //    errorBox.addMessage(DateTime.Now.ToLongDateString() + " " + DateTime.Now.ToLongTimeString() + ": " + e.Description);
-        //}
         #endregion
     }
 }

@@ -1014,6 +1014,78 @@ namespace Huddle.Engine.Processor.Sensors
 
         #endregion
 
+        #region IsUseColorNode
+
+        /// <summary>
+        /// The <see cref="IsUseColorNode" /> property's name.
+        /// </summary>
+        public const string IsUseColorNodePropertyName = "IsUseColorNode";
+
+        private bool _IsUseColorNode = true;
+
+        /// <summary>
+        /// Sets and gets the IsUseColorNode property.
+        /// Changes to that property's value raise the PropertyChanged event. 
+        /// </summary>
+        public bool IsUseColorNode
+        {
+            get
+            {
+                return _IsUseColorNode;
+            }
+
+            set
+            {
+                if (_IsUseColorNode == value)
+                {
+                    return;
+                }
+
+                RaisePropertyChanging(IsUseColorNodePropertyName);
+                _IsUseColorNode = value;
+                TriggerColorNode(value);
+                RaisePropertyChanged(IsUseColorNodePropertyName);
+            }
+        }
+
+        #endregion
+
+        #region IsUseDepthNode
+
+        /// <summary>
+        /// The <see cref="IsUseDepthNode" /> property's name.
+        /// </summary>
+        public const string IsUseDepthNodePropertyName = "IsUseDepthNode";
+
+        private bool _IsUseDepthNode = true;
+
+        /// <summary>
+        /// Sets and gets the IsUseDepthNode property.
+        /// Changes to that property's value raise the PropertyChanged event. 
+        /// </summary>
+        public bool IsUseDepthNode
+        {
+            get
+            {
+                return _IsUseDepthNode;
+            }
+
+            set
+            {
+                if (_IsUseDepthNode == value)
+                {
+                    return;
+                }
+
+                RaisePropertyChanging(IsUseDepthNodePropertyName);
+                _IsUseDepthNode = value;
+                TriggerDepthNode(value);
+                RaisePropertyChanged(IsUseDepthNodePropertyName);
+            }
+        }
+
+        #endregion
+
         #endregion
 
         #region ctor
@@ -1220,7 +1292,7 @@ namespace Huddle.Engine.Processor.Sensors
             return null;
         }
 
-        public bool TriggerColorNode(bool value)
+        private bool TriggerColorNode(bool value)
         {
             if (DSW == null)
                 throw new Exception("Depth Sense Wrapper not initialized");
@@ -1228,12 +1300,14 @@ namespace Huddle.Engine.Processor.Sensors
             if (DSW.GetColorNodeEnabled() != value)
             {
                 return DSW.EnableColorNode(value);
-            } else {
+            }
+            else
+            {
                 return DSW.GetColorNodeEnabled();
             }
         }
 
-        public bool TriggerDepthNode(bool value)
+        private bool TriggerDepthNode(bool value)
         {
             if (DSW == null)
                 throw new Exception("Depth Sense Wrapper not initialized");
@@ -1256,10 +1330,15 @@ namespace Huddle.Engine.Processor.Sensors
 
             // register CallBacks
             if (_colorSampleCallback == null)
+            {
                 _colorSampleCallback = new ColorSampleCallBack(ColorSampleCallBackFunc);
+            }
             DSW.regColorSampleCallBack(_colorSampleCallback);
+
             if (_depthSampleCallback == null)
+            {
                 _depthSampleCallback = new DepthSampleCallBack(DepthSampleCallBackFunc);
+            }
             DSW.regDepthSampleCallBack(_depthSampleCallback);
 
             if (EmitROI == true || EmitColorROI == true)
@@ -1271,6 +1350,8 @@ namespace Huddle.Engine.Processor.Sensors
             _isRunning = true;
             // disable grabbing of color iamges per default?
             //TriggerColorNode(false);
+            TriggerDepthNode(IsUseDepthNode);
+            TriggerColorNode(IsUseColorNode);
         }
 
         public override void Stop()
@@ -1298,7 +1379,7 @@ namespace Huddle.Engine.Processor.Sensors
 
         private void DepthSampleCallBackFunc(DepthSample sample)
         {
-             ProcessDepthSample(sample);
+            ProcessDepthSample(sample);
         }
 
         private void ProcessColorSample(ColorSample sample)
@@ -1345,11 +1426,12 @@ namespace Huddle.Engine.Processor.Sensors
             var maxValue = MaxDepthValue;
 
             /*Parallel.For(0, sample.Height, (i) => {*/
-            for (int i=0; i < sample.Height; i++) {
+            for (int i = 0; i < sample.Height; i++)
+            {
                 for (int j = 0; j < sample.Width; j++)
                 {
                     //var depth = sample.Ptr[i * sample.Width + j];
-                    var depth = sample.Data[i,j,0];
+                    var depth = sample.Data[i, j, 0];
 
                     if (depth != EmguExtensions.LowConfidence && depth != EmguExtensions.Saturation)
                     {
@@ -1443,7 +1525,7 @@ namespace Huddle.Engine.Processor.Sensors
                 timer.Start();
             }
         }
-        
+
         private void stopEmitROITimer()
         {
             if (timer != null)
