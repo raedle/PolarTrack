@@ -720,48 +720,53 @@ namespace Huddle.Engine.Processor.Sensors
         /**
          * Grabs a single frame
          */
+        private Object o = new object();
         public void GrabFrame()
         {
-            var confidenceThreshold = DepthConfidenceThreshold;
-            if (IsAdaptiveSensing)
-                confidenceThreshold = _alternate ? DepthConfidenceThresholdHigh : DepthConfidenceThreshold;
-
-            /* If raw depth is needed, disable smoothing */
-            _device.SetProperty(PXCMCapture.Device.Property.PROPERTY_DEPTH_SMOOTHING, DepthSmoothing ? 1 : 0);
-            _device.SetProperty(PXCMCapture.Device.Property.PROPERTY_DEPTH_CONFIDENCE_THRESHOLD, confidenceThreshold);
-
-            /* Wait until a frame is ready */
-            _pp.AcquireFrame(true);
-
-            /* Get RGB color image */
-            Stopwatch sw = Stopwatch.StartNew();
-            var color = _pp.QueryImage(PXCMImage.ImageType.IMAGE_TYPE_COLOR);
-            var colorBitmap = Senz3DUtils.GetRgb32Pixels(color);
-            UMat colorImage = new Image<Rgb, byte>(colorBitmap).ToUMat();
-            ColorImageFrameTime = sw.ElapsedMilliseconds;
-
-            _pp.ReleaseFrame();
-
-
-            if (IsRenderContent)
+            lock (o)
             {
-                //Render color image.
-                var colorImageCopy = colorImage.Clone();
-                Task.Factory.StartNew(() =>
-                {
-                    var bitmap = colorImageCopy.ToBitmapSource(true);
-                    colorImageCopy.Dispose();
-                    return bitmap;
-                }).ContinueWith(s => ColorImageSource = s.Result);
-            }
 
-            // publish images finally
-            var dc = new DataContainer(++_frameId, DateTime.Now)
+                Stopwatch sw = Stopwatch.StartNew();
+
+                var confidenceThreshold = DepthConfidenceThreshold;
+                if (IsAdaptiveSensing)
+                    confidenceThreshold = _alternate ? DepthConfidenceThresholdHigh : DepthConfidenceThreshold;
+
+                /* If raw depth is needed, disable smoothing */
+                _device.SetProperty(PXCMCapture.Device.Property.PROPERTY_DEPTH_SMOOTHING, DepthSmoothing ? 1 : 0);
+                _device.SetProperty(PXCMCapture.Device.Property.PROPERTY_DEPTH_CONFIDENCE_THRESHOLD, confidenceThreshold);
+
+                /* Wait until a frame is ready */
+                _pp.AcquireFrame(true);
+
+                /* Get RGB color image */
+                var color = _pp.QueryImage(PXCMImage.ImageType.IMAGE_TYPE_COLOR);
+                var colorBitmap = Senz3DUtils.GetRgb32Pixels(color);
+                UMat colorImage = new Image<Rgb, byte>(colorBitmap).ToUMat();
+
+                _pp.ReleaseFrame();
+
+                if (IsRenderContent)
+                {
+                    //Render color image.
+                    var colorImageCopy = colorImage.Clone();
+                    Task.Factory.StartNew(() =>
+                    {
+                        var bitmap = colorImageCopy.ToBitmapSource(true);
+                        colorImageCopy.Dispose();
+                        return bitmap;
+                    }).ContinueWith(s => ColorImageSource = s.Result);
+                }
+
+                // publish images finally
+                var dc = new DataContainer(++_frameId, DateTime.Now)
                     {
                         new UMatData(this, "color", colorImage),
                     };
 
-            Publish(dc);
+                Publish(dc);
+                ColorImageFrameTime = sw.ElapsedMilliseconds;
+            }
         }
 
         private void GrabFrames()
