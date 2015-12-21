@@ -329,13 +329,15 @@ namespace Huddle.Engine.Processor
             UMat ret = new UMat(data.Height, data.Width, DepthType.Cv8U, 3);
 
             CvInvoke.AbsDiff(_prevImage, data.Data, ret);
-            CvInvoke.CvtColor(ret, ret, ColorConversion.Rgb2Gray);
-            CvInvoke.Threshold(ret, ret, Threshold, 255, ThresholdType.Binary);
+
+            UMat tmp = new UMat();
+
+            CvInvoke.CvtColor(ret, tmp, ColorConversion.Rgb2Gray);
+            CvInvoke.Threshold(tmp, data.Data, Threshold, 255, ThresholdType.Binary);
 
             // save image for nxt turn
             _prevImage = imageCopy;
 
-            data.Data = ret;
             return data;
 
 
@@ -363,7 +365,6 @@ namespace Huddle.Engine.Processor
                 Senz3DSoftKinetic.getInstance().IsUseColorNode = true;
                 s.Reset();
                 s.Start();
-                Senz3DSoftKinetic.getInstance().IsUseDepthNode = IsUseDepthImages;
             }
         }
 
