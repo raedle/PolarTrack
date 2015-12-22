@@ -177,6 +177,11 @@
             </GroupBox>
             <CheckBox Content="Depth Images" VerticalAlignment="Center" IsChecked="{Binding Path=IsUseDepthImages}" />
             <CheckBox Content="Shutter" VerticalAlignment="Center" IsChecked="{Binding Path=Shutter}" />
+            <StackPanel Orientation="Horizontal" ToolTip="Set to 0.0 to disable check for minimal changes">
+                <Label Content="Minimal Diff in %"/>
+                <Slider Value="{Binding Path=MIN_DIFF}" Width="340" Height="25" Minimum="0" Maximum="1" TickFrequency="0.01" IsSnapToTickEnabled="True" />
+                <TextBlock Text="{Binding Path=MIN_DIFF, StringFormat={}{0}}"/>
+            </StackPanel>
         </StackPanel>
     </DataTemplate>
 </ResourceDictionary>

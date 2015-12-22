@@ -218,6 +218,41 @@ namespace Huddle.Engine.Processor
 
         #endregion
 
+        #region MIN_DIFF
+
+        /// <summary>
+        /// The <see cref="MIN_DIFF" /> property's name.
+        /// </summary>
+        public const string MIN_DIFFPropertyName = "MIN_DIFF";
+
+        private double _MIN_DIFF = 0.05;
+
+        /// <summary>
+        /// Sets and gets the MIN_DIFF property.
+        /// Changes to that property's value raise the PropertyChanged event. 
+        /// </summary>
+        public double MIN_DIFF
+        {
+            get
+            {
+                return _MIN_DIFF;
+            }
+
+            set
+            {
+                if (_MIN_DIFF == value)
+                {
+                    return;
+                }
+
+                RaisePropertyChanging(MIN_DIFFPropertyName);
+                _MIN_DIFF = value;
+                RaisePropertyChanged(MIN_DIFFPropertyName);
+            }
+        }
+
+        #endregion
+
         #endregion
 
         #region ctor
@@ -337,14 +372,17 @@ namespace Huddle.Engine.Processor
             // save image for nxt turn
             _prevImage = imageCopy;
 
-            // check white ratio
-            double w = CvInvoke.CountNonZero(data.Data);
-            double size = data.Data.Rows * data.Data.Cols;
-            double b = size - w;
-            //System.Console.WriteLine("b:{0},w:{1},r:{2}", b, w, (w / b) * 1000.0);
-            if ((w / b) < 0.05)
+            if (MIN_DIFF > 0.0)
             {
-                return null;
+                // check white ratio
+                double w = CvInvoke.CountNonZero(data.Data);
+                double size = data.Data.Rows * data.Data.Cols;
+                double b = size - w;
+                //System.Console.WriteLine("b:{0},w:{1},r:{2}", b, w, (w / b) * 1000.0);
+                if ((w / b) < MIN_DIFF)
+                {
+                    return null;
+                }
             }
 
             return data;
