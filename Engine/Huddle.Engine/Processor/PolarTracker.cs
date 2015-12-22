@@ -299,7 +299,7 @@ namespace Huddle.Engine.Processor
             fpsTimer.Enabled = true;
 
             imageTimer.Elapsed += new System.Timers.ElapsedEventHandler(getImage);
-            imageTimer.Interval = 100; // 100 = 10 fps; 250 = 4 fps;
+            imageTimer.Interval = 83.3; //83.3 = 12 fps; 100 = 10 fps; 250 = 4 fps;
 
             imageTimer.Enabled = Shutter;
         }
