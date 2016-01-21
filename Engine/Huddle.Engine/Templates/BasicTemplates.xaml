@@ -480,6 +480,16 @@
                 <Slider Value="{Binding Path=Threshold}" Width="340" Height="25" Minimum="0" Maximum="255" TickFrequency="1" IsSnapToTickEnabled="True" />
                 <TextBlock Text="{Binding Path=Threshold, StringFormat={}{0}}"/>
             </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <Label Content="Weight New Image"/>
+                <Slider Value="{Binding Path=WeightNew}" Width="340" Height="25" Minimum="0" Maximum="1" TickFrequency="0.001" IsSnapToTickEnabled="True" />
+                <TextBlock Text="{Binding Path=WeightNew, StringFormat={}{0}}"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <Label Content="weight Old Image"/>
+                <Slider Value="{Binding Path=WeightOld}" Width="340" Height="25" Minimum="0" Maximum="1" TickFrequency="0.001" IsSnapToTickEnabled="True" />
+                <TextBlock Text="{Binding Path=WeightOld, StringFormat={}{0}}"/>
+            </StackPanel>
         </StackPanel>
     </DataTemplate>
 

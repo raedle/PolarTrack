@@ -102,6 +102,76 @@ namespace Huddle.Engine.Processor
 
         #endregion
 
+        #region WeightOld
+
+        /// <summary>
+        /// The <see cref="WeightOld" /> property's name.
+        /// </summary>
+        public const string WeightOldPropertyName = "WeightOld";
+
+        private double _weightOld = 0.8;
+
+        /// <summary>
+        /// Sets and gets the WeightOld property.
+        /// Changes to that property's value raise the PropertyChanged event. 
+        /// </summary>
+        public double WeightOld
+        {
+            get
+            {
+                return _weightOld;
+            }
+
+            set
+            {
+                if (_weightOld == value)
+                {
+                    return;
+                }
+
+                RaisePropertyChanging(WeightOldPropertyName);
+                _weightOld = value;
+                RaisePropertyChanged(WeightOldPropertyName);
+            }
+        }
+
+        #endregion
+
+        #region WeightNew
+
+        /// <summary>
+        /// The <see cref="WeightNew" /> property's name.
+        /// </summary>
+        public const string WeightNewPropertyName = "WeightNew";
+
+        private double _weightNew = 0.1;
+
+        /// <summary>
+        /// Sets and gets the WeightNew property.
+        /// Changes to that property's value raise the PropertyChanged event. 
+        /// </summary>
+        public double WeightNew
+        {
+            get
+            {
+                return _weightNew;
+            }
+
+            set
+            {
+                if (_weightNew == value)
+                {
+                    return;
+                }
+
+                RaisePropertyChanging(WeightNewPropertyName);
+                _weightNew = value;
+                RaisePropertyChanged(WeightNewPropertyName);
+            }
+        }
+
+        #endregion
+
         #endregion
 
 
@@ -138,7 +208,7 @@ namespace Huddle.Engine.Processor
                 }
                 else
                 {
-                    CvInvoke.AddWeighted(ret, 0.1, _accImage, 0.8, 0, _accImage);
+                    CvInvoke.AddWeighted(ret, WeightNew, _accImage, WeightOld, 0, _accImage);
                 }
                 // intermediate image
                 #region render intermediate image
