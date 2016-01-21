@@ -335,6 +335,7 @@
     <Compile Include="Filter\SmoothingFilterFactory.cs" />
     <Compile Include="Processor\Dummy.cs" />
     <Compile Include="Processor\ImageAccumulator.cs" />
+    <Compile Include="Processor\ImageDiffAccumulator.cs" />
     <Compile Include="Processor\OpenCv\Features.cs" />
     <Compile Include="Processor\OpenCv\Flip.cs" />
     <Compile Include="Processor\Sensors\PhidgetsMotorControl.cs" />

@@ -452,4 +452,35 @@
         </StackPanel>
     </DataTemplate>
 
+    <DataTemplate x:Key="ImageDiffAccumulator" DataType="processor:ImageDiffAccumulator">
+        <StackPanel>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="320" />
+                    <ColumnDefinition Width="320" />
+                    <ColumnDefinition Width="320" />
+                </Grid.ColumnDefinitions>
+
+                <GroupBox Header="Pre Processed Image"
+                          Grid.Column="0">
+                    <Image x:Name="PreProcessImage" Source="{Binding Path=PreProcessImage}" />
+                </GroupBox>
+                <GroupBox Header="Intermediate Image"
+                          Grid.Column="1">
+                    <Image Source="{Binding Path=IntermediateImage}" />
+                </GroupBox>
+                <GroupBox Header="Post Processed Image"
+                          Grid.Column="2">
+                    <Image Source="{Binding Path=PostProcessImage}" />
+                </GroupBox>
+            </Grid>
+
+            <StackPanel Orientation="Horizontal">
+                <Label Content="Threshold"/>
+                <Slider Value="{Binding Path=Threshold}" Width="340" Height="25" Minimum="0" Maximum="255" TickFrequency="1" IsSnapToTickEnabled="True" />
+                <TextBlock Text="{Binding Path=Threshold, StringFormat={}{0}}"/>
+            </StackPanel>
+        </StackPanel>
+    </DataTemplate>
+
 </ResourceDictionary>
