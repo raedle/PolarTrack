@@ -172,6 +172,41 @@ namespace Huddle.Engine.Processor
 
         #endregion
 
+        #region IsUseGrayImages
+
+        /// <summary>
+        /// The <see cref="IsUseGrayImages" /> property's name.
+        /// </summary>
+        public const string IsUseGrayImagesPropertyName = "IsUseGrayImages";
+
+        private bool _IsUseGrayImages = true;
+
+        /// <summary>
+        /// Sets and gets the IsUseGrayImages property.
+        /// Changes to that property's value raise the PropertyChanged event. 
+        /// </summary>
+        public bool IsUseGrayImages
+        {
+            get
+            {
+                return _IsUseGrayImages;
+            }
+
+            set
+            {
+                if (_IsUseGrayImages == value)
+                {
+                    return;
+                }
+
+                RaisePropertyChanging(IsUseGrayImagesPropertyName);
+                _IsUseGrayImages = value;
+                RaisePropertyChanged(IsUseGrayImagesPropertyName);
+            }
+        }
+
+        #endregion
+
         #endregion
 
 
@@ -181,8 +216,38 @@ namespace Huddle.Engine.Processor
 
         }
 
+        public override void Start()
+        {
+            PropertyChanged += (s, e) =>
+            {
+                switch (e.PropertyName)
+                {
+                    case IsUseGrayImagesPropertyName:
+                        _previousImage = null;
+                        _accImage = null;
+                        break;
+                }
+            };
+
+            base.Start();
+        }
+
+        public override void Stop()
+        {
+            _previousImage = null;
+            _accImage = null;
+
+            base.Stop();
+        }
+
         public override UMatData ProcessAndView(UMatData data)
         {
+            if (IsUseGrayImages)
+            {
+                /* gray images */
+                CvInvoke.CvtColor(data.Data, data.Data, ColorConversion.Rgb2Gray);
+            }
+
             if (_previousImage == null)
             {
                 _previousImage = data.Data.Clone();
@@ -197,9 +262,10 @@ namespace Huddle.Engine.Processor
                 {
                     return null;
                 }
+
                 var imageCopy = data.Data.Clone();
 
-                UMat ret = new UMat(data.Height, data.Width, DepthType.Cv8U, 3);
+                UMat ret = new UMat();
                 CvInvoke.AbsDiff(_previousImage, data.Data, ret);
 
                 if (_accImage == null)
@@ -232,11 +298,16 @@ namespace Huddle.Engine.Processor
 
                 UMat tmp = new UMat();
 
-                CvInvoke.CvtColor(_accImage, tmp, ColorConversion.Rgb2Gray);
+                if (IsUseGrayImages)
+                {
+                    tmp = _accImage;
+                }
+                else
+                {
+                    CvInvoke.CvtColor(_accImage, tmp, ColorConversion.Rgb2Gray);
+                }
+
                 CvInvoke.Threshold(tmp, data.Data, Threshold, 255, ThresholdType.Binary);
-
-                //data.Data = _accImage.Clone();
-
 
                 // save image as lastImage
                 _previousImage = imageCopy;

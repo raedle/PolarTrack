@@ -474,22 +474,39 @@
                     <Image Source="{Binding Path=PostProcessImage}" />
                 </GroupBox>
             </Grid>
+            
+            <GroupBox Header="Settings">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
 
-            <StackPanel Orientation="Horizontal">
-                <Label Content="Threshold"/>
-                <Slider Value="{Binding Path=Threshold}" Width="340" Height="25" Minimum="0" Maximum="255" TickFrequency="1" IsSnapToTickEnabled="True" />
-                <TextBlock Text="{Binding Path=Threshold, StringFormat={}{0}}"/>
-            </StackPanel>
-            <StackPanel Orientation="Horizontal">
-                <Label Content="Weight New Image"/>
-                <Slider Value="{Binding Path=WeightNew}" Width="340" Height="25" Minimum="0" Maximum="1" TickFrequency="0.001" IsSnapToTickEnabled="True" />
-                <TextBlock Text="{Binding Path=WeightNew, StringFormat={}{0}}"/>
-            </StackPanel>
-            <StackPanel Orientation="Horizontal">
-                <Label Content="weight Old Image"/>
-                <Slider Value="{Binding Path=WeightOld}" Width="340" Height="25" Minimum="0" Maximum="1" TickFrequency="0.001" IsSnapToTickEnabled="True" />
-                <TextBlock Text="{Binding Path=WeightOld, StringFormat={}{0}}"/>
-            </StackPanel>
+
+                    <Label Content="Threshold" Grid.Column="0" Grid.Row="0" HorizontalAlignment="Right"/>
+                    <Slider Value="{Binding Path=Threshold}" Width="340" Height="25" Minimum="0" Maximum="255" TickFrequency="1" IsSnapToTickEnabled="True" Grid.Column="1" Grid.Row="0"/>
+                    <TextBlock Text="{Binding Path=Threshold, StringFormat={}{0}}" Grid.Column="2" Grid.Row="0"/>
+
+
+                    <Label Content="Weight New Image" Grid.Column="0" Grid.Row="1" HorizontalAlignment="Right"/>
+                    <Slider Value="{Binding Path=WeightNew}" Width="340" Height="25" Minimum="0" Maximum="1" TickFrequency="0.001" IsSnapToTickEnabled="True" Grid.Column="1" Grid.Row="1"/>
+                    <TextBlock Text="{Binding Path=WeightNew, StringFormat={}{0}}" Grid.Column="2" Grid.Row="1"/>
+
+                    <Label Content="weight Old Image" Grid.Column="0" Grid.Row="2" HorizontalAlignment="Right"/>
+                    <Slider Value="{Binding Path=WeightOld}" Width="340" Height="25" Minimum="0" Maximum="1" TickFrequency="0.001" IsSnapToTickEnabled="True" Grid.Column="1" Grid.Row="2"/>
+                    <TextBlock Text="{Binding Path=WeightOld, StringFormat={}{0}}" Grid.Column="2" Grid.Row="2"/>
+
+                    <CheckBox Content="Use Gray Images in intermediate step" VerticalAlignment="Center" IsChecked="{Binding Path=IsUseGrayImages}" Grid.Row="3" Grid.ColumnSpan="3"/>
+                </Grid>
+            </GroupBox>
+                      
         </StackPanel>
     </DataTemplate>
 
