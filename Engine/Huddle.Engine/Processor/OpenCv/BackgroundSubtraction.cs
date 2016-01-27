@@ -8,15 +8,16 @@ using Emgu.CV.External.Extensions;
 using Emgu.CV.Structure;
 using GalaSoft.MvvmLight.Command;
 using Huddle.Engine.Util;
+using Huddle.Engine.Data;
 
 namespace Huddle.Engine.Processor.OpenCv
 {
     [ViewTemplate("Background Subtraction", "BackgroundSubtraction")]
-    public class BackgroundSubtraction : BaseImageProcessor<Gray, float>
+    public class BackgroundSubtraction : UMatProcessor
     {
         #region private fields
 
-        private Image<Gray, float> _backgroundImage;
+        private UMat _backgroundImage = null;
 
         private int _collectedBackgroundImages;
 
@@ -192,27 +193,30 @@ namespace Huddle.Engine.Processor.OpenCv
             base.Start();
         }
 
-        public override Image<Gray, float> ProcessAndView(Image<Gray, float> image)
+        public override UMatData ProcessAndView(UMatData data)
         {
-            if (BuildingBackgroundImage(image)) return null;
+            if (BuildingBackgroundImage(data.Data)) return null;
 
-            var width = image.Width;
-            var height = image.Height;
+            var width = data.Data.Cols;
+            var height = data.Data.Rows;
 
             var lowCutOffDepth = LowCutOffDepth;
             var highCutOffDepth = HighCutOffDepth;
 
             // This image is used to segment object from background
-            var imageRemovedBackground = _backgroundImage.Sub(image.Copy());
+            UMat imageRemovedBackground = new UMat();
+            CvInvoke.Subtract(_backgroundImage, data.Data.Clone(), imageRemovedBackground);
 
             if (IsRenderContent)
             {
                 #region Render Debug Image
 
-                var debugImageCopy = imageRemovedBackground.Convert<Rgb, byte>();
+                var debugImageCopy = imageRemovedBackground.Clone().ToImage();
                 Task.Factory.StartNew(() =>
                 {
-                    var bitmapSource = debugImageCopy.ToBitmapSource(true);
+                    if (debugImageCopy == null) return null;
+
+                    BitmapSource bitmapSource = debugImageCopy.ToBitmapSource(true);
                     debugImageCopy.Dispose();
                     return bitmapSource;
                 }).ContinueWith(t => DebugImageSource = t.Result);
@@ -222,54 +226,75 @@ namespace Huddle.Engine.Processor.OpenCv
 
             // This image is necessary for using FloodFill to avoid filling background
             // (segmented objects are shifted back to original depth location after background subtraction)
-            var imageWithOriginalDepth = new Image<Gray, byte>(width, height);
+            //UMat imageWithOriginalDepth = new UMat();
+            var imageWithOriginalDepth = new Image<Rgb, byte>(width, height);
 
-            var imageData = image.Data;
-            var imageRemovedBackgroundData = imageRemovedBackground.Data;
+            var imageData = data.Data.Clone().ToImage<Rgb, byte>().Data;
+            var imageRemovedBackgroundData = imageRemovedBackground.Clone().ToImage<Rgb, byte>().Data;
             var imageWithOriginalDepthData = imageWithOriginalDepth.Data;
 
-            Parallel.For(0, height, y =>
-            {
+            //Parallel.For(0, height, y =>
+            //{
+                for (var y = 0; y < height; y++) {
                 byte originalDepthValue;
                 for (var x = 0; x < width; x++)
                 {
-                    // DON'T REMOVE CAST (it is necessary!!! :) )
-                    var depthValue = Math.Abs((byte)imageRemovedBackgroundData[y, x, 0]);
+                    for (var z = 0; z < 3; z++)
+                    {
+                        // DON'T REMOVE CAST (it is necessary!!! :) )
+                        var depthValue = Math.Abs((byte)imageRemovedBackgroundData[y, x, z]);
 
-                    if (depthValue > lowCutOffDepth && depthValue < highCutOffDepth)
-                        originalDepthValue = (byte)imageData[y, x, 0];
-                    else
-                        originalDepthValue = 0;
+                        if (depthValue > lowCutOffDepth && depthValue < highCutOffDepth)
+                            originalDepthValue = (byte)imageData[y, x, z];
+                        else
+                            originalDepthValue = 0;
 
-                    imageWithOriginalDepthData[y, x, 0] = originalDepthValue;
+                        imageWithOriginalDepthData[y, x, z] = originalDepthValue;
+                    }
                 }
-            });
+                }
+            //});
 
-            // Remove noise (background noise)
-            imageWithOriginalDepth = imageWithOriginalDepth
-                .Erode(2)
-                .Dilate(2)
-                .PyrUp()
-                .PyrDown();
+            UMat ret = new UMat();
+            UMat tmp = new UMat();
 
-            return imageWithOriginalDepth.Convert<Gray, float>();
+            CvInvoke.Erode(imageWithOriginalDepth.ToUMat(),
+                ret,
+                new Mat(),
+                new System.Drawing.Point(-1, -1),
+                2,
+                Emgu.CV.CvEnum.BorderType.Default,
+                new MCvScalar());
+            CvInvoke.Dilate(ret,
+                tmp,
+                new Mat(),
+                new System.Drawing.Point(-1, -1),
+                2,
+                Emgu.CV.CvEnum.BorderType.Default,
+                new MCvScalar());
+            CvInvoke.PyrUp(tmp, ret);
+            CvInvoke.PyrDown(ret, data.Data);
+
+            return data;
 
             //CvInvoke.cvNormalize(imageRemovedBackground.Ptr, imageRemovedBackground.Ptr, 0, 255, NORM_TYPE.CV_MINMAX, IntPtr.Zero);
 
             //return imageRemovedBackground.Copy();
         }
 
-        private bool BuildingBackgroundImage(Image<Gray, float> image)
+        private bool BuildingBackgroundImage(UMat data)
         {
             if (_backgroundImage == null)
             {
-                _backgroundImage = image.Copy();
+                _backgroundImage = data.Clone();
                 return true;
             }
 
             if (++_collectedBackgroundImages < BackgroundSubtractionSamples)
             {
-                _backgroundImage.AccumulateWeighted(image, 0.8);
+                var alpha = 0.8;
+                CvInvoke.AddWeighted(_backgroundImage, 1-alpha, data, alpha, 0, _backgroundImage);
+                //_backgroundImage.AccumulateWeighted(data, 0.8);
                 return true;
             }
 
