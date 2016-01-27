@@ -66,7 +66,46 @@ namespace Huddle.Engine.Processor.Sensors
             {
                 return new[]
                 {
-                    "640 x 480"/*,1280 x 720"*/
+                    ///*!< unknown */ FRAME_FORMAT_UNKNOWN = 0,
+                    "QQVGA (160x120)", //FRAME_FORMAT_QQVGA = 1
+                    "QCIF (176x144)", //FRAME_FORMAT_QCIF = 2
+                    "HQVGA (240x160)", //FRAME_FORMAT_HQVGA = 3
+                    "QVGA (320x240)", //FRAME_FORMAT_QVGA = 4
+                    "CIF (352x288)", //FRAME_FORMAT_CIF = 5
+                    "HVGA (480x320)", //FRAME_FORMAT_HVGA = 6
+                    "VGA (640x480)", //FRAME_FORMAT_VGA = 7
+                    "WXGA_H (1280x720)", //FRAME_FORMAT_WXGA_H = 8
+                    "DS311 (320x120)", //FRAME_FORMAT_DS311 = 9
+                    "XGA (1024x768)", //FRAME_FORMAT_XGA = 10
+                    "SVGA (800x600)", //FRAME_FORMAT_SVGA = 11
+                    "OVVGA (636x480)", //FRAME_FORMAT_OVVGA = 12
+                    "WHVGA (640x240)", //FRAME_FORMAT_WHVGA = 13
+                    "nHD (640x360)" //FRAME_FORMAT_NHD = 14
+                };
+            }
+        }
+
+        [IgnoreDataMember]
+        private static FrameFormat[] ColorImageProfilesEnum {
+            get
+            {
+                return new[]
+                {
+                    FrameFormat.FRAME_FORMAT_QQVGA,
+                    FrameFormat.FRAME_FORMAT_QCIF,
+                    FrameFormat.FRAME_FORMAT_HQVGA,
+                    FrameFormat.FRAME_FORMAT_QVGA,
+                    FrameFormat.FRAME_FORMAT_CIF,
+                    FrameFormat.FRAME_FORMAT_HVGA,
+                    FrameFormat.FRAME_FORMAT_VGA,
+                    FrameFormat.FRAME_FORMAT_WXGA_H,
+                    FrameFormat.FRAME_FORMAT_DS311,
+                    FrameFormat.FRAME_FORMAT_XGA,
+                    FrameFormat.FRAME_FORMAT_SVGA,
+                    FrameFormat.FRAME_FORMAT_OVVGA,
+                    FrameFormat.FRAME_FORMAT_WHVGA,
+                    FrameFormat.FRAME_FORMAT_NHD
+
                 };
             }
         }
@@ -1103,6 +1142,7 @@ namespace Huddle.Engine.Processor.Sensors
             DepthFrameRate = 30;
             DSW.setColorFrameRate(25);
             ColorFrameRate = 25;
+            DSW.setColorRes(FrameFormat.FRAME_FORMAT_VGA);
 
             // emitROI Timer
             if (timer == null)
@@ -1352,6 +1392,18 @@ namespace Huddle.Engine.Processor.Sensors
             //TriggerColorNode(false);
             TriggerDepthNode(IsUseDepthNode);
             TriggerColorNode(IsUseColorNode);
+
+            // listen to property changes
+            PropertyChanged += (s, e) => // TODO do i need to be removed?
+            {
+                switch (e.PropertyName)
+                {
+                    case ColorImageProfilePropertyName:
+                        //var i = Array.IndexOf(ColorImageProfiles, ColorImageProfile);
+                        //DSW.setColorRes(ColorImageProfilesEnum[i]);
+                        break;
+                }
+            };
         }
 
         public override void Stop()

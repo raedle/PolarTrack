@@ -240,6 +240,13 @@ namespace Huddle.Engine.Processor
             base.Stop();
         }
 
+        /**
+         * input image
+         * diff image
+         * accumulate image
+         * threshold image
+         * output image
+         */
         public override UMatData ProcessAndView(UMatData data)
         {
             if (IsUseGrayImages)
