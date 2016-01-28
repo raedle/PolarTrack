@@ -487,6 +487,7 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
 
@@ -494,16 +495,19 @@
                     <Slider Value="{Binding Path=Threshold}" Width="340" Height="25" Minimum="0" Maximum="255" TickFrequency="1" IsSnapToTickEnabled="True" Grid.Column="1" Grid.Row="0"/>
                     <TextBlock Text="{Binding Path=Threshold, StringFormat={}{0}}" Grid.Column="2" Grid.Row="0"/>
 
+                    <Label Content="Threshold Out" Grid.Column="0" Grid.Row="1" HorizontalAlignment="Right"/>
+                    <Slider Value="{Binding Path=ThresholdOut}" Width="340" Height="25" Minimum="0" Maximum="255" TickFrequency="1" IsSnapToTickEnabled="True" Grid.Column="1" Grid.Row="1"/>
+                    <TextBlock Text="{Binding Path=ThresholdOut, StringFormat={}{0}}" Grid.Column="2" Grid.Row="1"/>
 
-                    <Label Content="Weight New Image" Grid.Column="0" Grid.Row="1" HorizontalAlignment="Right"/>
-                    <Slider Value="{Binding Path=WeightNew}" Width="340" Height="25" Minimum="0" Maximum="1" TickFrequency="0.001" IsSnapToTickEnabled="True" Grid.Column="1" Grid.Row="1"/>
-                    <TextBlock Text="{Binding Path=WeightNew, StringFormat={}{0}}" Grid.Column="2" Grid.Row="1"/>
+                    <Label Content="Weight New Image" Grid.Column="0" Grid.Row="2" HorizontalAlignment="Right"/>
+                    <Slider Value="{Binding Path=WeightNew}" Width="340" Height="25" Minimum="0" Maximum="1" TickFrequency="0.001" IsSnapToTickEnabled="True" Grid.Column="1" Grid.Row="2"/>
+                    <TextBlock Text="{Binding Path=WeightNew, StringFormat={}{0}}" Grid.Column="2" Grid.Row="2"/>
 
-                    <Label Content="weight Old Image" Grid.Column="0" Grid.Row="2" HorizontalAlignment="Right"/>
-                    <Slider Value="{Binding Path=WeightOld}" Width="340" Height="25" Minimum="0" Maximum="1" TickFrequency="0.001" IsSnapToTickEnabled="True" Grid.Column="1" Grid.Row="2"/>
-                    <TextBlock Text="{Binding Path=WeightOld, StringFormat={}{0}}" Grid.Column="2" Grid.Row="2"/>
+                    <Label Content="weight Old Image" Grid.Column="0" Grid.Row="3" HorizontalAlignment="Right"/>
+                    <Slider Value="{Binding Path=WeightOld}" Width="340" Height="25" Minimum="0" Maximum="1" TickFrequency="0.001" IsSnapToTickEnabled="True" Grid.Column="1" Grid.Row="3"/>
+                    <TextBlock Text="{Binding Path=WeightOld, StringFormat={}{0}}" Grid.Column="2" Grid.Row="3"/>
 
-                    <CheckBox Content="Use Gray Images in intermediate step" VerticalAlignment="Center" IsChecked="{Binding Path=IsUseGrayImages}" Grid.Row="3" Grid.ColumnSpan="3"/>
+                    <CheckBox Content="Use Gray Images in intermediate step" VerticalAlignment="Center" IsChecked="{Binding Path=IsUseGrayImages}" Grid.Row="4" Grid.ColumnSpan="4"/>
                 </Grid>
             </GroupBox>
                       

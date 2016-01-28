@@ -5,6 +5,7 @@ using System.Runtime.Serialization;
 using System.Threading;
 using System.Windows.Media.Imaging;
 using System.Threading.Tasks;
+using System.Collections.Concurrent;
 
 using GalaSoft.MvvmLight;
 using GalaSoft.MvvmLight.Threading;
@@ -61,6 +62,41 @@ namespace Huddle.Engine.Processor
                 RaisePropertyChanging(ThresholdPropertyName);
                 _threshold = value;
                 RaisePropertyChanged(ThresholdPropertyName);
+            }
+        }
+
+        #endregion
+
+        #region ThresholdOut
+
+        /// <summary>
+        /// The <see cref="ThresholdOut" /> property's name.
+        /// </summary>
+        public const string ThresholdOutPropertyName = "ThresholdOut";
+
+        private int _thresholdOld = 125;
+
+        /// <summary>
+        /// Sets and gets the ThresholdOut property.
+        /// Changes to that property's value raise the PropertyChanged event. 
+        /// </summary>
+        public int ThresholdOut
+        {
+            get
+            {
+                return _thresholdOld;
+            }
+
+            set
+            {
+                if (_thresholdOld == value)
+                {
+                    return;
+                }
+
+                RaisePropertyChanging(ThresholdOutPropertyName);
+                _thresholdOld = value;
+                RaisePropertyChanged(ThresholdOutPropertyName);
             }
         }
 
@@ -247,6 +283,7 @@ namespace Huddle.Engine.Processor
          * threshold image
          * output image
          */
+        BlockingCollection<UMat> images = new BlockingCollection<UMat>();
         public override UMatData ProcessAndView(UMatData data)
         {
             if (IsUseGrayImages)
@@ -275,17 +312,23 @@ namespace Huddle.Engine.Processor
                 UMat ret = new UMat();
                 CvInvoke.AbsDiff(_previousImage, data.Data, ret);
 
-                if (_accImage == null)
+                UMat tmp = new UMat();
+                UMat tmp1 = new UMat();
+
+                if (IsUseGrayImages)
                 {
-                    _accImage = ret.Clone();
+                    tmp = ret;
                 }
                 else
                 {
-                    CvInvoke.AddWeighted(ret, WeightNew, _accImage, WeightOld, 0, _accImage);
+                    CvInvoke.CvtColor(ret, tmp, ColorConversion.Rgb2Gray);
                 }
+
+                CvInvoke.Threshold(tmp, tmp1, Threshold, 255, ThresholdType.Binary);
+
                 // intermediate image
                 #region render intermediate image
-                var image = _accImage.Clone().ToImage();
+                var image = tmp1.Clone().ToImage();
 
                 Task.Factory.StartNew(() =>
                 {
@@ -303,18 +346,30 @@ namespace Huddle.Engine.Processor
                 }).ContinueWith(s => IntermediateImage = s.Result);
                 #endregion
 
-                UMat tmp = new UMat();
 
-                if (IsUseGrayImages)
+                if (images.Count > 3)
                 {
-                    tmp = _accImage;
+                    images.Take();
+                    images.Add(tmp1);
                 }
                 else
                 {
-                    CvInvoke.CvtColor(_accImage, tmp, ColorConversion.Rgb2Gray);
+                    images.Add(tmp1);
                 }
 
-                CvInvoke.Threshold(tmp, data.Data, Threshold, 255, ThresholdType.Binary);
+                UMat outp = null;
+                foreach (var e in images)
+                {
+                    if (outp == null) {
+                        outp = e.Clone();
+                    } else{
+                        CvInvoke.AddWeighted(e, WeightNew, outp, WeightOld, 0, outp);
+                        //CvInvoke.BitwiseOr(e, outp, outp);
+                    }
+                }
+
+                CvInvoke.Threshold(outp, data.Data, ThresholdOut, 255, ThresholdType.Binary);
+
 
                 // save image as lastImage
                 _previousImage = imageCopy;
