@@ -285,14 +285,49 @@ namespace Huddle.Engine.Processor
          */
         BlockingCollection<UMat> images = new BlockingCollection<UMat>();
         BlockingCollection<UMat> diff = new BlockingCollection<UMat>();
+        BlockingCollection<UMat> q1 = new BlockingCollection<UMat>();
+        BlockingCollection<UMat> q2= new BlockingCollection<UMat>();
+        int __cnt = 1;
         public override UMatData ProcessAndView(UMatData data)
         {
-            images.Add(data.Data.Clone());
+            if (__cnt == 1 || __cnt == 3 || __cnt == 4)
+            {
+                if (q1.Count == 3)
+                {
+                    q1.Take();
+                }
 
-            if (images.Count == 3)
+                q1.Add(data.Data.Clone());
+
+                if (__cnt == 4)
+                {
+                    if (q2.Count == 3)
+                    {
+                        q2.Take();
+                    }
+
+                    q2.Add(data.Data.Clone());
+                }
+            }
+            else
+            {
+                if (q2.Count == 3)
+                {
+                    q2.Take();
+                }
+
+                q2.Add(data.Data.Clone());
+            }
+            __cnt++;
+            if (__cnt == 6)
+            {
+                __cnt = 1;
+            }
+
+            if (q1.Count == 3 && q2.Count == 3)
             {
                 UMat outp = null;
-                foreach (var i in images)
+                foreach (var i in q1)
                 {
                     if (outp == null)
                     {
@@ -303,57 +338,40 @@ namespace Huddle.Engine.Processor
                         CvInvoke.AddWeighted(i, WeightNew, outp, WeightOld, 0, outp);
                     }
                 }
-
-                 // intermediate image
-                #region render intermediate image
-                var image = outp.Clone().ToImage();
-
-                Task.Factory.StartNew(() =>
+                UMat outq = null;
+                foreach (var i in q2)
                 {
-                    if (image == null) return null;
-
-                    BitmapSource bitmap;
-                    if (image is Image<Gray, float>)
-                        bitmap = (image as Image<Gray, float>).ToGradientBitmapSource(true, EmguExtensions.LowConfidence, EmguExtensions.Saturation);
-                    else
-                        bitmap = image.ToBitmapSource(true);
-
-                    image.Dispose();
-
-                    return bitmap;
-                }).ContinueWith(s => IntermediateImage = s.Result);
-                #endregion
-
-
-
-                // save result and generate new
-                diff.Add(outp);
-                images = new BlockingCollection<UMat>();
-
-                UMat ret = new UMat();
-                if (diff.Count == 2)
-                {
-                    var i1 = diff.Take();
-                    var i2 = diff.Take();
-                    CvInvoke.AbsDiff(i1, i2, ret);
-
-                    diff = new BlockingCollection<UMat>();
-
-
-                    if (IsUseGrayImages)
+                    if (outq == null)
                     {
-                        /* gray images */
-                        CvInvoke.CvtColor(ret, data.Data, ColorConversion.Rgb2Gray);
+                        outq = i.Clone();
                     }
                     else
                     {
-                        data.Data = ret;
+                        CvInvoke.AddWeighted(i, WeightNew, outq, WeightOld, 0, outq);
                     }
-
-                    return data;
                 }
 
+                UMat ret = new UMat();
+                CvInvoke.AbsDiff(outp, outq, ret);
+
+                if (IsUseGrayImages)
+                {
+                    /* gray images */
+                    UMat __tmp = new UMat();
+                    CvInvoke.CvtColor(ret, __tmp, ColorConversion.Rgb2Gray);
+                    CvInvoke.Threshold(__tmp, data.Data, Threshold, 255, ThresholdType.Binary);
+
+                }
+                else
+                {
+                    data.Data = ret;
+                }
+
+                return data;
             }
+
+
+           
 
             return null;
         }
