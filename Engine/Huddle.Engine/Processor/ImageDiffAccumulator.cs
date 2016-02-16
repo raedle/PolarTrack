@@ -284,51 +284,29 @@ namespace Huddle.Engine.Processor
          * output image
          */
         BlockingCollection<UMat> images = new BlockingCollection<UMat>();
+        BlockingCollection<UMat> diff = new BlockingCollection<UMat>();
         public override UMatData ProcessAndView(UMatData data)
         {
-            if (IsUseGrayImages)
-            {
-                /* gray images */
-                CvInvoke.CvtColor(data.Data, data.Data, ColorConversion.Rgb2Gray);
-            }
+            images.Add(data.Data.Clone());
 
-            if (_previousImage == null)
+            if (images.Count == 3)
             {
-                _previousImage = data.Data.Clone();
-                return null;
-            }
-            else
-            {
-                if (_previousImage.Cols != data.Data.Cols ||
-                    _previousImage.Rows != data.Data.Rows ||
-                    _previousImage.Depth != data.Data.Depth ||
-                    _previousImage.NumberOfChannels != data.Data.NumberOfChannels)
+                UMat outp = null;
+                foreach (var i in images)
                 {
-                    return null;
+                    if (outp == null)
+                    {
+                        outp = i.Clone();
+                    }
+                    else
+                    {
+                        CvInvoke.AddWeighted(i, WeightNew, outp, WeightOld, 0, outp);
+                    }
                 }
 
-                var imageCopy = data.Data.Clone();
-
-                UMat ret = new UMat();
-                CvInvoke.AbsDiff(_previousImage, data.Data, ret);
-
-                UMat tmp = new UMat();
-                UMat tmp1 = new UMat();
-
-                if (IsUseGrayImages)
-                {
-                    tmp = ret;
-                }
-                else
-                {
-                    CvInvoke.CvtColor(ret, tmp, ColorConversion.Rgb2Gray);
-                }
-
-                CvInvoke.Threshold(tmp, tmp1, Threshold, 255, ThresholdType.Binary);
-
-                // intermediate image
+                 // intermediate image
                 #region render intermediate image
-                var image = tmp1.Clone().ToImage();
+                var image = outp.Clone().ToImage();
 
                 Task.Factory.StartNew(() =>
                 {
@@ -347,34 +325,37 @@ namespace Huddle.Engine.Processor
                 #endregion
 
 
-                if (images.Count > 3)
-                {
-                    images.Take();
-                    images.Add(tmp1);
-                }
-                else
-                {
-                    images.Add(tmp1);
-                }
 
-                UMat outp = null;
-                foreach (var e in images)
+                // save result and generate new
+                diff.Add(outp);
+                images = new BlockingCollection<UMat>();
+
+                UMat ret = new UMat();
+                if (diff.Count == 2)
                 {
-                    if (outp == null) {
-                        outp = e.Clone();
-                    } else{
-                        CvInvoke.AddWeighted(e, WeightNew, outp, WeightOld, 0, outp);
-                        //CvInvoke.BitwiseOr(e, outp, outp);
+                    var i1 = diff.Take();
+                    var i2 = diff.Take();
+                    CvInvoke.AbsDiff(i1, i2, ret);
+
+                    diff = new BlockingCollection<UMat>();
+
+
+                    if (IsUseGrayImages)
+                    {
+                        /* gray images */
+                        CvInvoke.CvtColor(ret, data.Data, ColorConversion.Rgb2Gray);
                     }
+                    else
+                    {
+                        data.Data = ret;
+                    }
+
+                    return data;
                 }
 
-                CvInvoke.Threshold(outp, data.Data, ThresholdOut, 255, ThresholdType.Binary);
-
-
-                // save image as lastImage
-                _previousImage = imageCopy;
-                return data;
             }
+
+            return null;
         }
     }
 }
