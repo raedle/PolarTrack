@@ -208,6 +208,41 @@ namespace Huddle.Engine.Processor
 
         #endregion
 
+        #region Gamma
+
+        /// <summary>
+        /// The <see cref="Gamma" /> property's name.
+        /// </summary>
+        public const string GammaPropertyName = "Gamma";
+
+        private double _gamma = 0.3;
+
+        /// <summary>
+        /// Sets and gets the Gamma property.
+        /// Changes to that property's value raise the PropertyChanged event. 
+        /// </summary>
+        public double Gamma
+        {
+            get
+            {
+                return _gamma;
+            }
+
+            set
+            {
+                if (_gamma == value)
+                {
+                    return;
+                }
+
+                RaisePropertyChanging(GammaPropertyName);
+                _gamma = value;
+                RaisePropertyChanged(GammaPropertyName);
+            }
+        }
+
+        #endregion
+
         #region IsUseGrayImages
 
         /// <summary>
@@ -290,90 +325,75 @@ namespace Huddle.Engine.Processor
         int __cnt = 1;
         public override UMatData ProcessAndView(UMatData data)
         {
-            if (__cnt == 1 || __cnt == 3 || __cnt == 4)
+            if (_previousImage == null)
             {
-                if (q1.Count == 3)
-                {
-                    q1.Take();
-                }
+                _previousImage = data.Data.Clone();
 
-                q1.Add(data.Data.Clone());
-
-                if (__cnt == 4)
-                {
-                    if (q2.Count == 3)
-                    {
-                        q2.Take();
-                    }
-
-                    q2.Add(data.Data.Clone());
-                }
+                return null;
             }
-            else
+            if (_previousImage.Cols != data.Data.Cols ||
+                _previousImage.Rows != data.Data.Rows ||
+                _previousImage.Depth != data.Data.Depth ||
+                _previousImage.NumberOfChannels != data.Data.NumberOfChannels)
             {
-                if (q2.Count == 3)
-                {
-                    q2.Take();
-                }
-
-                q2.Add(data.Data.Clone());
-            }
-            __cnt++;
-            if (__cnt == 6)
-            {
-                __cnt = 1;
+                return null;
             }
 
-            if (q1.Count == 3 && q2.Count == 3)
+            UMat imageCopy = data.Data.Clone();
+
+
+            UMat ret = new UMat();
+            UMat tmp = new UMat();
+            UMat outp = null;
+
+            CvInvoke.AbsDiff(_previousImage, data.Data, ret); // A-B
+            CvInvoke.CvtColor(ret, tmp, ColorConversion.Rgb2Gray); // Gray
+            CvInvoke.Threshold(tmp, ret, Threshold, 255, ThresholdType.Binary); // Thresh
+
+            // intermediate image
+            #region render intermediate image
+            var image = ret.Clone().ToImage();
+
+            Task.Factory.StartNew(() =>
             {
-                UMat outp = null;
-                foreach (var i in q1)
-                {
-                    if (outp == null)
-                    {
-                        outp = i.Clone();
-                    }
-                    else
-                    {
-                        CvInvoke.AddWeighted(i, WeightNew, outp, WeightOld, 0, outp);
-                    }
-                }
-                UMat outq = null;
-                foreach (var i in q2)
-                {
-                    if (outq == null)
-                    {
-                        outq = i.Clone();
-                    }
-                    else
-                    {
-                        CvInvoke.AddWeighted(i, WeightNew, outq, WeightOld, 0, outq);
-                    }
-                }
+                if (image == null) return null;
 
-                UMat ret = new UMat();
-                CvInvoke.AbsDiff(outp, outq, ret);
+                BitmapSource bitmap;
+                if (image is Image<Gray, float>)
+                    bitmap = (image as Image<Gray, float>).ToGradientBitmapSource(true, EmguExtensions.LowConfidence, EmguExtensions.Saturation);
+                else
+                    bitmap = image.ToBitmapSource(true);
 
-                if (IsUseGrayImages)
+                image.Dispose();
+
+                return bitmap;
+            }).ContinueWith(s => IntermediateImage = s.Result);
+            #endregion
+
+            if (images.Count >= 8)
+            {
+                var devnull = images.Take();
+            }
+            images.Add(ret);
+
+            foreach (var i in images)
+            {
+                if (outp == null)
                 {
-                    /* gray images */
-                    UMat __tmp = new UMat();
-                    CvInvoke.CvtColor(ret, __tmp, ColorConversion.Rgb2Gray);
-                    CvInvoke.Threshold(__tmp, data.Data, Threshold, 255, ThresholdType.Binary);
-
+                    outp = i.Clone();
                 }
                 else
                 {
-                    data.Data = ret;
+                    //CvInvoke.BitwiseOr(i, outp, outp);
+                    CvInvoke.AddWeighted(i, WeightNew, outp, WeightOld, Gamma, outp);
                 }
-
-                return data;
             }
 
+            CvInvoke.Threshold(outp, data.Data, ThresholdOut, 255, ThresholdType.Binary);
 
-           
-
-            return null;
+            // clean up and stuff
+            _previousImage = imageCopy;
+            return data;
         }
     }
 }

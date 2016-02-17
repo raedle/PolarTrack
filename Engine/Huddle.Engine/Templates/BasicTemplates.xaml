@@ -488,6 +488,7 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
 
@@ -508,6 +509,10 @@
                     <TextBlock Text="{Binding Path=WeightOld, StringFormat={}{0}}" Grid.Column="2" Grid.Row="3"/>
 
                     <CheckBox Content="Use Gray Images in intermediate step" VerticalAlignment="Center" IsChecked="{Binding Path=IsUseGrayImages}" Grid.Row="4" Grid.ColumnSpan="4"/>
+
+                    <Label Content="Gamma" Grid.Column="0" Grid.Row="5" HorizontalAlignment="Right"/>
+                    <Slider Value="{Binding Path=Gamma}" Width="340" Height="25" Minimum="0" Maximum="1" TickFrequency="0.001" IsSnapToTickEnabled="True" Grid.Column="1" Grid.Row="5"/>
+                    <TextBlock Text="{Binding Path=Gamma, StringFormat={}{0}}" Grid.Column="2" Grid.Row="5"/>
                 </Grid>
             </GroupBox>
                       
