@@ -347,6 +347,7 @@ namespace Huddle.Engine.Processor
             UMat outp = null;
 
             CvInvoke.AbsDiff(_previousImage, data.Data, ret); // A-B
+            CvInvoke.Blur(ret, ret, new System.Drawing.Size(10, 10), new System.Drawing.Point(-1, -1));
             CvInvoke.CvtColor(ret, tmp, ColorConversion.Rgb2Gray); // Gray
             CvInvoke.Threshold(tmp, ret, Threshold, 255, ThresholdType.Binary); // Thresh
 
